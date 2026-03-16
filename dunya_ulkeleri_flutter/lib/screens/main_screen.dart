@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import 'dictionary_screen.dart'; // YENİ EKRANI IMPORT ET
+import 'dictionary_screen.dart';
+import 'leaderboard_screen.dart'; // YENİ EKRANI IMPORT ETTİK
 
 class MainScreen extends StatefulWidget {
   @override
@@ -11,11 +12,12 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  // Alt menüdeki sekmeler (Sözlük eklendi)
+  // Alt menüdeki sekmeler (Sıralama ekranı 1. sıraya eklendi)
   final List<Widget> _screens = [
     HomeScreen(), // 0. index: Oyuna Başla sayfası
-    DictionaryScreen(), // 1. index: Öğrenme(Sözlük) sayfası
-    ProfileScreen(), // 2. index: Profil sayfası
+    LeaderboardScreen(), // 1. index: Sıralama (Liderlik) sayfası - YENİ
+    DictionaryScreen(), // 2. index: Öğrenme(Sözlük) sayfası
+    ProfileScreen(), // 3. index: Profil sayfası
   ];
 
   @override
@@ -24,6 +26,11 @@ class _MainScreenState extends State<MainScreen> {
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
+        // DİKKAT: 3'ten fazla ikon kullanıldığında 'fixed' yapmak zorunludur!
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors
+            .amber, // Seçilen sekmenin rengi (Oyunun temasına uygun altın sarısı)
+        unselectedItemColor: Colors.grey, // Seçili olmayanların rengi
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -32,9 +39,10 @@ class _MainScreenState extends State<MainScreen> {
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.play_arrow), label: 'Oyun'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book), // SÖZLÜK İKONU
-            label: 'Öğren',
+            icon: Icon(Icons.leaderboard), // YENİ SIRALAMA İKONU
+            label: 'Sıralama',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Öğren'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
