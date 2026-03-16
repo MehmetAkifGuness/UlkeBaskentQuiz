@@ -45,33 +45,78 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(height: 20),
             authProvider.isLoading
                 ? CircularProgressIndicator()
-                : ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                    onPressed: () async {
-                      final result = await authProvider.login(
-                        _usernameController.text,
-                        _passwordController.text,
-                      );
+                : Column(
+                    children: [
+                      // NORMAL GİRİŞ YAP BUTONU
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: Size(double.infinity, 50),
+                        ),
+                        onPressed: () async {
+                          final result = await authProvider.login(
+                            _usernameController.text,
+                            _passwordController.text,
+                          );
 
-                      if (authProvider.token != null) {
-                        // ✅ DEĞİŞİKLİK BURADA: HomeScreen yerine MainScreen'e gidiyoruz!
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => MainScreen()),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result.message ?? "Giriş başarısız!"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                    child: Text("Giriş Yap"),
+                          if (authProvider.token != null) {
+                            // ✅ DEĞİŞİKLİK BURADA: HomeScreen yerine MainScreen'e gidiyoruz!
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MainScreen(),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result.message ?? "Giriş başarısız!",
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(
+                          "Giriş Yap",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      // --- YENİ EKLENEN MİSAFİR GİRİŞİ BUTONU ---
+                      OutlinedButton(
+                        onPressed: () async {
+                          bool success = await authProvider.loginAsGuest();
+                          if (success) {
+                            // ✅ Misafir girişinde de HomeScreen yerine MainScreen'e gidiyoruz
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MainScreen(),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Misafir girişi başarısız oldu."),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: Size(double.infinity, 50),
+                          side: BorderSide(color: Colors.blueAccent),
+                        ),
+                        child: Text(
+                          "Misafir Olarak Devam Et",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                      // ------------------------------------------
+                    ],
                   ),
+            SizedBox(height: 20),
             TextButton(
               onPressed: () {
                 Navigator.push(

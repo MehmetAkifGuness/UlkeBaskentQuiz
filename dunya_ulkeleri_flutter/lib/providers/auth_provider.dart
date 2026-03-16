@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/auth_model.dart';
 import '../services/auth_service.dart';
 
@@ -14,6 +15,30 @@ class AuthProvider with ChangeNotifier {
   String? get username => _username;
   bool get isLoading => _isLoading;
 
+  // Misafir olarak giriş yapma fonksiyonu
+  Future<bool> loginAsGuest() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final authData = await _authService.guestLogin();
+      _token = authData.token;
+      _username = authData.username;
+
+      // Token'ı cihaza kaydet
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', _token!);
+      await prefs.setString('username', _username!);
+
+      return true;
+    } catch (e) {
+      print("Misafir giriş hatası: $e");
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
   // giriş yapma
   // lib/providers/auth_provider.dart içindeki login fonksiyonu
 

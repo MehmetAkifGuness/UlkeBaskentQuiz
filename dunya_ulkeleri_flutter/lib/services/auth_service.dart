@@ -46,6 +46,20 @@ class AuthService {
     }
   }
 
+  // Misafir Girişi İsteği
+  Future<AuthModel> guestLogin() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/guest'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return AuthModel.fromJson(json.decode(utf8.decode(response.bodyBytes)));
+    } else {
+      throw Exception('Misafir girişi başarısız oldu!');
+    }
+  }
+
   // MAİL DOĞRULAMA
   Future<AuthModel> verify(String email, String code) async {
     final response = await http.post(
