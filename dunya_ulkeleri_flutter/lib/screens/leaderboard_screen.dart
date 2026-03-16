@@ -15,7 +15,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     "Avrupa",
     "Asya",
     "Afrika",
-    "Amerika",
+    "Kuzey Amerika",
+    "Güney Amerika",
+    "Okyanusya",
   ];
   String _selectedCategory = "Dünya";
 
