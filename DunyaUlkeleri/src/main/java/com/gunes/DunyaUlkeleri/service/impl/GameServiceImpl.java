@@ -61,26 +61,47 @@ public class GameServiceImpl implements GameService {
         boolean isCorrect = request.getCapitalGuess().trim().equalsIgnoreCase(previousCorrectAnswer);
 
         if (isCorrect) {
-            session.setCurrentScore(session.getCurrentScore() + 10);
+            // YENİ ZAMAN BAZLI PUANLAMA MANTIĞI:
+            // Taban puan 1000. Harcanan her saniye için 10 puan eksilir.
+            int timePenalty = request.getTimeTaken() * 10;
+            int earnedScore = 1000 - timePenalty;
+            
+            // Eğer çok uzun süre beklediyse puan eksiye düşmesin, en az 100 puan alsın
+            if (earnedScore < 100) {
+                earnedScore = 100;
+            }
+            
+            session.setCurrentScore(session.getCurrentScore() + earnedScore);
             
             // EĞER DOĞRU BİLDİYSE: Bu sorunun ID'sini "soruldu" listesine ekle ki bir daha çıkmasın.
             if (previousQuestionId != null) {
                 session.getAskedQuestionIds().add(previousQuestionId);
             }
         } else {
+            // YANLIŞ BİLDİYSE: Can Düşür
             session.setRemainingLives(session.getRemainingLives() - 1);
-            // YANLIŞ BİLDİYSE: Listeye EKLEMİYORUZ. Böylece soru havuzda kalmaya devam ediyor.
         }
 
         // Oyun bittiyse (Can 0 olduysa)
         if (session.getRemainingLives() <= 0) {
             session.setFinished(true);
             User user = session.getUser();
+            
+            // 1. Kategori Bazlı En İyi Skoru Güncelle (Eğer yeni rekor kırdıysa)
+            String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
+            int currentScore = session.getCurrentScore();
+            int bestScore = user.getCategoryBestScores().getOrDefault(currentCategory, 0);
+            
+            if (currentScore > bestScore) {
+                user.getCategoryBestScores().put(currentCategory, currentScore);
+            }
+
+            // 2. Win Streak ve Toplam Oyun Sayısını Güncelle
             if (session.getCurrentScore() > user.getMaxWinStreak()) {
                 user.setMaxWinStreak(session.getCurrentScore());
-                userRepository.save(user);
             }
             user.setTotalGamesPlayed(user.getTotalGamesPlayed() + 1);
+            
             userRepository.save(user);
             gameSessionRepository.save(session);
             

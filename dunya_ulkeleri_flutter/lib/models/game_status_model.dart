@@ -8,6 +8,9 @@ class GameStatusModel {
   final bool? lastAnswerCorrect;
   final String? lastCorrectAnswer;
 
+  // 1. YENİ EKLENDİ: Oyunun bitip bitmediğini tutan değişken
+  final bool? finished;
+
   GameStatusModel({
     this.sessionId,
     required this.currentScore,
@@ -17,13 +20,13 @@ class GameStatusModel {
     this.message,
     this.lastAnswerCorrect,
     this.lastCorrectAnswer,
+
+    // 2. YENİ EKLENDİ: Constructor'a ekledik
+    this.finished,
   });
 
-  //backend den gelen veriyi fluttera dönüştüren kısım
   factory GameStatusModel.fromJson(Map<String, dynamic> json) {
     return GameStatusModel(
-      lastAnswerCorrect: json['lastAnswerCorrect'],
-      lastCorrectAnswer: json['lastCorrectAnswer'],
       sessionId: json['sessionId'],
       currentScore: json['currentScore'] ?? 0,
       remainingLives: json['remainingLives'] ?? 0,
@@ -32,6 +35,11 @@ class GameStatusModel {
           ? List<String>.from(json['options'])
           : null,
       message: json['message'],
+      lastAnswerCorrect: json['lastAnswerCorrect'],
+      lastCorrectAnswer: json['lastCorrectAnswer'],
+
+      // 3. YENİ EKLENDİ: JSON'dan gelen değeri okuyoruz
+      finished: json['finished'],
     );
   }
 }

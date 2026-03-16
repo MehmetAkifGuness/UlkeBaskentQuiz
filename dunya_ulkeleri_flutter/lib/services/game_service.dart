@@ -16,7 +16,6 @@ class GameService {
       },
     );
 
-    // 📡 BURASI ÇOK KRİTİK: Terminale bakacağız
     print("--- OYUN BAŞLATMA İSTEĞİ ---");
     print("Seçilen Kategori: $category");
     print("Durum Kodu: ${response.statusCode}");
@@ -25,7 +24,6 @@ class GameService {
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return GameStatusModel.fromJson(jsonDecode(response.body));
     } else {
-      // Eğer boş gelirse veya hata kodu dönerse uygulamayı patlatmak yerine hata fırlatıyoruz
       throw Exception(
         "Backend hatası: ${response.statusCode} / İçerik: ${response.body}",
       );
@@ -40,7 +38,6 @@ class GameService {
     );
 
     if (response.statusCode == 200) {
-      // Türkçe karakterlerin (ş, ç, ö vb.) bozuk gelmemesi için utf8.decode kullanıyoruz
       List jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       return jsonResponse
           .map((item) => DictionaryModel.fromJson(item))
@@ -50,23 +47,28 @@ class GameService {
     }
   }
 
+  // YENİ: timeTaken eklendi
   Future<GameStatusModel> makeGuess(
     String token,
     int sessionId,
     String capital,
+    int timeTaken, // ⏱️ Backend'e gidecek süre (saniye cinsinden)
   ) async {
-    // 🚨 ADRES DEĞİŞTİ: /guess yerine /submit oldu
     final response = await http.post(
       Uri.parse('$baseUrl/submit'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      // 🚨 DİKKAT: JSON anahtarları GameAnswerRequest sınıfındakiyle aynı olmalı!
-      body: jsonEncode({'sessionId': sessionId, 'capitalGuess': capital}),
+      body: jsonEncode({
+        'sessionId': sessionId,
+        'capitalGuess': capital,
+        'timeTaken': timeTaken, // ⏱️ Süreyi JSON'a ekledik
+      }),
     );
 
     print("--- TAHMİN İSTEĞİ ---");
+    print("Geçen Süre: $timeTaken saniye");
     print("Durum Kodu: ${response.statusCode}");
     print("Gelen Cevap: ${response.body}");
 

@@ -1,11 +1,18 @@
 package com.gunes.DunyaUlkeleri.entity;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -44,5 +51,20 @@ public class User {
     @PrePersist
     protected void onCreate(){
         this.creationDate = LocalDateTime.now();
+    }
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_category_scores", joinColumns = @JoinColumn(name = "user_id"))
+    @MapKeyColumn(name = "category")
+    @Column(name = "best_score")
+    private Map<String, Integer> categoryBestScores = new HashMap<>();
+
+    // Getter ve Setter
+    public Map<String, Integer> getCategoryBestScores() {
+        return categoryBestScores;
+    }
+
+    public void setCategoryBestScores(Map<String, Integer> categoryBestScores) {
+        this.categoryBestScores = categoryBestScores;
     }
 }

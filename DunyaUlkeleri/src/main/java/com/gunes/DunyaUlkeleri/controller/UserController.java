@@ -1,8 +1,18 @@
 package com.gunes.DunyaUlkeleri.controller;
 
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
+import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.UserService;
 import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository; // Gerekli olduğu için eklendi
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getUserProfile() {
@@ -26,5 +37,28 @@ public class UserController {
             return ResponseEntity.ok(response); // Kullanıcı bulunduysa 200 OK
         }
         return ResponseEntity.notFound().build(); // Bulunamadıysa 404 Not Found
+    }
+
+    // 1. Kullanıcının Kendi Profilindeki Kategori Skorları (Örn: Avrupa: 8000, Asya: 4500)
+    @GetMapping("/my-category-scores")
+    public ResponseEntity<Map<String, Integer>> getMyCategoryScores(Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        return ResponseEntity.ok(user.getCategoryBestScores());
+    }
+
+    // 2. Kategoriye Özel Liderlik Tablosu (Altın, Gümüş, Bronz için ilk 10)
+    @GetMapping("/leaderboard/{category}")
+    public ResponseEntity<List<Map<String, Object>>> getCategoryLeaderboard(@PathVariable String category) {
+        List<Object[]> topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 10));
+        
+        List<Map<String, Object>> leaderboard = new ArrayList<>();
+        for (Object[] record : topUsers) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("username", record[0]);
+            map.put("score", record[1]);
+            leaderboard.add(map);
+        }
+        return ResponseEntity.ok(leaderboard);
     }
 }

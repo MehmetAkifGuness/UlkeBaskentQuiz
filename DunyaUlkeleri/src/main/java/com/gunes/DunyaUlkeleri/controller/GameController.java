@@ -7,7 +7,6 @@ import com.gunes.DunyaUlkeleri.service.GameService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
-import java.util.Locale.Category;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;

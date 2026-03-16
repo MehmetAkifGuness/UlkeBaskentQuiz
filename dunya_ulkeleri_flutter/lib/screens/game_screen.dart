@@ -6,7 +6,6 @@ import '../providers/game_provider.dart';
 class GameScreen extends StatefulWidget {
   final String category; // Hangi kıtada oynanacağını tutan değişken
 
-  // Constructor güncellendi
   const GameScreen({Key? key, required this.category}) : super(key: key);
 
   @override
@@ -67,7 +66,47 @@ class _GameScreenState extends State<GameScreen> {
                       "Mod: ${widget.category}",
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: 20),
+
+                    // ⏱️ --- YENİ EKLENEN ŞIK KRONOMETRE UI ---
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.amber, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.timer, color: Colors.amber, size: 28),
+                          SizedBox(width: 10),
+                          Text(
+                            gameProvider
+                                .formattedTime, // ⏱️ SAAT BURADA CANLI AKIYOR
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'Courier', // Dijital saat görünümü
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 30),
+
+                    // --------------------------------------
                     Text(
                       "${status.countryName} ülkesinin başkenti neresidir?",
                       textAlign: TextAlign.center,
