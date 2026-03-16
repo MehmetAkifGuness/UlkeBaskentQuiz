@@ -54,8 +54,9 @@ class _GameScreenState extends State<GameScreen> {
         ),
         automaticallyImplyLeading: false,
       ),
-      body: status.remainingLives <= 0
-          ? _buildGameOver(context, status.currentScore)
+      // 🚨 DEĞİŞİKLİK BURADA: status.finished == true şartı ve status.message eklendi
+      body: (status.remainingLives <= 0 || status.finished == true)
+          ? _buildGameOver(context, status.currentScore, status.message)
           : Stack(
               children: [
                 Column(
@@ -177,28 +178,71 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Widget _buildGameOver(BuildContext context, int score) {
+  // 🚨 DEĞİŞİKLİK BURADA: Zafer durumunu da kapsayan yeni Oyun Bitti tasarımı
+  Widget _buildGameOver(BuildContext context, int score, String? message) {
+    // Mesajın içinde "TEBRİKLER" geçiyorsa kazanmış demektir, yoksa kaybetmiştir.
+    bool isVictory = message != null && message.contains("TEBRİKLER");
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Kazanma ve kaybetmeye göre değişen ikon
+          Icon(
+            isVictory ? Icons.emoji_events : Icons.videogame_asset_off,
+            size: 100,
+            color: isVictory ? Colors.amber : Colors.red,
+          ),
+          SizedBox(height: 20),
+
+          // Kazanma ve kaybetmeye göre değişen başlık
           Text(
-            "OYUN BİTTİ!",
+            isVictory ? "MUHTEŞEM ZAFER!" : "OYUN BİTTİ!",
             style: TextStyle(
               fontSize: 32,
-              color: Colors.red,
+              color: isVictory ? Colors.amber : Colors.red,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 10),
-          Text("Toplam Skorun: $score", style: TextStyle(fontSize: 24)),
-          SizedBox(height: 20),
+          SizedBox(height: 15),
+
+          // Backend'den gelen mesaj (Örn: +5000 Puan Bonus mesajı)
+          if (message != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+            ),
+          SizedBox(height: 30),
+
+          // Skor
+          Text(
+            "Toplam Skorun: $score",
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 40),
+
+          // Buton
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber, // Altın sarısı buton
+              foregroundColor: Colors.black, // Siyah yazı
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
             onPressed: () {
               Provider.of<GameProvider>(context, listen: false).resetGame();
               Navigator.pop(context); // Ana sayfaya dön
             },
-            child: Text("Ana Sayfaya Dön"),
+            child: Text(
+              "Ana Sayfaya Dön",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

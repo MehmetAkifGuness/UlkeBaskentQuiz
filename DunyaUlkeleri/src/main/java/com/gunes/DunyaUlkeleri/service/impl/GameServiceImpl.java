@@ -120,9 +120,8 @@ public class GameServiceImpl implements GameService {
         return response;
     }
 
-    private GameStatusResponse generateNextQuestion(GameSession session) {
+private GameStatusResponse generateNextQuestion(GameSession session) {
         // Eğer daha önce hiç soru sorulmadıysa Set boş olur. Boş Set SQL'de hata verir. 
-        // Bu yüzden varsayılan olarak var olmayan bir ID (-1) ekliyoruz.
         Set<Long> askedIds = session.getAskedQuestionIds().isEmpty() ? Set.of(-1L) : session.getAskedQuestionIds();
         
         // Kategori boş gelmişse varsayılan olarak "Dünya" yapalım
@@ -130,8 +129,38 @@ public class GameServiceImpl implements GameService {
 
         // Daha önce sorulmamış ve seçilen kategoriye ait yeni bir soru getir!
         Question question = questionRepository.findRandomQuestionByCategory(category, askedIds)
-                .orElseThrow(() -> new RuntimeException("Tebrikler! Bu kategorideki tüm ülkeleri doğru bildiniz!"));
+                .orElse(null); // HATA FIRLATMAK YERİNE NULL DÖNDÜR
 
+        // KATEGORİYİ BİTİRME (KAZANMA) DURUMU
+        if (question == null) {
+            session.setFinished(true); // Oyunu "Bitti" olarak işaretle
+            User user = session.getUser();
+            
+            // Bütün kıtayı bitirdiği için 5000 Puan Bonus!
+            session.setCurrentScore(session.getCurrentScore() + 5000);
+
+            // 1. Kategori Rekorunu Güncelle
+            int currentScore = session.getCurrentScore();
+            int bestScore = user.getCategoryBestScores().getOrDefault(category, 0);
+            
+            if (currentScore > bestScore) {
+                user.getCategoryBestScores().put(category, currentScore);
+            }
+
+            // 2. Profil İstatistiklerini Güncelle
+            if (currentScore > user.getMaxWinStreak()) {
+                user.setMaxWinStreak(currentScore);
+            }
+            user.setTotalGamesPlayed(user.getTotalGamesPlayed() + 1);
+            
+            userRepository.save(user);
+            gameSessionRepository.save(session);
+
+            // Flutter'a hatasız, başarılı bir Oyun Bitti mesajı yolla
+            return buildResponse(session, "TEBRİKLER! Bu kategorideki tüm ülkeleri bildiniz! (+5000 Bonus)", true);
+        }
+
+        // Eğer soru varsa normal şekilde devam et
         List<String> options = new ArrayList<>();
         options.add(question.getCapitalName()); 
         options.addAll(questionRepository.findRandomWrongAnswers(question.getCapitalName())); 
