@@ -33,7 +33,9 @@ class _GameScreenState extends State<GameScreen> {
     final status = gameProvider.status;
 
     if (gameProvider.isLoading && status == null) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+      );
     }
 
     if (status == null) {
@@ -47,29 +49,45 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
+    // 🚨 YENİ: Hangi modda olduğumuzu anlıyoruz
+    bool isDaily = widget.category == "DailyChallenge";
+
     return Scaffold(
       appBar: AppBar(
+        // 🚨 YENİ: Günün Görevinde can barını gizleyip özel başlık ekliyoruz
         title: Text(
-          "Skor: ${status.currentScore} | Can: ${status.remainingLives}",
+          isDaily
+              ? "Skor: ${status.currentScore} | 🎯 Günün Görevi"
+              : "Skor: ${status.currentScore} | ❤️ Can: ${status.remainingLives}",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
         automaticallyImplyLeading: false,
       ),
-      // 🚨 DEĞİŞİKLİK BURADA: status.finished == true şartı ve status.message eklendi
       body: (status.remainingLives <= 0 || status.finished == true)
-          ? _buildGameOver(context, status.currentScore, status.message)
+          ? _buildGameOver(
+              context,
+              status.currentScore,
+              status.message,
+              isDaily,
+            )
           : Stack(
               children: [
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Hangi modda oynadığını üste küçük yazıyla ekleyebiliriz
+                    // Backend'den gelen mesajı (Örn: Soru 3/10) burada gösteriyoruz
                     Text(
-                      "Mod: ${widget.category}",
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      status.message ?? "Oyun Devam Ediyor...",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.amber,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 20),
 
-                    // ⏱️ --- YENİ EKLENEN ŞIK KRONOMETRE UI ---
+                    // ⏱️ --- KRONOMETRE UI ---
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20,
@@ -93,13 +111,12 @@ class _GameScreenState extends State<GameScreen> {
                           Icon(Icons.timer, color: Colors.amber, size: 28),
                           SizedBox(width: 10),
                           Text(
-                            gameProvider
-                                .formattedTime, // ⏱️ SAAT BURADA CANLI AKIYOR
+                            gameProvider.formattedTime,
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              fontFamily: 'Courier', // Dijital saat görünümü
+                              fontFamily: 'Courier',
                             ),
                           ),
                         ],
@@ -107,7 +124,7 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                     SizedBox(height: 30),
 
-                    // --------------------------------------
+                    // SORU METNİ
                     Text(
                       "${status.countryName} ülkesinin başkenti neresidir?",
                       textAlign: TextAlign.center,
@@ -118,6 +135,7 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                     SizedBox(height: 30),
 
+                    // ŞIKLAR
                     ...(status.options ?? []).map((option) {
                       Color? buttonColor;
                       if (gameProvider.showResult &&
@@ -132,14 +150,18 @@ class _GameScreenState extends State<GameScreen> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 5,
+                          vertical: 6,
                         ),
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            minimumSize: Size(double.infinity, 50),
-                            backgroundColor: buttonColor,
+                            minimumSize: Size(double.infinity, 55),
+                            backgroundColor:
+                                buttonColor ?? Colors.blueGrey[800],
                             disabledBackgroundColor: buttonColor,
                             disabledForegroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
                           ),
                           onPressed:
                               (gameProvider.isLoading ||
@@ -152,8 +174,9 @@ class _GameScreenState extends State<GameScreen> {
                           child: Text(
                             option,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -161,6 +184,7 @@ class _GameScreenState extends State<GameScreen> {
                     }).toList(),
                   ],
                 ),
+                // YÜKLENİYOR ANİMASYONU
                 // ignore: unnecessary_null_comparison
                 if (gameProvider.isLoading && status != null)
                   Center(
@@ -170,7 +194,7 @@ class _GameScreenState extends State<GameScreen> {
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: CircularProgressIndicator(color: Colors.white),
+                      child: CircularProgressIndicator(color: Colors.amber),
                     ),
                   ),
               ],
@@ -178,16 +202,21 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // 🚨 DEĞİŞİKLİK BURADA: Zafer durumunu da kapsayan yeni Oyun Bitti tasarımı
-  Widget _buildGameOver(BuildContext context, int score, String? message) {
-    // Mesajın içinde "TEBRİKLER" geçiyorsa kazanmış demektir, yoksa kaybetmiştir.
-    bool isVictory = message != null && message.contains("TEBRİKLER");
+  // --- OYUN BİTTİ EKRANI ---
+  Widget _buildGameOver(
+    BuildContext context,
+    int score,
+    String? message,
+    bool isDaily,
+  ) {
+    bool isVictory =
+        message != null &&
+        (message.contains("TEBRİKLER") || message.contains("Tamamlandı"));
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Kazanma ve kaybetmeye göre değişen ikon
           Icon(
             isVictory ? Icons.emoji_events : Icons.videogame_asset_off,
             size: 100,
@@ -195,9 +224,10 @@ class _GameScreenState extends State<GameScreen> {
           ),
           SizedBox(height: 20),
 
-          // Kazanma ve kaybetmeye göre değişen başlık
           Text(
-            isVictory ? "MUHTEŞEM ZAFER!" : "OYUN BİTTİ!",
+            isDaily
+                ? "GÖREV TAMAMLANDI!"
+                : (isVictory ? "MUHTEŞEM ZAFER!" : "OYUN BİTTİ!"),
             style: TextStyle(
               fontSize: 32,
               color: isVictory ? Colors.amber : Colors.red,
@@ -206,7 +236,6 @@ class _GameScreenState extends State<GameScreen> {
           ),
           SizedBox(height: 15),
 
-          // Backend'den gelen mesaj (Örn: +5000 Puan Bonus mesajı)
           if (message != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -218,31 +247,44 @@ class _GameScreenState extends State<GameScreen> {
             ),
           SizedBox(height: 30),
 
-          // Skor
-          Text(
-            "Toplam Skorun: $score",
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          // 🚨 YENİ: Günün görevinde kazanılan puan daha vurgulu
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.amber.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.amber, width: 2),
+            ),
+            child: Text(
+              "Skorun: $score",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
           ),
+
           SizedBox(height: 40),
 
-          // Buton
-          ElevatedButton(
+          ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber, // Altın sarısı buton
-              foregroundColor: Colors.black, // Siyah yazı
-              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.black,
+              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(20),
               ),
+            ),
+            icon: Icon(Icons.home),
+            label: Text(
+              "Ana Sayfaya Dön",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             onPressed: () {
               Provider.of<GameProvider>(context, listen: false).resetGame();
               Navigator.pop(context); // Ana sayfaya dön
             },
-            child: Text(
-              "Ana Sayfaya Dön",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
           ),
         ],
       ),

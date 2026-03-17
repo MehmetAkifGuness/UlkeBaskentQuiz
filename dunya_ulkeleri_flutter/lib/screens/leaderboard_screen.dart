@@ -10,7 +10,10 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   final UserService _userService = UserService();
+
+  // 🚨 YENİ EKLENDİ: "🔥 Günün Görevi" listeye en başa alındı
   final List<String> _categories = [
+    "🔥 Günün Görevi",
     "Dünya",
     "Avrupa",
     "Asya",
@@ -19,7 +22,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     "Güney Amerika",
     "Okyanusya",
   ];
-  String _selectedCategory = "Dünya";
+
+  // 🚨 Varsayılan açılış kategorisi değiştirildi
+  String _selectedCategory = "🔥 Günün Görevi";
 
   List<Map<String, dynamic>> _leaderboardData = [];
   bool _isLoading = true;
@@ -35,9 +40,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final token = Provider.of<AuthProvider>(context, listen: false).token;
       if (token != null) {
+        // 🚨 SİHİRLİ DOKUNUŞ: Eğer "Günün Görevi" seçiliyse, backend'e "DailyChallenge" yazısını yolla
+        String apiCategory = _selectedCategory == "🔥 Günün Görevi"
+            ? "DailyChallenge"
+            : _selectedCategory;
+
         _leaderboardData = await _userService.getCategoryLeaderboard(
           token,
-          _selectedCategory,
+          apiCategory,
         );
       }
     } catch (e) {
@@ -92,6 +102,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               itemBuilder: (context, index) {
                 final category = _categories[index];
                 final isSelected = category == _selectedCategory;
+
+                // 🚨 TASARIM DOKUNUŞU: Günün Görevi seçili değilse arka planı Kırmızı kalsın ki dikkat çeksin!
+                Color? bgColor = isSelected ? Colors.amber : Colors.grey[800];
+                if (category == "🔥 Günün Görevi" && !isSelected) {
+                  bgColor = Colors.red[900];
+                }
+
                 return GestureDetector(
                   onTap: () {
                     setState(() {
@@ -103,7 +120,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     margin: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.amber : Colors.grey[800],
+                      color: bgColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: isSelected
                           ? [
@@ -132,7 +149,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: Colors.amber))
                 : _leaderboardData.isEmpty
-                ? Center(child: Text("Bu kategoride henüz skor yok."))
+                ? Center(
+                    // 🚨 EĞER GÜNLÜK GÖREVSE MESAJI DAHA GÜZEL VERELİM
+                    child: Text(
+                      _selectedCategory == "🔥 Günün Görevi"
+                          ? "Bugün listeye henüz kimse giremedi.\nİlk giren sen ol!"
+                          : "Bu kategoride henüz skor yok.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[400]),
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: _leaderboardData.length,
                     itemBuilder: (context, index) {

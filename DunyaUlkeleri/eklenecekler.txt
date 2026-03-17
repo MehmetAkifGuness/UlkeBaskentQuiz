@@ -1,7 +1,8 @@
-şifremi unuttum
+şifremi unuttum(çözüldü)
 öğrenem kısmı geliştirilecek
 ülkelerin yöresel yemek ve müziği eklenecek
 ülkelerin başkent fotosu ve nüfusu ekelenecek 
 ülkelerin para birimi eklenecek 
 ülkelerin bulunduğu konum kıta böölge olarak aşama aşama resim olarak eklenecek 
 şifre kısmında aynı şifre olmaması ve şfirenin en az 6 olması gerek bunu eklememm laızm
+başarımlar (uygulama bittikten sonra eklenecek )

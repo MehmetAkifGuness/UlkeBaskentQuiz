@@ -1,10 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import 'game_screen.dart'; // GameScreen'i import ediyoruz
+import '../models/user_profile_model.dart';
+import '../services/user.service.dart';
+import 'game_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  // Veritabanındaki isimlerle birebir aynı olmalı
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final UserService _userService = UserService();
+  bool _hasPlayedDaily = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDailyStatus();
+  }
+
+  // Kullanıcının bugün görevi yapıp yapmadığını kontrol ediyoruz
+  Future<void> _checkDailyStatus() async {
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    if (token != null) {
+      UserProfileModel? profile = await _userService.getUserProfile(token);
+      if (profile != null && mounted) {
+        setState(() {
+          _hasPlayedDaily = profile.hasPlayedDaily;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   final List<String> categories = [
     "Dünya",
     "Avrupa",
@@ -15,7 +45,6 @@ class HomeScreen extends StatelessWidget {
     "Okyanusya",
   ];
 
-  // Aşağıdan açılan Kategori Seçim Menüsü
   void _showCategorySelection(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -48,17 +77,16 @@ class HomeScreen extends StatelessWidget {
                       title: Text(category, style: TextStyle(fontSize: 18)),
                       trailing: Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
-                        // 1. Önce bu menüyü kapat
                         Navigator.pop(context);
-
-                        // 2. Seçilen kategoriyle beraber Oyun Ekranına geç
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
                                 GameScreen(category: category),
                           ),
-                        );
+                        ).then(
+                          (_) => _checkDailyStatus(),
+                        ); // Oyun bitince ana ekranı yenile
                       },
                     );
                   },
@@ -85,25 +113,111 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Hoş Geldin, ${authProvider.username}!",
-              style: TextStyle(fontSize: 24),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: Colors.amber))
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    "Hoş Geldin, ${authProvider.username}!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 40),
+
+                  // 🚨 YENİ EKLENEN GÜNÜN GÖREVİ KARTI 🚨
+                  Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    color: _hasPlayedDaily
+                        ? Colors.grey[800]
+                        : Colors.deepPurple[800],
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: _hasPlayedDaily
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      GameScreen(category: "DailyChallenge"),
+                                ),
+                              ).then(
+                                (_) => _checkDailyStatus(),
+                              ); // Dönüşte kartı güncelle
+                            },
+                      child: Padding(
+                        padding: const EdgeInsets.all(25.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              _hasPlayedDaily
+                                  ? Icons.check_circle
+                                  : Icons.calendar_month,
+                              size: 60,
+                              color: _hasPlayedDaily
+                                  ? Colors.green
+                                  : Colors.amber,
+                            ),
+                            SizedBox(height: 15),
+                            Text(
+                              "Günün Görevi",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              _hasPlayedDaily
+                                  ? "Bugünkü görevi tamamladın!\nYarın tekrar gel."
+                                  : "Dünyadaki herkesle aynı 10 soruyu çöz\nve liderlik tablosuna gir!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _hasPlayedDaily
+                                    ? Colors.grey
+                                    : Colors.amber[100],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 30),
+
+                  // ESKİ OYUNA BAŞLA (SERBEST MOD) BUTONU
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      backgroundColor: Colors.blueGrey[800],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    icon: Icon(Icons.public, size: 28),
+                    label: Text(
+                      "Serbest Modda Oyna",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onPressed: () => _showCategorySelection(context),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Artık doğrudan oyunu başlatmıyor, seçim menüsünü açıyor
-                _showCategorySelection(context);
-              },
-              child: Text("Oyuna Başla", style: TextStyle(fontSize: 18)),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

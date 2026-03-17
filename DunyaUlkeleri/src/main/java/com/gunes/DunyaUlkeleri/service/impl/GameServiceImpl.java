@@ -14,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,9 +36,22 @@ public class GameServiceImpl implements GameService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + username));
 
+        // 🚨 GÜNÜN GÖREVİ KONTROLÜ: Kullanıcı bugün zaten oynamış mı?
+        if ("DailyChallenge".equals(category)) {
+            if (user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now())) {
+                throw new RuntimeException("Bugün zaten Günün Görevi'ni tamamladın! Yarın tekrar gel.");
+            }
+        }
+
         GameSession session = new GameSession();
         session.setUser(user);
         session.setCategory(category); // Seçilen kategoriyi oturuma kaydediyoruz
+        
+        // Günün görevinde can sınırı yok, sadece 10 soru sınırı var. O yüzden canı sembolik olarak yüksek tutabiliriz.
+        if ("DailyChallenge".equals(category)) {
+            session.setRemainingLives(1); 
+        }
+
         session = gameSessionRepository.save(session); 
 
         return generateNextQuestion(session);
@@ -59,52 +74,62 @@ public class GameServiceImpl implements GameService {
         Long previousQuestionId = session.getCurrentQuestionId(); // Cevapladığımız sorunun ID'si
         
         boolean isCorrect = request.getCapitalGuess().trim().equalsIgnoreCase(previousCorrectAnswer);
+        boolean isDaily = "DailyChallenge".equals(session.getCategory());
 
-if (isCorrect) {
-            // YENİ VE DENGELİ PUANLAMA MANTIĞI:
+        if (isCorrect) {
             double timeInSeconds = request.getTimeTaken();
             int earnedScore;
-            System.out.println("Flutter'dan Gelen Süre: " + timeInSeconds);
             
-
             if (timeInSeconds > 10.0) {
-                // 10 saniyeden uzun sürdüyse sabit 100 puan
                 earnedScore = 100;
             } else {
-                // Aşırı hızlı tıklanma ihtimaline karşı sıfıra bölünmeyi önle
                 if (timeInSeconds < 0.1) timeInSeconds = 0.1;
-                
-                // Senin Formülün: (10 / Geçen Süre) * 200
                 earnedScore = (int) Math.round((10.0 / timeInSeconds) * 200.0);
-                
-                // 🚨 YENİ: DENGESİZLİĞİ ÖNLEMEK İÇİN TAVAN PUAN SINIRI (Max 2000 Puan)
-                // İstersen buradaki 2000 değerini 1000 veya 1500 yaparak oyunu daha da zorlaştırabilirsin.
                 if (earnedScore > 2000) {
                     earnedScore = 2000; 
                 }
             }
             
-            // Terminalde tam olarak ne olduğunu görebilmen için log yazdırıyoruz
             System.out.println("Süre: " + timeInSeconds + " sn | Kazanılan Puan: " + earnedScore);
-            
             session.setCurrentScore(session.getCurrentScore() + earnedScore);
             
-            // EĞER DOĞRU BİLDİYSE: Bu sorunun ID'sini "soruldu" listesine ekle
             if (previousQuestionId != null) {
                 session.getAskedQuestionIds().add(previousQuestionId);
             }
         }
         else {
-            // YANLIŞ BİLDİYSE: Can Düşür
-            session.setRemainingLives(session.getRemainingLives() - 1);
+            // YANLIŞ BİLDİYSE
+            if (isDaily) {
+                // 🚨 GÜNÜN GÖREVİ MODU: Yanlış yapsa da can düşmez, soru pas geçilir.
+                if (previousQuestionId != null) {
+                    session.getAskedQuestionIds().add(previousQuestionId);
+                }
+            } else {
+                // NORMAL MOD: Can Düşür
+                session.setRemainingLives(session.getRemainingLives() - 1);
+            }
         }
 
-        // Oyun bittiyse (Can 0 olduysa)
-        if (session.getRemainingLives() <= 0) {
+        // --- OYUN BİTME KONTROLÜ ---
+        boolean gameFinished = false;
+        User user = session.getUser();
+
+        if (isDaily) {
+            // 🚨 GÜNÜN GÖREVİ BİTİŞ KONTROLÜ: 10 Soru cevaplandı mı?
+            if (session.getAskedQuestionIds().size() >= 10) {
+                gameFinished = true;
+                user.setLastDailyDate(LocalDate.now()); // BUGÜN OYNADI OLARAK İŞARETLE!
+            }
+        } else {
+            // NORMAL MOD BİTİŞ KONTROLÜ: Can 0 oldu mu?
+            if (session.getRemainingLives() <= 0) {
+                gameFinished = true;
+            }
+        }
+
+        if (gameFinished) {
             session.setFinished(true);
-            User user = session.getUser();
             
-            // 1. Kategori Bazlı En İyi Skoru Güncelle (Eğer yeni rekor kırdıysa)
             String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
             int currentScore = session.getCurrentScore();
             int bestScore = user.getCategoryBestScores().getOrDefault(currentCategory, 0);
@@ -113,7 +138,6 @@ if (isCorrect) {
                 user.getCategoryBestScores().put(currentCategory, currentScore);
             }
 
-            // 2. Win Streak ve Toplam Oyun Sayısını Güncelle
             if (session.getCurrentScore() > user.getMaxWinStreak()) {
                 user.setMaxWinStreak(session.getCurrentScore());
             }
@@ -137,53 +161,66 @@ if (isCorrect) {
         return response;
     }
 
-private GameStatusResponse generateNextQuestion(GameSession session) {
-        // Eğer daha önce hiç soru sorulmadıysa Set boş olur. Boş Set SQL'de hata verir. 
-        Set<Long> askedIds = session.getAskedQuestionIds().isEmpty() ? Set.of(-1L) : session.getAskedQuestionIds();
-        
-        // Kategori boş gelmişse varsayılan olarak "Dünya" yapalım
-        String category = (session.getCategory() == null || session.getCategory().isEmpty()) ? "Dünya" : session.getCategory();
+    private GameStatusResponse generateNextQuestion(GameSession session) {
+        boolean isDaily = "DailyChallenge".equals(session.getCategory());
+        Question question = null;
 
-        // Daha önce sorulmamış ve seçilen kategoriye ait yeni bir soru getir!
-        Question question = questionRepository.findRandomQuestionByCategory(category, askedIds)
-                .orElse(null); // HATA FIRLATMAK YERİNE NULL DÖNDÜR
+        if (isDaily) {
+            // 🚨 GÜNÜN GÖREVİ: O günkü sabit 10 soruyu al ve sıradakini bul
+            List<Question> dailyQuestions = getDailyQuestions();
+            for (Question q : dailyQuestions) {
+                if (!session.getAskedQuestionIds().contains(q.getId())) {
+                    question = q;
+                    break;
+                }
+            }
+        } else {
+            // NORMAL MOD: Rastgele soru getir
+            Set<Long> askedIds = session.getAskedQuestionIds().isEmpty() ? Set.of(-1L) : session.getAskedQuestionIds();
+            String category = (session.getCategory() == null || session.getCategory().isEmpty()) ? "Dünya" : session.getCategory();
+            question = questionRepository.findRandomQuestionByCategory(category, askedIds).orElse(null);
+        }
 
         // KATEGORİYİ BİTİRME (KAZANMA) DURUMU
         if (question == null) {
-            session.setFinished(true); // Oyunu "Bitti" olarak işaretle
+            session.setFinished(true); 
             User user = session.getUser();
             
-            // Bütün kıtayı bitirdiği için 5000 Puan Bonus!
-            session.setCurrentScore(session.getCurrentScore() + 5000);
-
-            // 1. Kategori Rekorunu Güncelle
-            int currentScore = session.getCurrentScore();
-            int bestScore = user.getCategoryBestScores().getOrDefault(category, 0);
-            
-            if (currentScore > bestScore) {
-                user.getCategoryBestScores().put(category, currentScore);
+            // Eğer normal modsa ve tüm sorular bittiyse bonus ekle
+            if (!isDaily) {
+                session.setCurrentScore(session.getCurrentScore() + 5000);
             }
 
-            // 2. Profil İstatistiklerini Güncelle
+            String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
+            int currentScore = session.getCurrentScore();
+            int bestScore = user.getCategoryBestScores().getOrDefault(currentCategory, 0);
+            
+            if (currentScore > bestScore) {
+                user.getCategoryBestScores().put(currentCategory, currentScore);
+            }
+
             if (currentScore > user.getMaxWinStreak()) {
                 user.setMaxWinStreak(currentScore);
             }
             user.setTotalGamesPlayed(user.getTotalGamesPlayed() + 1);
             
+            if (isDaily) {
+                user.setLastDailyDate(LocalDate.now()); // Günlük görev başarıyla bitti
+            }
+            
             userRepository.save(user);
             gameSessionRepository.save(session);
 
-            // Flutter'a hatasız, başarılı bir Oyun Bitti mesajı yolla
-            return buildResponse(session, "TEBRİKLER! Bu kategorideki tüm ülkeleri bildiniz! (+5000 Bonus)", true);
+            String msg = isDaily ? "Günün Görevi Tamamlandı! Harika iş çıkardın." : "TEBRİKLER! Bu kategorideki tüm ülkeleri bildiniz! (+5000 Bonus)";
+            return buildResponse(session, msg, true);
         }
 
-        // Eğer soru varsa normal şekilde devam et
+        // Soru varsa normal şekilde devam et
         List<String> options = new ArrayList<>();
         options.add(question.getCapitalName()); 
         options.addAll(questionRepository.findRandomWrongAnswers(question.getCapitalName())); 
         Collections.shuffle(options);
 
-        // Doğru cevabı VE o anki sorunun ID'sini oturuma kaydet ki sonra kontrol edebilelim
         session.setCurrentCorrectAnswer(question.getCapitalName());
         session.setCurrentQuestionId(question.getId());
         gameSessionRepository.save(session);
@@ -191,7 +228,21 @@ private GameStatusResponse generateNextQuestion(GameSession session) {
         GameStatusResponse response = buildResponse(session, "Yeni Soru!", false);
         response.setCountryName(question.getCountryName());
         response.setOptions(options);
+        
+        // 🚨 Sadece Günlük Görevde kaçıncı soruda olduğunu göstermek için ufak bir hile:
+        if (isDaily) {
+            response.setMessage("Günün Görevi: Soru " + (session.getAskedQuestionIds().size() + 1) + "/10");
+        }
+        
         return response;
+    }
+
+    // 🚨 YENİ EKLENDİ: O güne özel HERKES İÇİN AYNI olan 10 soruyu belirler
+    private List<Question> getDailyQuestions() {
+        List<Question> allQuestions = questionRepository.findAllByOrderByCountryNameAsc(); // Tüm soruları sabit sırada al
+        long seed = LocalDate.now().toEpochDay(); // Bugünün tarihini şifre (seed) yap
+        Collections.shuffle(allQuestions, new Random(seed)); // Rastgele ama herkes için aynı dizilim
+        return allQuestions.stream().limit(10).collect(Collectors.toList()); // Sadece ilk 10'unu al
     }
 
     private GameStatusResponse buildResponse(GameSession session, String message, boolean isFinished) {

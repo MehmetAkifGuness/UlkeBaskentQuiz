@@ -1,4 +1,5 @@
 package com.gunes.DunyaUlkeleri.entity;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,8 @@ public class User {
     private boolean isVerified = false;
 
     private String resetCode;
+
+    private LocalDate lastDailyDate;
 
     @Column(updatable = false)
     private LocalDateTime creationDate;

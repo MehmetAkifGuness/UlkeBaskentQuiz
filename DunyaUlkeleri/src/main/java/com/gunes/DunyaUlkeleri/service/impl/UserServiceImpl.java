@@ -1,5 +1,6 @@
 package com.gunes.DunyaUlkeleri.service.impl;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
@@ -29,6 +30,8 @@ public class UserServiceImpl implements UserService {
             response.setCreationDate(user.getCreationDate());
             response.setMaxWinStreak(user.getMaxWinStreak());
             response.setTotalGamesPlayed(user.getTotalGamesPlayed());
+            boolean playedToday = user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now());
+            response.setHasPlayedDaily(playedToday);
             return response;
         }
         

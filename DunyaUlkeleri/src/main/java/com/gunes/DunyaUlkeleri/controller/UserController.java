@@ -2,10 +2,13 @@ package com.gunes.DunyaUlkeleri.controller;
 
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
 import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.UserService;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,23 +26,20 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository; // Gerekli olduğu için eklendi
+    private final UserRepository userRepository;
+    private final GameSessionRepository gameSessionRepository; // 🚨 YENİ EKLENDİ
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getUserProfile() {
-        // GÜVENLİK: Email'i dışarıdan (URL'den) almıyoruz. 
-        // İsteği atan kişinin kimliğini (username) güvenli bir şekilde Token'dan çekiyoruz.
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        
         UserProfileResponse response = userService.getUserProfile(username);
         
         if (response != null) {
-            return ResponseEntity.ok(response); // Kullanıcı bulunduysa 200 OK
+            return ResponseEntity.ok(response);
         }
-        return ResponseEntity.notFound().build(); // Bulunamadıysa 404 Not Found
+        return ResponseEntity.notFound().build(); 
     }
 
-    // 1. Kullanıcının Kendi Profilindeki Kategori Skorları (Örn: Avrupa: 8000, Asya: 4500)
     @GetMapping("/my-category-scores")
     public ResponseEntity<Map<String, Integer>> getMyCategoryScores(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
@@ -47,10 +47,18 @@ public class UserController {
         return ResponseEntity.ok(user.getCategoryBestScores());
     }
 
-    // 2. Kategoriye Özel Liderlik Tablosu (Altın, Gümüş, Bronz için ilk 10)
     @GetMapping("/leaderboard/{category}")
     public ResponseEntity<List<Map<String, Object>>> getCategoryLeaderboard(@PathVariable String category) {
-        List<Object[]> topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 10));
+        List<Object[]> topUsers;
+        
+        // 🚨 SİHİRLİ KONTROL: Eğer "DailyChallenge" ise sadece bugünün rekorlarını çek (Her gece sıfırlanır)
+        if ("DailyChallenge".equals(category)) {
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); // Gece 00:00:00
+            topUsers = gameSessionRepository.findTop10DailyScores(category, startOfDay, PageRequest.of(0, 10));
+        } else {
+            // Değilse eski taktikle (Kıtalar için) tüm zamanların en iyilerini çek
+            topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 10));
+        }
         
         List<Map<String, Object>> leaderboard = new ArrayList<>();
         for (Object[] record : topUsers) {

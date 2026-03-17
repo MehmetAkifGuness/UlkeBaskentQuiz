@@ -12,4 +12,6 @@ public class UserProfileResponse {
     private LocalDateTime creationDate;
     private int maxWinStreak;
     private int totalGamesPlayed;
+
+    private boolean hasPlayedDaily;
 }
