@@ -60,24 +60,41 @@ public class GameServiceImpl implements GameService {
         
         boolean isCorrect = request.getCapitalGuess().trim().equalsIgnoreCase(previousCorrectAnswer);
 
-        if (isCorrect) {
-            // YENİ ZAMAN BAZLI PUANLAMA MANTIĞI:
-            // Taban puan 1000. Harcanan her saniye için 10 puan eksilir.
-            int timePenalty = request.getTimeTaken() * 10;
-            int earnedScore = 1000 - timePenalty;
+if (isCorrect) {
+            // YENİ VE DENGELİ PUANLAMA MANTIĞI:
+            double timeInSeconds = request.getTimeTaken();
+            int earnedScore;
+            System.out.println("Flutter'dan Gelen Süre: " + timeInSeconds);
             
-            // Eğer çok uzun süre beklediyse puan eksiye düşmesin, en az 100 puan alsın
-            if (earnedScore < 100) {
+
+            if (timeInSeconds > 10.0) {
+                // 10 saniyeden uzun sürdüyse sabit 100 puan
                 earnedScore = 100;
+            } else {
+                // Aşırı hızlı tıklanma ihtimaline karşı sıfıra bölünmeyi önle
+                if (timeInSeconds < 0.1) timeInSeconds = 0.1;
+                
+                // Senin Formülün: (10 / Geçen Süre) * 200
+                earnedScore = (int) Math.round((10.0 / timeInSeconds) * 200.0);
+                
+                // 🚨 YENİ: DENGESİZLİĞİ ÖNLEMEK İÇİN TAVAN PUAN SINIRI (Max 2000 Puan)
+                // İstersen buradaki 2000 değerini 1000 veya 1500 yaparak oyunu daha da zorlaştırabilirsin.
+                if (earnedScore > 2000) {
+                    earnedScore = 2000; 
+                }
             }
+            
+            // Terminalde tam olarak ne olduğunu görebilmen için log yazdırıyoruz
+            System.out.println("Süre: " + timeInSeconds + " sn | Kazanılan Puan: " + earnedScore);
             
             session.setCurrentScore(session.getCurrentScore() + earnedScore);
             
-            // EĞER DOĞRU BİLDİYSE: Bu sorunun ID'sini "soruldu" listesine ekle ki bir daha çıkmasın.
+            // EĞER DOĞRU BİLDİYSE: Bu sorunun ID'sini "soruldu" listesine ekle
             if (previousQuestionId != null) {
                 session.getAskedQuestionIds().add(previousQuestionId);
             }
-        } else {
+        }
+        else {
             // YANLIŞ BİLDİYSE: Can Düşür
             session.setRemainingLives(session.getRemainingLives() - 1);
         }

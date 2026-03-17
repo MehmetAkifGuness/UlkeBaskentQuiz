@@ -10,13 +10,13 @@ public class GameAnswerRequest {
     private String countryName;
     private String capitalName;
 
-    private int timeTaken;
+    private double timeTaken;
     
-    public int getTimeTaken() {
+    public double getTimeTaken() {
         return timeTaken;
     }
     
-    public void setTimeTaken(int timeTaken) {
+    public void setTimeTaken(double timeTaken) {
         this.timeTaken = timeTaken;
     }
 }

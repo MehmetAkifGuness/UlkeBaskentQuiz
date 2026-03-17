@@ -52,7 +52,7 @@ class GameService {
     String token,
     int sessionId,
     String capital,
-    int timeTaken, // ⏱️ Backend'e gidecek süre (saniye cinsinden)
+    double timeTaken, // ⏱️ Backend'e gidecek süre (saniye cinsinden)
   ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/submit'),

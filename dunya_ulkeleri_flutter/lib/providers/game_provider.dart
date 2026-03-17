@@ -68,35 +68,45 @@ class GameProvider with ChangeNotifier {
     if (_status?.sessionId == null || _showResult) return;
 
     _stopStopwatch(); // ⏱️ KULLANICI CEVAPLADI, SÜREYİ DURDUR
-    int timeTakenInSeconds = _stopwatch.elapsed.inSeconds;
+    double timeTakenInSeconds = _stopwatch.elapsedMilliseconds / 1000.0;
 
     _selectedAnswer = capital;
-    _showResult = true;
+    _showResult = true; // Butonları kilitliyoruz
     notifyListeners();
 
-    var nextStatus = await _gameService.makeGuess(
-      token,
-      _status!.sessionId!,
-      capital,
-      timeTakenInSeconds, // ⏱️ SÜREYİ BACKEND'E GÖNDER
-    );
+    try {
+      // Backend'e isteği atıyoruz
+      var nextStatus = await _gameService.makeGuess(
+        token,
+        _status!.sessionId!,
+        capital,
+        timeTakenInSeconds, // ⏱️ SÜREYİ BACKEND'E GÖNDER
+      );
 
-    _correctAnswer = nextStatus.lastCorrectAnswer;
-    notifyListeners();
+      _correctAnswer = nextStatus.lastCorrectAnswer;
+      notifyListeners();
 
-    await Future.delayed(Duration(milliseconds: 1500));
+      await Future.delayed(Duration(milliseconds: 1500));
 
-    _status = nextStatus;
-    _showResult = false;
-    _selectedAnswer = null;
-    _correctAnswer = null;
+      _status = nextStatus;
+      _showResult = false;
+      _selectedAnswer = null;
+      _correctAnswer = null;
 
-    // ⏱️ EĞER OYUN BİTMEDİYSE YENİ SORU İÇİN SÜREYİ BAŞTAN BAŞLAT
-    if (_status?.finished == false) {
-      _startStopwatch();
+      // ⏱️ EĞER OYUN BİTMEDİYSE YENİ SORU İÇİN SÜREYİ BAŞTAN BAŞLAT
+      if (_status?.finished == false) {
+        _startStopwatch();
+      }
+
+      notifyListeners();
+    } catch (e) {
+      // 🚨 HATA OLURSA EKRANIN DONMASINI ENGELLEYEN GÜVENLİK AĞI
+      print("💥 FLUTTER HATASI (sendGuess): $e");
+
+      // Kilitleri aç ve ekranı eski haline getir ki donuk kalmasın
+      _showResult = false;
+      notifyListeners();
     }
-
-    notifyListeners();
   }
 
   void resetGame() {
