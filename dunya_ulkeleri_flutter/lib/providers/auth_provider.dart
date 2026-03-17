@@ -39,9 +39,8 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  // giriş yapma
-  // lib/providers/auth_provider.dart içindeki login fonksiyonu
 
+  // giriş yapma
   Future<AuthModel> login(String username, String password) async {
     try {
       _isLoading = true;
@@ -52,6 +51,11 @@ class AuthProvider with ChangeNotifier {
       if (result.token != null) {
         _token = result.token;
         _username = result.username;
+
+        // 🚨 Normal girişte de token'ı cihaza kaydediyoruz
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', _token!);
+        await prefs.setString('username', _username!);
       }
 
       _isLoading = false;
@@ -64,5 +68,18 @@ class AuthProvider with ChangeNotifier {
       print("GİRİŞ HATASI: $e"); // Hatayı terminale yazdır
       return AuthModel(message: "Sunucuya bağlanılamadı: $e");
     }
+  }
+
+  // --- 🚨 YENİ EKLENEN ÇIKIŞ YAP (LOGOUT) FONKSİYONU ---
+  Future<void> logout() async {
+    _token = null;
+    _username = null;
+
+    // Cihaz hafızasındaki kayıtlı oturum bilgilerini tamamen temizle
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('username');
+
+    notifyListeners();
   }
 }

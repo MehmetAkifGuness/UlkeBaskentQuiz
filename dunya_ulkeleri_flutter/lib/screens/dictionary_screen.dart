@@ -1,3 +1,5 @@
+// ignore_for_file: dead_code
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -44,6 +46,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   }
 
   // Arama çubuğuna yazı yazıldıkça listeyi filtreleyen metod
+  // ignore: unused_element
   String _toTurkishLowerCase(String text) {
     return text
         .replaceAll('I', 'ı')
@@ -65,7 +68,10 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       setState(() {
         _filteredData = _allData.where((item) {
           // 🚨 Null güvenliği eklendi (item.değişken ?? '')
+          // ignore: duplicate_ignore
+          // ignore: dead_null_aware_expression, dead_code
           final countryLower = (item.countryName ?? '').toLowerCase();
+          // ignore: dead_null_aware_expression
           final capitalLower = (item.capitalName ?? '').toLowerCase();
           final continentLower = (item.continent ?? '').toLowerCase();
           final searchLower = query.toLowerCase();
@@ -160,6 +166,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           ),
                           title: Text(
                             // 🚨 Null güvenliği eklendi
+                            // ignore: dead_null_aware_expression
                             item.countryName ?? 'Bilinmiyor',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -169,6 +176,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           ),
                           subtitle: Text(
                             // 🚨 Null güvenliği eklendi
+                            // ignore: dead_null_aware_expression
                             "${item.capitalName ?? 'Bilinmiyor'} • ${item.continent ?? 'Bilinmiyor'}",
                             style: TextStyle(color: Colors.amber[200]),
                           ),
