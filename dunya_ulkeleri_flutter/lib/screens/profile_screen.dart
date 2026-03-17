@@ -5,6 +5,7 @@ import '../models/user_profile_model.dart';
 import '../services/user.service.dart'; // Kendi import yoluna dikkat et
 import 'login_screen.dart'; // Çıkış yapınca yönlendirmek için EKLENDİ
 import 'forgot_password_dialog.dart'; // 🚨 Şifre yenileme popup'ı EKLENDİ
+import 'dictionary_screen.dart'; // 🚨 Sözlüğe yönlendirme yapabilmek için eklendi
 
 class ProfileScreen extends StatelessWidget {
   final UserService _userService = UserService();
@@ -72,12 +73,64 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  // 🚨 YENİ VE AKILLI ANALİZ ALGORİTMASI 🚨
+  String _generateAnalysisText(Map<String, int> scores) {
+    final allCategories = [
+      "Avrupa",
+      "Asya",
+      "Afrika",
+      "Kuzey Amerika",
+      "Güney Amerika",
+      "Okyanusya",
+    ];
+
+    List<String> unplayed = [];
+    List<String> weak = [];
+
+    for (var cat in allCategories) {
+      int score = scores[cat] ?? 0;
+      if (score == 0) {
+        unplayed.add(cat);
+      } else if (score < 10000) {
+        // 20.000 puan hedefine göre 10.000 altını zayıf kabul ediyoruz
+        weak.add(cat);
+      }
+    }
+
+    String message = "";
+
+    // Hiç oyun oynamamışsa
+    if (unplayed.length == 6) {
+      return "Henüz hiçbir kıtada oynamamışsın! Hemen bir oyuna girerek dünyayı keşfetmeye başla.";
+    }
+
+    // Zayıf olduğu kıtalar varsa
+    if (weak.isNotEmpty) {
+      message +=
+          "İstatistiklerine göre ${weak.join(", ")} bölgelerinde biraz zorlanıyorsun. Puanlarını artırmak için sözlükten bu kıtalara çalışabilirsin.\n\n";
+    }
+
+    // Hiç oynamadığı kıtalar varsa
+    if (unplayed.isNotEmpty) {
+      message +=
+          "Ayrıca ${unplayed.join(", ")} kıtalarında henüz hiç oynamamışsın. Şansını oralarda da denemeni kesinlikle tavsiye ederiz!";
+    }
+
+    // Her yerde mükemmelse
+    if (weak.isEmpty && unplayed.isEmpty) {
+      message =
+          "Harika bir iş çıkarıyorsun! Bütün kıtalarda gayet başarılısın, rekorlarını tazelemeye devam et!";
+    }
+
+    return message.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return Scaffold(
-      appBar: AppBar(title: Text("Profilim"), centerTitle: true),
+      appBar: AppBar(title: Text("Profilim & Analiz"), centerTitle: true),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _fetchProfileData(authProvider.token!),
         builder: (context, snapshot) {
@@ -125,6 +178,9 @@ class ProfileScreen extends StatelessWidget {
             tierColor = Colors.amber;
             tierIcon = Icons.school;
           }
+
+          // 🚨 Dinamik Analiz Metnini Oluşturuyoruz
+          String analysisText = _generateAnalysisText(scores);
 
           // Ekrana sığması için SingleChildScrollView kullanıyoruz
           return SingleChildScrollView(
@@ -175,6 +231,143 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 30),
 
+                // 🚨 YENİ EKLENEN: ZAYIF YÖN ANALİZ KARTI
+                Card(
+                  elevation: 5,
+                  color: Colors.red[900]!.withOpacity(0.8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.query_stats,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              "Analiz & Tavsiye",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          analysisText, // 🚨 ÜRETTİĞİMİZ DİNAMİK METİN BURAYA GELDİ
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                            height:
+                                1.4, // Satır arası boşluk, okumayı kolaylaştırır
+                          ),
+                        ),
+                        SizedBox(height: 15),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.red[900],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          icon: Icon(Icons.menu_book),
+                          label: Text(
+                            "Sözlüğe Git",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DictionaryScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 30),
+
+                // 🚨 YENİ EKLENEN: KITA USTALIK ÇUBUKLARI
+                Text(
+                  "Kıta Ustalık Seviyeleri",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber,
+                  ),
+                ),
+                Divider(color: Colors.amber),
+                ...[
+                  "Avrupa",
+                  "Asya",
+                  "Afrika",
+                  "Kuzey Amerika",
+                  "Güney Amerika",
+                  "Okyanusya",
+                ].map((cat) {
+                  int score = scores[cat] ?? 0;
+                  // Hedef skoru 20.000 puan olarak varsayıyoruz
+                  double percentage = (score / 20000).clamp(0.0, 1.0);
+
+                  Color barColor = Colors.red;
+                  if (percentage >= 0.8)
+                    barColor = Colors.green;
+                  else if (percentage >= 0.4)
+                    barColor = Colors.orange;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              cat,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              "$score Puan",
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: percentage,
+                            minHeight: 12,
+                            backgroundColor: Colors.grey[800],
+                            color: barColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+
+                SizedBox(height: 30),
+
                 // --- GENEL İSTATİSTİKLER BÖLÜMÜ ---
                 Text(
                   "Genel İstatistikler",
@@ -207,76 +400,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
 
                 SizedBox(height: 30),
-
-                // --- KATEGORİ REKORLARI BÖLÜMÜ ---
-                Text(
-                  "Kategori Rekorlarım",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber,
-                  ),
-                ),
-                Divider(color: Colors.amber),
-
-                if (scores.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      "Henüz hiçbir kategoride rekorunuz yok. Hemen oynamaya başlayın!",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
-                  )
-                else
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics:
-                        NeverScrollableScrollPhysics(), // Scroll çakışmasını önler
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Yan yana 2 kutu
-                      childAspectRatio: 2.5, // Kutuların en/boy oranı
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: scores.length,
-                    itemBuilder: (context, index) {
-                      String category = scores.keys.elementAt(index);
-                      int score = scores.values.elementAt(index);
-
-                      return Card(
-                        color: Colors.blueGrey[800],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 4,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              category,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "$score Puan",
-                              style: TextStyle(
-                                color: Colors.amber,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-
-                SizedBox(height: 40),
 
                 // --- ⚙️ AYARLAR VE ÇIKIŞ YAP BUTONLARI ---
                 Row(
