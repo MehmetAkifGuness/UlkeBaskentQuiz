@@ -85,6 +85,138 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     }
   }
 
+  // 🚨 YENİ EKLENEN: Ülke isimlerini emoji bayraklara çeviren sözlük!
+  // 🚨 EKSİKSİZ BAYRAK KÜTÜPHANESİ (143 ÜLKE)
+  String _getFlagEmoji(String country) {
+    const Map<String, String> flagMap = {
+      // A
+      "Afganistan": "🇦🇫",
+      "Almanya": "🇩🇪",
+      "Amerika Birleşik Devletleri": "🇺🇸",
+      "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua ve Barbuda": "🇦🇬",
+      "Arjantin": "🇦🇷", "Arnavutluk": "🇦🇱", "Avustralya": "🇦🇺",
+      "Avusturya": "🇦🇹", "Azerbaycan": "🇦🇿",
+
+      // B
+      "Bahamalar": "🇧🇸", "Bahreyn": "🇧🇭", "Bangladeş": "🇧🇩",
+      "Barbados": "🇧🇧", "Belçika": "🇧🇪", "Belize": "🇧🇿",
+      "Benin": "🇧🇯", "Belarus (Beyaz Rusya)": "🇧🇾", "Bhutan": "🇧🇹",
+      "Birleşik Arap Emirlikleri": "🇦🇪", "Birleşik Krallık": "🇬🇧",
+      "Bolivya": "🇧🇴", "Bosna-Hersek": "🇧🇦", "Botsvana": "🇧🇼",
+      "Brezilya": "🇧🇷", "Brunei": "🇧🇳", "Bulgaristan": "🇧🇬",
+      "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮",
+
+      // C - Ç
+      "Cezayir": "🇩🇿", "Cibuti": "🇩🇯", "Çad": "🇹🇩",
+      "Çekya": "🇨🇿", "Çin": "🇨🇳",
+
+      // D
+      "Danimarka": "🇩🇰", "Doğu Timor": "🇹🇱", "Dominik Cumhuriyeti": "🇩🇴",
+      "Dominika": "🇩🇲",
+
+      // E
+      "Ekvador": "🇪🇨", "Ekvator Ginesi": "🇬🇶", "El Salvador": "🇸🇻",
+      "Endonezya": "🇮🇩", "Eritre": "🇪🇷", "Ermenistan": "🇦🇲",
+      "Estonya": "🇪🇪", "Esvatini": "🇸🇿", "Etiyopya": "🇪🇹",
+
+      // F
+      "Fas": "🇲🇦", "Fiji": "🇫🇯", "Fildişi Sahili": "🇨🇮",
+      "Filipinler": "🇵🇭", "Filistin": "🇵🇸", "Finlandiya": "🇫🇮",
+      "Fransa": "🇫🇷",
+
+      // G
+      "Gabon": "🇬🇦", "Gambiya": "🇬🇲", "Gana": "🇬🇭",
+      "Gine": "🇬🇳", "Gine-Bissau": "🇬🇼", "Grenada": "🇬🇩",
+      "Guatemala": "🇬🇹", "Guyana": "🇬🇾", "Güney Afrika": "🇿🇦",
+      "Güney Kore": "🇰🇷", "Güney Sudan": "🇸🇸", "Gürcistan": "🇬🇪",
+
+      // H
+      "Haiti": "🇭🇹", "Hırvatistan": "🇭🇷", "Hindistan": "🇮🇳",
+      "Hollanda": "🇳🇱", "Honduras": "🇭🇳",
+
+      // I - İ
+      "Irak": "🇮🇶", "İran": "🇮🇷", "İrlanda": "🇮🇪",
+      "İspanya": "🇪🇸", "İsrail": "🇮🇱", "İsveç": "🇸🇪",
+      "İsviçre": "🇨🇭", "İtalya": "🇮🇹", "İzlanda": "🇮🇸",
+
+      // J
+      "Jamaika": "🇯🇲", "Japonya": "🇯🇵",
+
+      // K
+      "Kamboçya": "🇰🇭", "Kamerun": "🇨🇲", "Kanada": "🇨🇦",
+      "Karadağ": "🇲🇪", "Katar": "🇶🇦", "Kazakistan": "🇰🇿",
+      "Kenya": "🇰🇪", "Kıbrıs Cumhuriyeti": "🇨🇾", "Kırgızistan": "🇰🇬",
+      "Kiribati": "🇰🇮", "Kolombiya": "🇨🇴", "Komorlar": "🇰🇲",
+      "Kongo Cumhuriyeti": "🇨🇬", "Kongo Demokratik Cumhuriyeti": "🇨🇩",
+      "Kosta Rika": "🇨🇷",
+      "Kuveyt": "🇰🇼",
+      "Kuzey Kore": "🇰🇵", "Kuzey Makedonya": "🇲🇰", "Küba": "🇨🇺",
+
+      // L
+      "Laos": "🇱🇦", "Lesotho": "🇱🇸", "Letonya": "🇱🇻",
+      "Liberya": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮",
+      "Litvanya": "🇱🇹", "Lübnan": "🇱🇧", "Lüksemburg": "🇱🇺",
+
+      // M
+      "Macaristan": "🇭🇺", "Madagaskar": "🇲🇬", "Malavi": "🇲🇼",
+      "Maldivler": "🇲🇻", "Malezya": "🇲🇾", "Mali": "🇲🇱",
+      "Malta": "🇲🇹", "Marshall Adaları": "🇲🇭", "Mauritius": "🇲🇺",
+      "Meksika": "🇲🇽", "Mısır": "🇪🇬", "Mikronezya": "🇫🇲",
+      "Moğolistan": "🇲🇳", "Moldova": "🇲🇩", "Monako": "🇲🇨",
+      "Moritanya": "🇲🇷", "Mozambik": "🇲🇿", "Myanmar": "🇲🇲",
+
+      // N
+      "Namibya": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵",
+      "Nikaragua": "🇳🇮", "Nijer": "🇳🇪", "Nijerya": "🇳🇬",
+      "Norveç": "🇳🇴",
+
+      // O - Ö
+      "Orta Afrika Cumhuriyeti": "🇨🇫", "Özbekistan": "🇺🇿",
+
+      // P
+      "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Panama": "🇵🇦",
+      "Papua Yeni Gine": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪",
+      "Polonya": "🇵🇱", "Portekiz": "🇵🇹",
+
+      // R
+      "Romanya": "🇷🇴", "Ruanda": "🇷🇼", "Rusya": "🇷🇺",
+
+      // S - Ş
+      "Saint Kitts ve Nevis": "🇰🇳", "Saint Lucia": "🇱🇨",
+      "Saint Vincent ve Grenadinler": "🇻🇨", "Samoa": "🇼🇸",
+      "San Marino": "🇸🇲", "Sao Tome ve Principe": "🇸🇹",
+      "Senegal": "🇸🇳", "Seyşeller": "🇸🇨", "Sırbistan": "🇷🇸",
+      "Sierra Leone": "🇸🇱", "Singapur": "🇸🇬", "Slovakya": "🇸🇰",
+      "Slovenya": "🇸🇮", "Solomon Adaları": "🇸🇧", "Somali": "🇸🇴",
+      "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Surinam": "🇸🇷",
+      "Suriye": "🇸🇾", "Suudi Arabistan": "🇸🇦", "Şili": "🇨🇱",
+
+      // T
+      "Tacikistan": "🇹🇯", "Tanzanya": "🇹🇿", "Tayland": "🇹🇭",
+      "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad ve Tobago": "🇹🇹",
+      "Tunus": "🇹🇳", "Tuvalu": "🇹🇻", "Türkiye": "🇹🇷",
+      "Türkmenistan": "🇹🇲",
+
+      // U - Ü
+      "Uganda": "🇺🇬", "Ukrayna": "🇺🇦", "Umman": "🇴🇲",
+      "Uruguay": "🇺🇾", "Ürdün": "🇯🇴",
+
+      // V
+      "Vanuatu": "🇻🇺", "Vatikan": "🇻🇦", "Venezuela": "🇻🇪",
+      "Vietnam": "🇻🇳",
+
+      // Y
+      "Yemen": "🇾🇪", "Yeni Zelanda": "🇳🇿", "Yeşil Burun Adaları": "🇨🇻",
+      "Yunanistan": "🇬🇷",
+
+      // Z
+      "Zambiya": "🇿🇲", "Zimbabve": "🇿🇼",
+    };
+
+    String cleanCountry = country.trim();
+    return flagMap[cleanCountry] ?? "🏳️";
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -160,9 +292,12 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                         ),
                         elevation: 3,
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.amber,
-                            child: Icon(Icons.public, color: Colors.black),
+                          // 🚨 DEĞİŞİKLİK BURADA YAPILDI: CircleAvatar kaldırıldı, Bayrak Emojisi eklendi.
+                          leading: Text(
+                            _getFlagEmoji(item.countryName ?? ''),
+                            style: TextStyle(
+                              fontSize: 35,
+                            ), // Emojinin boyutunu ayarlayabilirsin
                           ),
                           title: Text(
                             // 🚨 Null güvenliği eklendi
