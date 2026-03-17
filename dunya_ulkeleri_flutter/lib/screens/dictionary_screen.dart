@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/game_service.dart';
-import '../models/dictionary_model.dart';
+import '../models/dictionary_model.dart'; // Model dosyanın yolunun doğru olduğundan emin ol
 
 class DictionaryScreen extends StatefulWidget {
   @override
@@ -11,80 +11,173 @@ class DictionaryScreen extends StatefulWidget {
 
 class _DictionaryScreenState extends State<DictionaryScreen> {
   final GameService _gameService = GameService();
-  late Future<List<DictionaryModel>> _dictionaryFuture;
+  final TextEditingController _searchController = TextEditingController();
+
+  List<DictionaryModel> _allData = [];
+  List<DictionaryModel> _filteredData = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // Ekran açılırken verileri bir kere çekmek için Future oluşturuyoruz.
-    final token = Provider.of<AuthProvider>(context, listen: false).token;
-    _dictionaryFuture = _gameService.getDictionary(token!);
+    _fetchDictionaryData();
+  }
+
+  Future<void> _fetchDictionaryData() async {
+    try {
+      final token = Provider.of<AuthProvider>(context, listen: false).token;
+      if (token != null) {
+        final data = await _gameService.getDictionary(token);
+        setState(() {
+          _allData = data;
+          _filteredData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Sözlük verileri yüklenemedi: $e";
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Arama çubuğuna yazı yazıldıkça listeyi filtreleyen metod
+  String _toTurkishLowerCase(String text) {
+    return text
+        .replaceAll('I', 'ı')
+        .replaceAll('İ', 'i')
+        .replaceAll('Ğ', 'ğ')
+        .replaceAll('Ü', 'ü')
+        .replaceAll('Ş', 'ş')
+        .replaceAll('Ö', 'ö')
+        .replaceAll('Ç', 'ç')
+        .toLowerCase();
+  }
+
+  void _filterData(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _filteredData = _allData;
+      });
+    } else {
+      setState(() {
+        _filteredData = _allData.where((item) {
+          // 🚨 Null güvenliği eklendi (item.değişken ?? '')
+          final countryLower = (item.countryName ?? '').toLowerCase();
+          final capitalLower = (item.capitalName ?? '').toLowerCase();
+          final continentLower = (item.continent ?? '').toLowerCase();
+          final searchLower = query.toLowerCase();
+
+          // Ülke, Başkent veya Kıtaya göre arama yapabilir
+          return countryLower.contains(searchLower) ||
+              capitalLower.contains(searchLower) ||
+              continentLower.contains(searchLower);
+        }).toList();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Öğrenme Modu (Sözlük)"), centerTitle: true),
-      body: FutureBuilder<List<DictionaryModel>>(
-        future: _dictionaryFuture,
-        builder: (context, snapshot) {
-          // Yükleniyorsa dönen animasyon göster
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          // Hata varsa hatayı göster
-          else if (snapshot.hasError) {
-            return Center(child: Text("Bir hata oluştu: ${snapshot.error}"));
-          }
-          // Veri yoksa
-          else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("Sözlükte henüz veri yok."));
-          }
-
-          // Veriler başarıyla geldiyse listele
-          final list = snapshot.data!;
-          return ListView.builder(
-            itemCount: list.length,
-            itemBuilder: (context, index) {
-              final item = list[index];
-              return Card(
-                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                elevation: 3,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    child: Text(
-                      item.countryName[0], // Baş harfini logoya koy
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    item.countryName,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("Başkent: ${item.capitalName}"),
-                  trailing: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      item.continent ?? "-",
-                      style: TextStyle(
-                        color: Colors.green[800],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+      appBar: AppBar(
+        title: Text(
+          "Öğren & Keşfet",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // --- ARAMA ÇUBUĞU (SEARCH BAR) ---
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterData,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Ülke, Başkent veya Kıta Ara...",
+                hintStyle: TextStyle(color: Colors.grey),
+                prefixIcon: Icon(Icons.search, color: Colors.amber),
+                filled: true,
+                fillColor: Colors.grey[900],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
                 ),
-              );
-            },
-          );
-        },
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 0,
+                ), // Dikey hizalamayı düzeltir
+              ),
+            ),
+          ),
+
+          // --- LİSTE VEYA YÜKLENİYOR EKRANI ---
+          Expanded(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator(color: Colors.amber))
+                : _errorMessage != null
+                ? Center(
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  )
+                : _filteredData.isEmpty
+                ? Center(
+                    child: Text(
+                      "Aradığınız kriterde sonuç bulunamadı.",
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _filteredData.length,
+                    itemBuilder: (context, index) {
+                      final item = _filteredData[index];
+                      return Card(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        color: Colors.blueGrey[800],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 3,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.amber,
+                            child: Icon(Icons.public, color: Colors.black),
+                          ),
+                          title: Text(
+                            // 🚨 Null güvenliği eklendi
+                            item.countryName ?? 'Bilinmiyor',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                          subtitle: Text(
+                            // 🚨 Null güvenliği eklendi
+                            "${item.capitalName ?? 'Bilinmiyor'} • ${item.continent ?? 'Bilinmiyor'}",
+                            style: TextStyle(color: Colors.amber[200]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
