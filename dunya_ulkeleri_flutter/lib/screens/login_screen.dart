@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
+import 'forgot_password_dialog.dart';
 import 'main_screen.dart'; // ✅ Artık MainScreen'e gideceğiz
 
 class LoginScreen extends StatefulWidget {
@@ -42,7 +43,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 prefixIcon: Icon(Icons.lock),
               ),
             ),
-            SizedBox(height: 20),
+
+            // --- 🚨 YENİ EKLENEN: ŞİFREMİ UNUTTUM BUTONU ---
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => ForgotPasswordDialog(),
+                  );
+                },
+                child: Text(
+                  "Şifremi Unuttum",
+                  style: TextStyle(
+                    color: Colors.amber,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10), // Arayı biraz açtık
+
             authProvider.isLoading
                 ? CircularProgressIndicator()
                 : Column(
@@ -83,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       SizedBox(height: 15),
-                      // --- YENİ EKLENEN MİSAFİR GİRİŞİ BUTONU ---
+                      // --- MİSAFİR GİRİŞİ BUTONU ---
                       OutlinedButton(
                         onPressed: () async {
                           bool success = await authProvider.loginAsGuest();

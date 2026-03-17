@@ -75,4 +75,40 @@ class AuthService {
       throw Exception(response.body);
     }
   }
+
+  // 1. AŞAMA: Şifre sıfırlama kodu gönder
+  Future<AuthModel> forgotPassword(String email) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (response.statusCode == 200) {
+      return AuthModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception(response.body);
+    }
+  }
+
+  // 2. AŞAMA: Kodu doğrula ve yeni şifreyi kaydet
+  Future<AuthModel> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'resetCode': code,
+        'newPassword': newPassword,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return AuthModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception(response.body);
+    }
+  }
 }

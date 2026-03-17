@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gunes.DunyaUlkeleri.dto.request.LoginRequest;
+import com.gunes.DunyaUlkeleri.dto.request.NewPasswordRequest;
 import com.gunes.DunyaUlkeleri.dto.request.RegisterRequest;
 import com.gunes.DunyaUlkeleri.dto.request.ResetPasswordRequest;
 import com.gunes.DunyaUlkeleri.dto.request.VerifyCodeRequest;
@@ -51,6 +52,12 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<AuthResponse> forgotPassword(@Valid @RequestBody ResetPasswordRequest request){
         AuthResponse response = service.forgotPassword(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody NewPasswordRequest request){
+        AuthResponse response = service.resetPassword(request);
         return ResponseEntity.ok(response);
     }
 }

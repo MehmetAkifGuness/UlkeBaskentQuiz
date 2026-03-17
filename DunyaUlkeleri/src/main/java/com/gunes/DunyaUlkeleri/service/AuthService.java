@@ -1,6 +1,7 @@
 package com.gunes.DunyaUlkeleri.service;
 
 import com.gunes.DunyaUlkeleri.dto.request.LoginRequest;
+import com.gunes.DunyaUlkeleri.dto.request.NewPasswordRequest;
 import com.gunes.DunyaUlkeleri.dto.request.RegisterRequest;
 import com.gunes.DunyaUlkeleri.dto.request.ResetPasswordRequest;
 import com.gunes.DunyaUlkeleri.dto.request.VerifyCodeRequest;
@@ -20,4 +21,6 @@ public interface AuthService {
     AuthResponse verifyEmail(VerifyCodeRequest request);
 
     AuthResponse forgotPassword(ResetPasswordRequest request);
+
+    AuthResponse resetPassword(NewPasswordRequest request);
 }

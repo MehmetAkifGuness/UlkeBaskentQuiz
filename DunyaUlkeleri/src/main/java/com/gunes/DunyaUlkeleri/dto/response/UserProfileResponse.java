@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class UserProfileResponse {
     private String username;
+    private String email;
     private LocalDateTime creationDate;
     private int maxWinStreak;
     private int totalGamesPlayed;

@@ -82,4 +82,38 @@ class AuthProvider with ChangeNotifier {
 
     notifyListeners();
   }
+
+  // Şifre sıfırlama e-postası gönder
+  Future<AuthModel> sendPasswordResetEmail(String email) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      return await _authService.forgotPassword(email);
+    } catch (e) {
+      print("Şifre sıfırlama hatası: $e");
+      return AuthModel(message: "Bağlantı hatası veya geçersiz e-posta: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Yeni şifreyi ayarla
+  Future<AuthModel> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      return await _authService.resetPassword(email, code, newPassword);
+    } catch (e) {
+      print("Şifre yenileme hatası: $e");
+      return AuthModel(message: "Geçersiz kod veya bağlantı hatası: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.security.SecureRandom;
+import java.util.Optional; // 🚨 YENİ EKLENDİ
 import java.util.UUID;
 
 @Service
@@ -99,14 +101,46 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse forgotPassword(ResetPasswordRequest request) {
-        // GÜVENLİK DETAYI: Kullanıcı yoksa bile hata fırlatmıyoruz (Kötü niyetli kişilerin e-posta taramasını engeller)
-        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+        String input = request.getEmail(); // Dışarıdan gelen veri e-posta VEYA kullanıcı adı olabilir
+        
+        // Önce e-posta olarak ara, bulamazsan kullanıcı adı olarak ara
+        Optional<User> userOpt = userRepository.findByEmail(input);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUsername(input);
+        }
+
+        userOpt.ifPresent(user -> {
             String resetCode = generateCode();
             user.setResetCode(resetCode);
             userRepository.save(user);
+            // Kodu her halükarda gerçek kayıtlı e-postaya gönder
             emailService.sendPasswordResetEmail(user.getEmail(), resetCode);
         });
-        return createResponse(null, null, "Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama kodu gönderilmiştir.");
+        
+        return createResponse(null, null, "Eğer bu bilgilere ait bir hesap varsa, şifre sıfırlama kodu gönderilmiştir.");
+    }
+
+    @Override
+    public AuthResponse resetPassword(NewPasswordRequest request) {
+        String input = request.getEmail(); // Bu da e-posta VEYA kullanıcı adı olabilir
+        
+        Optional<User> userOpt = userRepository.findByEmail(input);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUsername(input);
+        }
+
+        User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı veya e-posta/kullanıcı adı hatalı!"));
+
+        // Gönderdiğimiz kod ile kullanıcının girdiği kod eşleşiyor mu?
+        if (request.getResetCode() != null && request.getResetCode().equals(user.getResetCode())) {
+            // Şifreyi şifreleyerek (BCrypt) kaydet
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            user.setResetCode(null); // Kodu tek seferlik yapıyoruz, sıfırlıyoruz
+            userRepository.save(user);
+            return createResponse(null, user.getUsername(), "Şifreniz başarıyla değiştirildi! Yeni şifrenizle giriş yapabilirsiniz.");
+        }
+        
+        throw new IllegalArgumentException("Doğrulama kodu geçersiz veya süresi dolmuş!");
     }
 
     private String generateCode() {

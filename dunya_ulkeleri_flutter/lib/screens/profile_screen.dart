@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../models/user_profile_model.dart';
 import '../services/user.service.dart'; // Kendi import yoluna dikkat et
 import 'login_screen.dart'; // Çıkış yapınca yönlendirmek için EKLENDİ
+import 'forgot_password_dialog.dart'; // 🚨 Şifre yenileme popup'ı EKLENDİ
 
 class ProfileScreen extends StatelessWidget {
   final UserService _userService = UserService();
@@ -15,7 +16,7 @@ class ProfileScreen extends StatelessWidget {
     return {'profile': profile, 'scores': scores};
   }
 
-  // --- 🚨 ÇIKIŞ YAPMA İŞLEMİ ---
+  // --- ÇIKIŞ YAPMA İŞLEMİ ---
   void _handleLogout(BuildContext context) async {
     await Provider.of<AuthProvider>(context, listen: false).logout();
     // Tüm önceki ekranları kapatıp Giriş Ekranına (Login) yönlendirir
@@ -25,21 +26,46 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- 🚨 AYARLAR MENÜSÜ (Şimdilik Pop-up) ---
-  void _showSettings(BuildContext context) {
+  // --- 🚨 AYARLAR MENÜSÜ (Artık parametre olarak profili alıyor) ---
+  void _showSettings(BuildContext context, UserProfileModel profile) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text("Ayarlar", style: TextStyle(color: Colors.amber)),
-        content: Text(
-          "Ses efektleri ve titreşim ayarları çok yakında eklenecek!",
-          style: TextStyle(color: Colors.white),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+              ),
+              icon: Icon(Icons.lock_reset),
+              label: Text("Şifremi Değiştir"),
+              onPressed: () {
+                Navigator.pop(context); // Önce Ayarlar menüsünü kapat
+                // 🚨 E-POSTAYI POPUP'A GÖNDERİYORUZ:
+                showDialog(
+                  context: context,
+                  builder: (context) =>
+                      ForgotPasswordDialog(email: profile.email),
+                );
+              },
+            ),
+            SizedBox(height: 15),
+            Text(
+              "Ses ve titreşim ayarları çok yakında eklenecek!",
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Tamam", style: TextStyle(color: Colors.amber)),
+            child: Text("Kapat", style: TextStyle(color: Colors.amber)),
           ),
         ],
       ),
@@ -110,7 +136,7 @@ class ProfileScreen extends StatelessWidget {
                   radius: 50,
                   backgroundColor: tierColor.withOpacity(
                     0.2,
-                  ), // 🚨 Rütbeye göre renk değişir
+                  ), // Rütbeye göre renk değişir
                   child: Icon(Icons.person, size: 50, color: tierColor),
                 ),
                 SizedBox(height: 20),
@@ -174,7 +200,6 @@ class ProfileScreen extends StatelessWidget {
                   profile.totalGamesPlayed.toString(),
                   Icons.videogame_asset,
                 ),
-                // 🚨 YENİ EKLENDİ: Toplam Puan
                 _buildStatCard(
                   "Toplam Ustalık Puanı",
                   totalScore.toString(),
@@ -263,7 +288,7 @@ class ProfileScreen extends StatelessWidget {
                           backgroundColor:
                               Colors.deepPurple[800], // Koyu Mor/Lacivert Renk
                           foregroundColor: Colors.white,
-                          elevation: 4, // Hafif gölge eklendi
+                          elevation: 4,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -273,7 +298,8 @@ class ProfileScreen extends StatelessWidget {
                           "Ayarlar",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () => _showSettings(context),
+                        // 🚨 PROFİLİ PARAMETRE OLARAK VERİYORUZ
+                        onPressed: () => _showSettings(context, profile),
                       ),
                     ),
                     SizedBox(width: 15),
@@ -284,7 +310,7 @@ class ProfileScreen extends StatelessWidget {
                           backgroundColor:
                               Colors.red[800], // Kırmızı Çıkış Butonu
                           foregroundColor: Colors.white,
-                          elevation: 4, // Hafif gölge eklendi
+                          elevation: 4,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

@@ -25,6 +25,7 @@ public class UserServiceImpl implements UserService {
             // Bilgileri DTO (veri transfer objesi) içine paketliyoruz
             UserProfileResponse response = new UserProfileResponse();
             response.setUsername(user.getUsername());
+            response.setEmail(user.getEmail());
             response.setCreationDate(user.getCreationDate());
             response.setMaxWinStreak(user.getMaxWinStreak());
             response.setTotalGamesPlayed(user.getTotalGamesPlayed());
