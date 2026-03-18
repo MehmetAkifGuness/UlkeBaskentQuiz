@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/game_provider.dart';
+// ignore: unused_import
+import '../models/game_status_model.dart';
 
 class GameScreen extends StatefulWidget {
-  final String category; // Hangi kıtada oynanacağını tutan değişken
+  final String category;
 
   const GameScreen({Key? key, required this.category}) : super(key: key);
 
@@ -21,7 +23,6 @@ class _GameScreenState extends State<GameScreen> {
       final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
       gameProvider.resetGame();
-      // Seçilen kategoriyi göndererek oyunu başlatıyoruz
       gameProvider.startNewGame(authProvider.token!, widget.category);
     });
   }
@@ -49,12 +50,10 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
-    // 🚨 YENİ: Hangi modda olduğumuzu anlıyoruz
     bool isDaily = widget.category == "DailyChallenge";
 
     return Scaffold(
       appBar: AppBar(
-        // 🚨 YENİ: Günün Görevinde can barını gizleyip özel başlık ekliyoruz
         title: Text(
           isDaily
               ? "Skor: ${status.currentScore} | 🎯 Günün Görevi"
@@ -76,7 +75,6 @@ class _GameScreenState extends State<GameScreen> {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Backend'den gelen mesajı (Örn: Soru 3/10) burada gösteriyoruz
                     Text(
                       status.message ?? "Oyun Devam Ediyor...",
                       style: TextStyle(
@@ -122,7 +120,48 @@ class _GameScreenState extends State<GameScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 30),
+                    SizedBox(height: 20),
+
+                    // 👻 --- AKILLI HAYALET SÜRÜCÜ BÖLÜMÜ ---
+                    if (status.ghostSpeed != null && status.ghostSpeed! < 0)
+                      // KİMSE OYNAMAMIŞSA: Motive edici mesaj
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20.0,
+                          vertical: 10.0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.emoji_events,
+                              color: Colors.amber,
+                              size: 24,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "İlk rekoru sen kır!",
+                              style: TextStyle(
+                                color: Colors.amber,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (status.ghostName != null &&
+                        status.ghostSpeed != null)
+                      // REKOR VARSA: Hayaleti koşutur
+                      GhostRacerWidget(
+                        ghostName: status.ghostName!,
+                        ghostSpeed: status.ghostSpeed!,
+                        countryName: status.countryName ?? "",
+                        // 🚨 SİHİRLİ BAĞLANTI: Butonlar renk değiştirdiği (showResult) an true olur ve hayalet DONAR!
+                        isPaused: gameProvider.showResult,
+                      ),
+
+                    SizedBox(height: 20),
 
                     // SORU METNİ
                     Text(
@@ -184,7 +223,6 @@ class _GameScreenState extends State<GameScreen> {
                     }).toList(),
                   ],
                 ),
-                // YÜKLENİYOR ANİMASYONU
                 // ignore: unnecessary_null_comparison
                 if (gameProvider.isLoading && status != null)
                   Center(
@@ -202,7 +240,6 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // --- OYUN BİTTİ EKRANI ---
   Widget _buildGameOver(
     BuildContext context,
     int score,
@@ -223,7 +260,6 @@ class _GameScreenState extends State<GameScreen> {
             color: isVictory ? Colors.amber : Colors.red,
           ),
           SizedBox(height: 20),
-
           Text(
             isDaily
                 ? "GÖREV TAMAMLANDI!"
@@ -235,7 +271,6 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ),
           SizedBox(height: 15),
-
           if (message != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -246,8 +281,6 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
           SizedBox(height: 30),
-
-          // 🚨 YENİ: Günün görevinde kazanılan puan daha vurgulu
           Container(
             padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
             decoration: BoxDecoration(
@@ -264,9 +297,7 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
           ),
-
           SizedBox(height: 40),
-
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber,
@@ -283,8 +314,131 @@ class _GameScreenState extends State<GameScreen> {
             ),
             onPressed: () {
               Provider.of<GameProvider>(context, listen: false).resetGame();
-              Navigator.pop(context); // Ana sayfaya dön
+              Navigator.pop(context);
             },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 👻 --- AKILLI HAYALET SÜRÜCÜ WIDGET'I --- 👻
+class GhostRacerWidget extends StatefulWidget {
+  final String ghostName;
+  final double ghostSpeed;
+  final String countryName;
+  final bool isPaused; // Animasyonu donduracak olan sihirli değişken
+
+  const GhostRacerWidget({
+    Key? key,
+    required this.ghostName,
+    required this.ghostSpeed,
+    required this.countryName,
+    required this.isPaused,
+  }) : super(key: key);
+
+  @override
+  _GhostRacerWidgetState createState() => _GhostRacerWidgetState();
+}
+
+class _GhostRacerWidgetState extends State<GhostRacerWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: (widget.ghostSpeed * 1000).toInt()),
+    );
+
+    // Eğer paused değilse hemen koşmaya başla
+    if (!widget.isPaused) {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant GhostRacerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // KULLANICI ŞIKKI İŞARETLEDİ, RENK DEĞİŞTİ: Hayaleti olduğu yerde dondur!
+    if (widget.isPaused && !oldWidget.isPaused) {
+      _controller.stop();
+    }
+    // 2 SANİYELİK BEKLEME BİTTİ (YENİ SORU BAŞLIYOR): Hayaleti başa sar ve koşmaya başla!
+    else if (!widget.isPaused && oldWidget.isPaused) {
+      _controller.duration = Duration(
+        milliseconds: (widget.ghostSpeed * 1000).toInt(),
+      );
+      _controller.reset();
+      _controller.forward();
+    }
+    // OYUN İLK AÇILDIĞINDA VEYA BİR SEBEPLE DİREKT GEÇİŞ OLDUĞUNDA
+    else if (!widget.isPaused && oldWidget.countryName != widget.countryName) {
+      _controller.duration = Duration(
+        milliseconds: (widget.ghostSpeed * 1000).toInt(),
+      );
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Sen",
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                "👑 ${widget.ghostName}",
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            ],
+          ),
+          SizedBox(height: 5),
+          Stack(
+            children: [
+              Container(
+                height: 15,
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white24),
+                ),
+              ),
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return FractionallySizedBox(
+                    widthFactor: _controller.value,
+                    child: Container(
+                      alignment: Alignment.centerRight,
+                      child: Text("👻", style: TextStyle(fontSize: 16)),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),

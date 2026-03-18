@@ -7,7 +7,6 @@
 şifre kısmında aynı şifre olmaması ve şfirenin en az 6 olması gerek bunu eklememm laızm
 başarımlar (uygulama bittikten sonra eklenecek )
 sözlük kısmına bayraklar eklenecek(eklendi)
-detaylı analiz ve zayıf yönler
-hayalet eklenecek 
+detaylı analiz ve zayıf yönler(eklendi)
+hayalet eklenecek (eklendi ama süreler üzerinde gelişme yapılacak)
 profil kısmında yeşil yer düzenlenecek
- 

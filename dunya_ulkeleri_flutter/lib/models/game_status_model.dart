@@ -7,12 +7,16 @@ class GameStatusModel {
   final String? message;
   final bool? lastAnswerCorrect;
   final String? lastCorrectAnswer;
+  final String? ghostName;
+  final double? ghostSpeed;
 
   // 1. YENİ EKLENDİ: Oyunun bitip bitmediğini tutan değişken
   final bool? finished;
 
   GameStatusModel({
     this.sessionId,
+    this.ghostName,
+    this.ghostSpeed,
     required this.currentScore,
     required this.remainingLives,
     this.countryName,
@@ -31,6 +35,10 @@ class GameStatusModel {
       currentScore: json['currentScore'] ?? 0,
       remainingLives: json['remainingLives'] ?? 0,
       countryName: json['countryName'],
+      ghostName: json['ghostName'],
+      ghostSpeed: json['ghostSpeed'] != null
+          ? (json['ghostSpeed'] as num).toDouble()
+          : 8.0,
       options: json['options'] != null
           ? List<String>.from(json['options'])
           : null,

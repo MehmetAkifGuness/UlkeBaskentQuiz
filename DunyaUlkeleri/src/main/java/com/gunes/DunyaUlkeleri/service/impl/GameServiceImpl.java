@@ -10,6 +10,7 @@ import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
 import com.gunes.DunyaUlkeleri.repository.QuestionRepository;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.GameService;
+import org.springframework.data.domain.PageRequest; // 🚨 YENİ EKLENDİ (Hayaleti bulmak için)
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -252,6 +253,44 @@ public class GameServiceImpl implements GameService {
         return allQuestions.stream().limit(10).collect(Collectors.toList()); // Sadece ilk 10'unu al
     }
 
+    // 👻 YENİ EKLENDİ: O kategorinin 1.'sini bulup hayaletin hızını hesaplar (KİMSE OYNAMADIYSA KONTROLÜ İLE)
+    private void calculateGhost(GameSession session, GameStatusResponse response) {
+        String category = session.getCategory() == null ? "Dünya" : session.getCategory();
+        boolean isDaily = "DailyChallenge".equals(category);
+        
+        List<Object[]> topUsers;
+        if (isDaily) {
+            topUsers = gameSessionRepository.findTop10DailyScores(category, LocalDate.now().atStartOfDay(), PageRequest.of(0, 1));
+        } else {
+            topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 1));
+        }
+
+        // Eğer birinci olan biri varsa VE skoru 0'dan büyükse:
+        if (topUsers != null && !topUsers.isEmpty() && topUsers.get(0)[1] != null && ((Integer)topUsers.get(0)[1]) > 0) {
+            Object[] topPlayer = topUsers.get(0);
+            String ghostName = (String) topPlayer[0];
+            Integer ghostScore = (Integer) topPlayer[1];
+
+            double avgScorePerQuestion;
+            if (isDaily) {
+                avgScorePerQuestion = ghostScore / 10.0;
+            } else {
+                double estimatedQuestions = (ghostScore / 1500.0) + 1;
+                avgScorePerQuestion = ghostScore / estimatedQuestions;
+            }
+
+            double ghostSpeedInSeconds = 2000.0 / Math.max(avgScorePerQuestion, 1.0);
+            if (ghostSpeedInSeconds > 10.0) ghostSpeedInSeconds = 10.0;
+
+            response.setGhostName(ghostName);
+            response.setGhostSpeed(ghostSpeedInSeconds);
+        } else {
+            // 🚨 KİMSE OYNAMAMIŞSA VEYA REKOR YOKSA:
+            response.setGhostName("Rekor Yok");
+            response.setGhostSpeed(-1.0); // Eksi değer gönderiyoruz ki Flutter tarafı anlasın
+        }
+    }
+
     private GameStatusResponse buildResponse(GameSession session, String message, boolean isFinished) {
         GameStatusResponse response = new GameStatusResponse();
         response.setSessionId(session.getId());
@@ -259,6 +298,10 @@ public class GameServiceImpl implements GameService {
         response.setRemainingLives(session.getRemainingLives());
         response.setMessage(message);
         response.setFinished(isFinished);
+        
+        // 🚨 YENİ EKLENDİ: DTO'ya Hayalet verilerini set et
+        calculateGhost(session, response);
+        
         return response;
     }
 
