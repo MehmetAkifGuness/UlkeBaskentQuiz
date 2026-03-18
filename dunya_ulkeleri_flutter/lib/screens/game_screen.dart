@@ -123,43 +123,56 @@ class _GameScreenState extends State<GameScreen> {
                     SizedBox(height: 20),
 
                     // 👻 --- AKILLI HAYALET SÜRÜCÜ BÖLÜMÜ ---
-                    if (status.ghostSpeed != null && status.ghostSpeed! < 0)
+                    if (status.ghostScore != null &&
+                        status.totalQuestions != null)
                       // KİMSE OYNAMAMIŞSA: Motive edici mesaj
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20.0,
-                          vertical: 10.0,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.emoji_events,
-                              color: Colors.amber,
-                              size: 24,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              "İlk rekoru sen kır!",
-                              style: TextStyle(
-                                color: Colors.amber,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                      if (status.ghostScore == 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20.0,
+                            vertical: 10.0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Kalan Soru: ${status.remainingQuestions}",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
-                            ),
-                          ],
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.emoji_events,
+                                    color: Colors.amber,
+                                    size: 24,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "İlk rekoru sen kır!",
+                                    style: TextStyle(
+                                      color: Colors.amber,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        // REKOR VARSA: İkili Barı Göster
+                        ScoreProgressWidget(
+                          ghostName: status.ghostName!,
+                          ghostScore: status.ghostScore!,
+                          currentScore: status.currentScore,
+                          totalQuestions: status.totalQuestions!,
+                          remainingQuestions: status.remainingQuestions ?? 0,
                         ),
-                      )
-                    else if (status.ghostName != null &&
-                        status.ghostSpeed != null)
-                      // REKOR VARSA: Hayaleti koşutur
-                      GhostRacerWidget(
-                        ghostName: status.ghostName!,
-                        ghostSpeed: status.ghostSpeed!,
-                        countryName: status.countryName ?? "",
-                        // 🚨 SİHİRLİ BAĞLANTI: Butonlar renk değiştirdiği (showResult) an true olur ve hayalet DONAR!
-                        isPaused: gameProvider.showResult,
-                      ),
 
                     SizedBox(height: 20),
 
@@ -323,120 +336,189 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-// 👻 --- AKILLI HAYALET SÜRÜCÜ WIDGET'I --- 👻
-class GhostRacerWidget extends StatefulWidget {
+// 🏁 --- YENİ: İKİLİ İLERLEME ÇUBUĞU (SORU VE SKOR) --- 🏃
+class ScoreProgressWidget extends StatelessWidget {
   final String ghostName;
-  final double ghostSpeed;
-  final String countryName;
-  final bool isPaused; // Animasyonu donduracak olan sihirli değişken
+  final int ghostScore;
+  final int currentScore;
+  final int totalQuestions;
+  final int remainingQuestions;
 
-  const GhostRacerWidget({
+  const ScoreProgressWidget({
     Key? key,
     required this.ghostName,
-    required this.ghostSpeed,
-    required this.countryName,
-    required this.isPaused,
+    required this.ghostScore,
+    required this.currentScore,
+    required this.totalQuestions,
+    required this.remainingQuestions,
   }) : super(key: key);
 
   @override
-  _GhostRacerWidgetState createState() => _GhostRacerWidgetState();
-}
-
-class _GhostRacerWidgetState extends State<GhostRacerWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: (widget.ghostSpeed * 1000).toInt()),
-    );
-
-    // Eğer paused değilse hemen koşmaya başla
-    if (!widget.isPaused) {
-      _controller.forward();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant GhostRacerWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // KULLANICI ŞIKKI İŞARETLEDİ, RENK DEĞİŞTİ: Hayaleti olduğu yerde dondur!
-    if (widget.isPaused && !oldWidget.isPaused) {
-      _controller.stop();
-    }
-    // 2 SANİYELİK BEKLEME BİTTİ (YENİ SORU BAŞLIYOR): Hayaleti başa sar ve koşmaya başla!
-    else if (!widget.isPaused && oldWidget.isPaused) {
-      _controller.duration = Duration(
-        milliseconds: (widget.ghostSpeed * 1000).toInt(),
-      );
-      _controller.reset();
-      _controller.forward();
-    }
-    // OYUN İLK AÇILDIĞINDA VEYA BİR SEBEPLE DİREKT GEÇİŞ OLDUĞUNDA
-    else if (!widget.isPaused && oldWidget.countryName != widget.countryName) {
-      _controller.duration = Duration(
-        milliseconds: (widget.ghostSpeed * 1000).toInt(),
-      );
-      _controller.reset();
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // 1. SORU İLERLEMESİ HESAPLARI
+    int answeredQuestions = totalQuestions - remainingQuestions;
+    double questionProgress = totalQuestions > 0
+        ? (answeredQuestions / totalQuestions)
+        : 0.0;
+    if (questionProgress > 1.0) questionProgress = 1.0;
+
+    // 2. SKOR İLERLEMESİ HESAPLARI (Maksimum Olası Skor: Soru Sayısı * 2000)
+    int maxPossibleScore = totalQuestions * 2000;
+    double scoreProgress = maxPossibleScore > 0
+        ? (currentScore / maxPossibleScore)
+        : 0.0;
+    double ghostProgress = maxPossibleScore > 0
+        ? (ghostScore / maxPossibleScore)
+        : 0.0;
+
+    if (scoreProgress > 1.0) scoreProgress = 1.0;
+    if (ghostProgress > 1.0) ghostProgress = 1.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // --- 1. BAR: SORU DURUMU ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Sen",
+                "Soru İlerlemesi",
                 style: TextStyle(
-                  color: Colors.amber,
+                  color: Colors.white70,
                   fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
               ),
               Text(
-                "👑 ${widget.ghostName}",
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+                "$answeredQuestions / $totalQuestions",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
           SizedBox(height: 5),
           Stack(
+            alignment: Alignment.centerLeft,
             children: [
               Container(
-                height: 15,
+                height: 12,
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.white24),
                 ),
               ),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.0, end: questionProgress),
+                duration: Duration(milliseconds: 500),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
                   return FractionallySizedBox(
-                    widthFactor: _controller.value,
+                    widthFactor: value > 0.0 ? value : 0.0,
                     child: Container(
-                      alignment: Alignment.centerRight,
-                      child: Text("👻", style: TextStyle(fontSize: 16)),
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                 },
+              ),
+            ],
+          ),
+
+          SizedBox(height: 15),
+
+          // --- 2. BAR: SKOR VE HAYALET DURUMU ---
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Sen ($currentScore Puan)",
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              Text(
+                "👑 $ghostName ($ghostScore Puan)",
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 5),
+          Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              // Arka Plan
+              Container(
+                height: 18,
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white24),
+                ),
+              ),
+              // Senin Skorunun Çubuğu
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.0, end: scoreProgress),
+                duration: Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return FractionallySizedBox(
+                    widthFactor: value > 0.0 ? value : 0.0,
+                    child: Container(
+                      height: 18,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.orange, Colors.amber],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.centerRight,
+                      child: value > 0.05
+                          ? Padding(
+                              padding: const EdgeInsets.only(right: 2.0),
+                              child: Text("🏃", style: TextStyle(fontSize: 12)),
+                            )
+                          : null,
+                    ),
+                  );
+                },
+              ),
+              // Hayaletin Sabit Bayrağı (Rekor Konumu)
+              FractionallySizedBox(
+                widthFactor: ghostProgress,
+                child: Container(
+                  alignment: Alignment.centerRight,
+                  height: 18,
+                  child: OverflowBox(
+                    maxWidth: 30,
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 2,
+                          height: 18,
+                          color: Colors.redAccent,
+                        ),
+                        Text("🏁", style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

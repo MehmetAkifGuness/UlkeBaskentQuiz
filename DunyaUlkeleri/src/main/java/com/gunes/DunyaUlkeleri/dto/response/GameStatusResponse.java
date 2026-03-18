@@ -13,7 +13,11 @@ public class GameStatusResponse {
     private String countryName;
     private List<String> options;
     private String message;
-    private boolean finished; // Senior dokunuşu: Oyunun bitip bitmediğini kontrol eder
-    private String ghostName; // 1. olan kişinin adı (Örn: "Ahmet")
-    private double ghostSpeed; // Hayaletin soruyu çözme süresi (Örn: 1.3 saniye)
+    private boolean finished;
+
+    // 🚨 YENİ EKLENENLER: Puan bazlı yarış ve Kalan Soru takibi için
+    private String ghostName;
+    private Integer ghostScore;
+    private Integer totalQuestions;
+    private Integer remainingQuestions;
 }

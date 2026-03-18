@@ -1,53 +1,53 @@
 class GameStatusModel {
-  final int? sessionId;
+  final int sessionId;
+  final bool? lastAnswerCorrect;
+  final String? lastCorrectAnswer;
   final int currentScore;
   final int remainingLives;
   final String? countryName;
   final List<String>? options;
   final String? message;
-  final bool? lastAnswerCorrect;
-  final String? lastCorrectAnswer;
-  final String? ghostName;
-  final double? ghostSpeed;
+  final bool finished;
 
-  // 1. YENİ EKLENDİ: Oyunun bitip bitmediğini tutan değişken
-  final bool? finished;
+  // 🚨 YENİ EKLENEN DEĞİŞKENLER
+  final String? ghostName;
+  final int? ghostScore;
+  final int? totalQuestions;
+  final int? remainingQuestions;
 
   GameStatusModel({
-    this.sessionId,
-    this.ghostName,
-    this.ghostSpeed,
+    required this.sessionId,
+    this.lastAnswerCorrect,
+    this.lastCorrectAnswer,
     required this.currentScore,
     required this.remainingLives,
     this.countryName,
     this.options,
     this.message,
-    this.lastAnswerCorrect,
-    this.lastCorrectAnswer,
-
-    // 2. YENİ EKLENDİ: Constructor'a ekledik
-    this.finished,
+    required this.finished,
+    this.ghostName,
+    this.ghostScore,
+    this.totalQuestions,
+    this.remainingQuestions,
   });
 
   factory GameStatusModel.fromJson(Map<String, dynamic> json) {
     return GameStatusModel(
       sessionId: json['sessionId'],
-      currentScore: json['currentScore'] ?? 0,
-      remainingLives: json['remainingLives'] ?? 0,
+      lastAnswerCorrect: json['lastAnswerCorrect'],
+      lastCorrectAnswer: json['lastCorrectAnswer'],
+      currentScore: json['currentScore'],
+      remainingLives: json['remainingLives'],
       countryName: json['countryName'],
-      ghostName: json['ghostName'],
-      ghostSpeed: json['ghostSpeed'] != null
-          ? (json['ghostSpeed'] as num).toDouble()
-          : 8.0,
       options: json['options'] != null
           ? List<String>.from(json['options'])
           : null,
       message: json['message'],
-      lastAnswerCorrect: json['lastAnswerCorrect'],
-      lastCorrectAnswer: json['lastCorrectAnswer'],
-
-      // 3. YENİ EKLENDİ: JSON'dan gelen değeri okuyoruz
       finished: json['finished'],
+      ghostName: json['ghostName'],
+      ghostScore: json['ghostScore'],
+      totalQuestions: json['totalQuestions'],
+      remainingQuestions: json['remainingQuestions'],
     );
   }
 }

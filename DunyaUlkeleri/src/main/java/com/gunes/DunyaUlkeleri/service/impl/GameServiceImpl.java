@@ -253,11 +253,29 @@ public class GameServiceImpl implements GameService {
         return allQuestions.stream().limit(10).collect(Collectors.toList()); // Sadece ilk 10'unu al
     }
 
-    // 👻 YENİ EKLENDİ: O kategorinin 1.'sini bulup hayaletin hızını hesaplar (KİMSE OYNAMADIYSA KONTROLÜ İLE)
-    private void calculateGhost(GameSession session, GameStatusResponse response) {
+    // 🚨 YENİ EKLENDİ: Skor hedefini (Rekor) ve Kalan Soru Sayısını hesaplar
+    private void calculateGhostAndQuestions(GameSession session, GameStatusResponse response) {
         String category = session.getCategory() == null ? "Dünya" : session.getCategory();
         boolean isDaily = "DailyChallenge".equals(category);
         
+        // 1. KALAN SORU HESAPLAMA
+        int totalQ;
+        if (isDaily) {
+            totalQ = 10;
+        } else {
+            if ("Dünya".equals(category)) {
+                totalQ = (int) questionRepository.count();
+            } else {
+                totalQ = questionRepository.findByContinent(category).size();
+            }
+        }
+        
+        int remainingQ = totalQ - session.getAskedQuestionIds().size();
+        
+        response.setTotalQuestions(totalQ);
+        response.setRemainingQuestions(remainingQ);
+
+        // 2. REKOR PUANI HESAPLAMA
         List<Object[]> topUsers;
         if (isDaily) {
             topUsers = gameSessionRepository.findTop10DailyScores(category, LocalDate.now().atStartOfDay(), PageRequest.of(0, 1));
@@ -265,29 +283,13 @@ public class GameServiceImpl implements GameService {
             topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 1));
         }
 
-        // Eğer birinci olan biri varsa VE skoru 0'dan büyükse:
         if (topUsers != null && !topUsers.isEmpty() && topUsers.get(0)[1] != null && ((Integer)topUsers.get(0)[1]) > 0) {
             Object[] topPlayer = topUsers.get(0);
-            String ghostName = (String) topPlayer[0];
-            Integer ghostScore = (Integer) topPlayer[1];
-
-            double avgScorePerQuestion;
-            if (isDaily) {
-                avgScorePerQuestion = ghostScore / 10.0;
-            } else {
-                double estimatedQuestions = (ghostScore / 1500.0) + 1;
-                avgScorePerQuestion = ghostScore / estimatedQuestions;
-            }
-
-            double ghostSpeedInSeconds = 2000.0 / Math.max(avgScorePerQuestion, 1.0);
-            if (ghostSpeedInSeconds > 10.0) ghostSpeedInSeconds = 10.0;
-
-            response.setGhostName(ghostName);
-            response.setGhostSpeed(ghostSpeedInSeconds);
+            response.setGhostName((String) topPlayer[0]);
+            response.setGhostScore((Integer) topPlayer[1]);
         } else {
-            // 🚨 KİMSE OYNAMAMIŞSA VEYA REKOR YOKSA:
             response.setGhostName("Rekor Yok");
-            response.setGhostSpeed(-1.0); // Eksi değer gönderiyoruz ki Flutter tarafı anlasın
+            response.setGhostScore(0);
         }
     }
 
@@ -299,8 +301,8 @@ public class GameServiceImpl implements GameService {
         response.setMessage(message);
         response.setFinished(isFinished);
         
-        // 🚨 YENİ EKLENDİ: DTO'ya Hayalet verilerini set et
-        calculateGhost(session, response);
+        // 🚨 YENİ EKLENDİ: DTO'ya Hayalet ve Soru verilerini set et
+        calculateGhostAndQuestions(session, response);
         
         return response;
     }
