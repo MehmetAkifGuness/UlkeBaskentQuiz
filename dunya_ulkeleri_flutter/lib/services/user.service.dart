@@ -53,4 +53,40 @@ class UserService {
       throw Exception('Liderlik tablosu alınamadı!');
     }
   }
+
+  // Hata Defterini Getir
+  // Hata Defterini Getir
+  // Hata Defterini Getir
+  Future<List<dynamic>> getMistakes(String token) async {
+    try {
+      final response = await http.get(
+        // 🚨 DÜZELTİLDİ: Sadece $baseUrl/mistakes yazıyoruz
+        Uri.parse('$baseUrl/mistakes'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      print("🎯 API Cevap Kodu: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      }
+    } catch (e) {
+      print("🚨 Hata defteri çekilemedi: $e");
+    }
+    return [];
+  }
+
+  // Öğrenilen Hatayı Sil
+  Future<bool> removeMistake(String token, int questionId) async {
+    try {
+      final response = await http.delete(
+        // 🚨 DÜZELTİLDİ: Sadece $baseUrl/mistakes/$questionId yazıyoruz
+        Uri.parse('$baseUrl/mistakes/$questionId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }

@@ -294,6 +294,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                         child: ListTile(
                           // 🚨 DEĞİŞİKLİK BURADA YAPILDI: CircleAvatar kaldırıldı, Bayrak Emojisi eklendi.
                           leading: Text(
+                            // ignore: dead_null_aware_expression
                             _getFlagEmoji(item.countryName ?? ''),
                             style: TextStyle(
                               fontSize: 35,

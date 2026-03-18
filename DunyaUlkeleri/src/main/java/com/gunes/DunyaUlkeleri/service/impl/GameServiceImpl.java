@@ -99,6 +99,13 @@ public class GameServiceImpl implements GameService {
         }
         else {
             // YANLIŞ BİLDİYSE
+            User user = session.getUser();
+            Question currentQuestion = questionRepository.findById(session.getCurrentQuestionId()).orElse(null);
+            
+            if (currentQuestion != null) {
+                user.getFailedQuestions().add(currentQuestion);
+                userRepository.save(user); // Soruyu kullanıcının hata listesine ekle
+            }
             if (isDaily) {
                 // 🚨 GÜNÜN GÖREVİ MODU: Yanlış yapsa da can düşmez, soru pas geçilir.
                 if (previousQuestionId != null) {

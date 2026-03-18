@@ -118,7 +118,6 @@ INSERT INTO question (country_name, capital_name, continent) VALUES ('Kongo Cumh
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Kongo Demokratik Cumhuriyeti', 'Kinşasa', 'Afrika') ON CONFLICT (country_name) DO NOTHING;
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Kosta Rika', 'San José', 'Kuzey Amerika') ON CONFLICT (country_name) DO NOTHING;
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Kuveyt', 'Kuveyt', 'Asya') ON CONFLICT (country_name) DO NOTHING;
-INSERT INTO question (country_name, capital_name, continent) VALUES ('Kuzey Kıbrıs Türk Cumhuriyeti', 'Lefkoşa', 'Avrupa') ON CONFLICT (country_name) DO NOTHING;
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Kuzey Kore', 'Pyongyang', 'Asya') ON CONFLICT (country_name) DO NOTHING;
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Kuzey Makedonya', 'Üsküp', 'Avrupa') ON CONFLICT (country_name) DO NOTHING;
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Küba', 'Havana', 'Kuzey Amerika') ON CONFLICT (country_name) DO NOTHING;

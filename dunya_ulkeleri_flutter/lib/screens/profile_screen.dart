@@ -6,6 +6,7 @@ import '../services/user.service.dart'; // Kendi import yoluna dikkat et
 import 'login_screen.dart'; // Çıkış yapınca yönlendirmek için EKLENDİ
 import 'forgot_password_dialog.dart'; // 🚨 Şifre yenileme popup'ı EKLENDİ
 import 'dictionary_screen.dart'; // 🚨 Sözlüğe yönlendirme yapabilmek için eklendi
+import 'mistake_screen.dart'; // 🚨 YENİ: Hata defterine yönlendirme yapabilmek için EKLENDİ
 
 class ProfileScreen extends StatelessWidget {
   final UserService _userService = UserService();
@@ -297,6 +298,35 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                SizedBox(height: 15), // İki kart arası boşluk
+                // 🚨 YENİ EKLENEN: HATA DEFTERİ BUTONU 🚨
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange[800],
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 5,
+                  ),
+                  icon: Icon(Icons.auto_stories, color: Colors.white),
+                  label: Text(
+                    "Hata Defterimi İncele",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MistakeScreen()),
+                    );
+                  },
+                ),
+
                 SizedBox(height: 30),
 
                 // 🚨 YENİ EKLENEN: KITA USTALIK ÇUBUKLARI

@@ -29,4 +29,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     @Query(value = "SELECT * FROM question q WHERE (:category = 'Dünya' OR q.continent = :category) " +
                    "AND q.id NOT IN :askedIds ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Optional<Question> findRandomQuestionByCategory(@Param("category")String category , @Param("askedIds")Set<Long> askedIds);
+
+    // Kullanıcının hatalı sorularını çekmek için özel sorgu
+    @Query("SELECT q FROM User u JOIN u.failedQuestions q WHERE u.username = :username")
+    List<Question> findFailedQuestionsByUsername(@Param("username") String username);
 }

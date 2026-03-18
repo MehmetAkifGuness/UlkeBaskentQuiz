@@ -6,5 +6,8 @@
 ülkelerin bulunduğu konum kıta böölge olarak aşama aşama resim olarak eklenecek 
 şifre kısmında aynı şifre olmaması ve şfirenin en az 6 olması gerek bunu eklememm laızm
 başarımlar (uygulama bittikten sonra eklenecek )
-sözlük kısmına bayraklar eklenecek
-detaylı analiz ve zayıf yönler 
+sözlük kısmına bayraklar eklenecek(eklendi)
+detaylı analiz ve zayıf yönler
+hayalet eklenecek 
+profil kısmında yeşil yer düzenlenecek
+ 
