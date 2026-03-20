@@ -170,17 +170,33 @@ class ProfileScreen extends StatelessWidget {
           Color tierColor;
           IconData tierIcon;
 
-          if (totalScore < 150000) {
+          if (totalScore < 100000) {
             tierName = "Turist";
             tierColor = Colors.green;
             tierIcon = Icons.backpack;
-          } else if (totalScore < 500000) {
+          } else if (totalScore < 250000) {
             tierName = "Gezgin";
             tierColor = Colors.blue;
             tierIcon = Icons.explore;
-          } else if (totalScore < 4000000) {
+          } else if (totalScore < 500000) {
+            tierName = "Gezgin";
+            tierColor = Colors.yellow;
+            tierIcon = Icons.explore;
+          } else if (totalScore < 1000000) {
+            tierName = "Gezgin";
+            tierColor = Colors.brown;
+            tierIcon = Icons.explore;
+          } else if (totalScore < 5000000) {
+            tierName = "Gezgin";
+            tierColor = Colors.cyanAccent;
+            tierIcon = Icons.explore;
+          } else if (totalScore < 10000000) {
+            tierName = "Gezgin";
+            tierColor = Colors.teal;
+            tierIcon = Icons.explore;
+          } else if (totalScore < 20000000) {
             tierName = "Kâşif";
-            tierColor = Colors.purpleAccent;
+            tierColor = const Color.fromARGB(255, 1, 90, 90);
             tierIcon = Icons.map;
           } else {
             tierName = "Coğrafya Profesörü";

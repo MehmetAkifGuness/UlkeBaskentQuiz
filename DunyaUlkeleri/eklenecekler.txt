@@ -1,14 +1,8 @@
-şifremi unuttum(çözüldü)
 öğrenem kısmı geliştirilecek
 ülkelerin yöresel yemek ve müziği eklenecek
 ülkelerin bayrak fotosu ve nüfusu ekelenecek 
 ülkelerin para birimi eklenecek 
 ülkelerin bulunduğu konum kıta böölge olarak aşama aşama resim olarak eklenecek 
-şifre kısmında aynı şifre olmaması ve şfirenin en az 6 olması gerek bunu eklememm laızm
 başarımlar (uygulama bittikten sonra eklenecek )
-sözlük kısmına bayraklar eklenecek(eklendi)
-detaylı analiz ve zayıf yönler(eklendi)
-hayalet eklenecek (eklendi ama süreler üzerinde gelişme yapılacak)
-profil kısmında yeşil yer düzenlenecek
-kıta ustalık seviyesi dünya ekleme
+profil kısmında yeşil yer düzenlenecek(şifremi değiştir kısmında eğer bu bilgilere ait bir hesap varsa kısmı giriş ekranında oalcak ama profilde olmayacak )
 sonsuz mod ekleme
