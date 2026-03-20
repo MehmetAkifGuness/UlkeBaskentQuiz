@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/game_service.dart';
 import '../models/dictionary_model.dart'; // Model dosyanın yolunun doğru olduğundan emin ol
+import 'country_detail_screen.dart'; // 🚨 YENİ EKLENDİ: Detay sayfasına geçiş için
 
 class DictionaryScreen extends StatefulWidget {
   @override
@@ -292,6 +293,28 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                         ),
                         elevation: 3,
                         child: ListTile(
+                          // 🚨 YENİ EKLENDİ: Ülkeye tıklandığında detay sayfasına yönlendirir
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CountryDetailScreen(
+                                  // ignore: dead_null_aware_expression
+                                  countryName: item.countryName ?? 'Bilinmiyor',
+                                  // ignore: dead_null_aware_expression
+                                  capitalName: item.capitalName ?? 'Bilinmiyor',
+                                  continent: item.continent ?? 'Bilinmiyor',
+                                ),
+                              ),
+                            );
+                          },
+                          // 🚨 YENİ EKLENDİ: Sağ tarafa küçük bir ok koyarak tıklanabilir hissi verir
+                          trailing: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.white54,
+                          ),
+
                           // 🚨 DEĞİŞİKLİK BURADA YAPILDI: CircleAvatar kaldırıldı, Bayrak Emojisi eklendi.
                           leading: Text(
                             // ignore: dead_null_aware_expression
