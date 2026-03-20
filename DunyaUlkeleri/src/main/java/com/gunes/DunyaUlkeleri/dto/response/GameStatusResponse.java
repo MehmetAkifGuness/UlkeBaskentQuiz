@@ -14,8 +14,10 @@ public class GameStatusResponse {
     private List<String> options;
     private String message;
     private boolean finished;
+    
+    // 🚨 İŞTE BU SATIR EKSİK OLDUĞU İÇİN O HATAYI ALIYORSUN 🚨
+    private String questionText;
 
-    // 🚨 YENİ EKLENENLER: Puan bazlı yarış ve Kalan Soru takibi için
     private String ghostName;
     private Integer ghostScore;
     private Integer totalQuestions;

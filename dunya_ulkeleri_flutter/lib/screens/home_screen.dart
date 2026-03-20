@@ -45,55 +45,111 @@ class _HomeScreenState extends State<HomeScreen> {
     "Okyanusya",
   ];
 
+  // 🚨 YENİ: Şık BottomSheet ile hem Mod hem Kategori Seçimi
   void _showCategorySelection(BuildContext context) {
+    String selectedMode = "COUNTRY_TO_CAPITAL"; // Varsayılan mod
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Listenin taşmaması için
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Nerede Oynamak İstersin?",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Divider(),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return ListTile(
-                      leading: Icon(
-                        category == "Dünya" ? Icons.public : Icons.map,
-                        color: Colors.blueAccent,
+        return StatefulBuilder(
+          // BottomSheet içindeki butonların renk değiştirmesi için
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Oyun Modunu Seç",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+
+                  // OYUN MODU BUTONLARI (Chip)
+                  Wrap(
+                    spacing: 8.0,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ChoiceChip(
+                        label: Text("Ülke ➡ Başkent"),
+                        selected: selectedMode == "COUNTRY_TO_CAPITAL",
+                        onSelected: (bool selected) {
+                          setModalState(() {
+                            selectedMode = "COUNTRY_TO_CAPITAL";
+                          });
+                        },
                       ),
-                      title: Text(category, style: TextStyle(fontSize: 18)),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                GameScreen(category: category),
+                      ChoiceChip(
+                        label: Text("Başkent ➡ Ülke"),
+                        selected: selectedMode == "CAPITAL_TO_COUNTRY",
+                        onSelected: (bool selected) {
+                          setModalState(() {
+                            selectedMode = "CAPITAL_TO_COUNTRY";
+                          });
+                        },
+                      ),
+                      ChoiceChip(
+                        label: Text("🔀 Karışık"),
+                        selected: selectedMode == "MIXED",
+                        onSelected: (bool selected) {
+                          setModalState(() {
+                            selectedMode = "MIXED";
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 15),
+                  Divider(),
+
+                  Text(
+                    "Nerede Oynamak İstersin?",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+
+                  // KITA LİSTESİ
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        return ListTile(
+                          leading: Icon(
+                            category == "Dünya" ? Icons.public : Icons.map,
+                            color: Colors.blueAccent,
                           ),
-                        ).then(
-                          (_) => _checkDailyStatus(),
-                        ); // Oyun bitince ana ekranı yenile
+                          title: Text(category, style: TextStyle(fontSize: 18)),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => GameScreen(
+                                  category: category,
+                                  mode: selectedMode,
+                                ), // 🚨 YENİ: Seçilen modu gönderdik
+                              ),
+                            ).then(
+                              (_) => _checkDailyStatus(),
+                            ); // Oyun bitince ana ekranı yenile
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -145,8 +201,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      GameScreen(category: "DailyChallenge"),
+                                  builder: (context) => GameScreen(
+                                    category: "DailyChallenge",
+                                    mode: "MIXED",
+                                  ), // 🚨 YENİ: Günlük görev hep karışıktır
                                 ),
                               ).then(
                                 (_) => _checkDailyStatus(),

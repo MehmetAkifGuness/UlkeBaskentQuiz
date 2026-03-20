@@ -10,27 +10,28 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-// DÜZELTME: JpaRepository<Question, Long> yapıldı.
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     @Query(value = "SELECT * FROM question ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Optional<Question> findRandomQuestion();
 
+    // Yanlış Başkentleri Getirir (Normal mod için)
     @Query(value = "SELECT capital_name FROM question WHERE capital_name != :correctAnswer ORDER BY RANDOM() LIMIT 3", nativeQuery = true)
     List<String> findRandomWrongAnswers(@Param("correctAnswer") String correctAnswer);
 
-    // KATEGORİ VE ÖĞRENME MODU İÇİN YENİ METOTLAR
-    List<Question> findByContinent(String continent);
+    // 🚨 İŞTE EKSİK OLAN VE HATAYI ÇÖZECEK METOT BURASI (Ters köşe mod için) 🚨
+    @Query(value = "SELECT country_name FROM question WHERE country_name != :correctAnswer ORDER BY RANDOM() LIMIT 3", nativeQuery = true)
+    List<String> findRandomWrongCountries(@Param("correctAnswer") String correctAnswer);
 
-    List<Question> findByCountryNameStartingWithOrderByCountryNameAsc(String prefix);
+    List<Question> findByContinent(String continent);
     
     List<Question> findAllByOrderByCountryNameAsc();
+
     @Query(value = "SELECT * FROM question q WHERE (:category = 'Dünya' OR q.continent = :category) " +
                    "AND q.id NOT IN :askedIds ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
-    Optional<Question> findRandomQuestionByCategory(@Param("category")String category , @Param("askedIds")Set<Long> askedIds);
+    Optional<Question> findRandomQuestionByCategory(@Param("category") String category, @Param("askedIds") Set<Long> askedIds);
 
-    // Kullanıcının hatalı sorularını çekmek için özel sorgu
     @Query("SELECT q FROM User u JOIN u.failedQuestions q WHERE u.username = :username")
     List<Question> findFailedQuestionsByUsername(@Param("username") String username);
 }

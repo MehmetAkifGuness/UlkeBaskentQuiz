@@ -10,3 +10,5 @@ sözlük kısmına bayraklar eklenecek(eklendi)
 detaylı analiz ve zayıf yönler(eklendi)
 hayalet eklenecek (eklendi ama süreler üzerinde gelişme yapılacak)
 profil kısmında yeşil yer düzenlenecek
+kıta ustalık seviyesi dünya ekleme
+sonsuz mod ekleme

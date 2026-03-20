@@ -20,10 +20,12 @@ public class GameController {
     private final GameService gameService;
 
     @PostMapping("/start")
-    public ResponseEntity<GameStatusResponse> startGame(@RequestParam(defaultValue = "Dünya") String category) {
+    public ResponseEntity<GameStatusResponse> startGame(
+            @RequestParam(defaultValue = "Dünya") String category,
+            @RequestParam(defaultValue = "COUNTRY_TO_CAPITAL") String mode) { // 🚨 YENİ: mode parametresi
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         // frontend'den gelen kategoriyi servise iletiyoruz
-        GameStatusResponse response = gameService.startGame(username, category);
+        GameStatusResponse response = gameService.startGame(username, category, mode);
         return ResponseEntity.ok(response);
     }
 

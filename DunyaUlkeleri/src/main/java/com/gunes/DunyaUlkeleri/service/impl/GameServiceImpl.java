@@ -33,7 +33,7 @@ public class GameServiceImpl implements GameService {
     private final GameSessionRepository gameSessionRepository;
 
     @Override
-    public GameStatusResponse startGame(String username, String category) {
+    public GameStatusResponse startGame(String username, String category, String mode) { // 🚨 YENİ: mode
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + username));
 
@@ -47,6 +47,7 @@ public class GameServiceImpl implements GameService {
         GameSession session = new GameSession();
         session.setUser(user);
         session.setCategory(category); // Seçilen kategoriyi oturuma kaydediyoruz
+        session.setGameMode(mode); // 🚨 YENİ: Modu oturuma ekliyoruz
         
         // Günün görevinde can sınırı yok, sadece 10 soru sınırı var. O yüzden canı sembolik olarak yüksek tutabiliriz.
         if ("DailyChallenge".equals(category)) {
@@ -223,18 +224,46 @@ public class GameServiceImpl implements GameService {
             return buildResponse(session, msg, true);
         }
 
-        // Soru varsa normal şekilde devam et
+        // 🚨 YENİ: Veritabanındaki Mode'u okuyup Başkent mi yoksa Ülke mi soracağımızı anlıyoruz
+        boolean askForCapital = true;
+        if (isDaily) {
+            long seed = LocalDate.now().toEpochDay() + question.getId();
+            askForCapital = new Random(seed).nextBoolean();
+        } else {
+            String mode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
+            if ("COUNTRY_TO_CAPITAL".equals(mode)) {
+                askForCapital = true;
+            } else if ("CAPITAL_TO_COUNTRY".equals(mode)) {
+                askForCapital = false;
+            } else {
+                askForCapital = Math.random() < 0.5; // MIXED (Rastgele)
+            }
+        }
+
         List<String> options = new ArrayList<>();
-        options.add(question.getCapitalName()); 
-        options.addAll(questionRepository.findRandomWrongAnswers(question.getCapitalName())); 
+        String correctAnswer;
+        String questionText;
+
+        if (askForCapital) {
+            correctAnswer = question.getCapitalName();
+            options.add(correctAnswer);
+            options.addAll(questionRepository.findRandomWrongAnswers(correctAnswer)); 
+            questionText = question.getCountryName() + " ülkesinin başkenti neresidir?";
+        } else {
+            correctAnswer = question.getCountryName();
+            options.add(correctAnswer);
+            options.addAll(questionRepository.findRandomWrongCountries(correctAnswer)); 
+            questionText = question.getCapitalName() + " şehri hangi ülkenin başkentidir?";
+        }
         Collections.shuffle(options);
 
-        session.setCurrentCorrectAnswer(question.getCapitalName());
+        session.setCurrentCorrectAnswer(correctAnswer);
         session.setCurrentQuestionId(question.getId());
         gameSessionRepository.save(session);
 
         GameStatusResponse response = buildResponse(session, "Yeni Soru!", false);
         response.setCountryName(question.getCountryName());
+        response.setQuestionText(questionText); // 🚨 Soruyu da yolluyoruz
         response.setOptions(options);
         
         // 🚨 Sadece Günlük Görevde kaçıncı soruda olduğunu göstermek için ufak bir hile:

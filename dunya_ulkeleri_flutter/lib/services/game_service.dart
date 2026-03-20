@@ -6,10 +6,15 @@ import '../models/game_status_model.dart';
 class GameService {
   final String baseUrl = "http://10.0.2.2:8080/api/game";
 
-  Future<GameStatusModel> startGame(String token, String category) async {
-    // 📡 Kategori bilgisini URL'ye parametre olarak ekledik
+  Future<GameStatusModel> startGame(
+    String token,
+    String category,
+    String mode,
+  ) async {
+    // 🚨 YENİ: mode eklendi
+    // 📡 Kategori ve Mode bilgisini URL'ye parametre olarak ekledik
     final response = await http.post(
-      Uri.parse('$baseUrl/start?category=$category'),
+      Uri.parse('$baseUrl/start?category=$category&mode=$mode'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -17,7 +22,7 @@ class GameService {
     );
 
     print("--- OYUN BAŞLATMA İSTEĞİ ---");
-    print("Seçilen Kategori: $category");
+    print("Seçilen Kategori: $category, Seçilen Mod: $mode");
     print("Durum Kodu: ${response.statusCode}");
     print("Gelen Cevap: '${response.body}'");
 

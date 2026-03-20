@@ -49,12 +49,13 @@ class GameProvider with ChangeNotifier {
     _uiTimer?.cancel();
   }
 
-  Future<void> startNewGame(String token, String category) async {
+  Future<void> startNewGame(String token, String category, String mode) async {
+    // 🚨 YENİ: mode eklendi
     _isLoading = true;
     _showResult = false;
     notifyListeners();
     try {
-      _status = await _gameService.startGame(token, category);
+      _status = await _gameService.startGame(token, category, mode); // 🚨 YENİ
       _startStopwatch(); // ⏱️ OYUN BAŞLADI, SÜREYİ BAŞLAT
     } catch (e) {
       print("Oyun başlatma hatası: $e");

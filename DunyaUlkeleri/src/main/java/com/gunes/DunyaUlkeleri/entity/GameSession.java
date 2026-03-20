@@ -49,6 +49,10 @@ public class GameSession {
     @Column(nullable = false)
     private LocalDateTime updateAt;
 
+    // 🚨 YENİ EKLENDİ: Oyun modu veritabanında tutulacak
+    @Column(name = "game_mode")
+    private String gameMode;
+
     @PrePersist
     protected void onCreate(){
         this.createdAt = LocalDateTime.now();

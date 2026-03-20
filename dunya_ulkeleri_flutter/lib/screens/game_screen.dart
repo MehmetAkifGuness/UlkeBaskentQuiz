@@ -7,8 +7,9 @@ import '../models/game_status_model.dart';
 
 class GameScreen extends StatefulWidget {
   final String category;
-
-  const GameScreen({Key? key, required this.category}) : super(key: key);
+  final String mode;
+  const GameScreen({Key? key, required this.category, required this.mode})
+    : super(key: key);
 
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -23,7 +24,11 @@ class _GameScreenState extends State<GameScreen> {
       final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
       gameProvider.resetGame();
-      gameProvider.startNewGame(authProvider.token!, widget.category);
+      gameProvider.startNewGame(
+        authProvider.token!,
+        widget.category,
+        widget.mode,
+      );
     });
   }
 
@@ -178,7 +183,8 @@ class _GameScreenState extends State<GameScreen> {
 
                     // SORU METNİ
                     Text(
-                      "${status.countryName} ülkesinin başkenti neresidir?",
+                      status.questionText ??
+                          "${status.countryName} ülkesinin başkenti neresidir?",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 22,

@@ -1,53 +1,58 @@
 class GameStatusModel {
-  final int sessionId;
-  final bool? lastAnswerCorrect;
-  final String? lastCorrectAnswer;
+  final int? sessionId;
   final int currentScore;
   final int remainingLives;
   final String? countryName;
   final List<String>? options;
   final String? message;
-  final bool finished;
-
-  // 🚨 YENİ EKLENEN DEĞİŞKENLER
+  final bool? lastAnswerCorrect;
+  final String? lastCorrectAnswer;
   final String? ghostName;
+
   final int? ghostScore;
   final int? totalQuestions;
   final int? remainingQuestions;
 
+  final bool? finished;
+
+  // 🚨 YENİ EKLENDİ: Backend'den gelen dinamik soru metni
+  final String? questionText;
+
   GameStatusModel({
-    required this.sessionId,
-    this.lastAnswerCorrect,
-    this.lastCorrectAnswer,
+    this.sessionId,
+    this.ghostName,
+    this.ghostScore,
+    this.totalQuestions,
+    this.remainingQuestions,
     required this.currentScore,
     required this.remainingLives,
     this.countryName,
     this.options,
     this.message,
-    required this.finished,
-    this.ghostName,
-    this.ghostScore,
-    this.totalQuestions,
-    this.remainingQuestions,
+    this.lastAnswerCorrect,
+    this.lastCorrectAnswer,
+    this.finished,
+    this.questionText, // 🚨 EKLENDİ
   });
 
   factory GameStatusModel.fromJson(Map<String, dynamic> json) {
     return GameStatusModel(
       sessionId: json['sessionId'],
-      lastAnswerCorrect: json['lastAnswerCorrect'],
-      lastCorrectAnswer: json['lastCorrectAnswer'],
-      currentScore: json['currentScore'],
-      remainingLives: json['remainingLives'],
+      currentScore: json['currentScore'] ?? 0,
+      remainingLives: json['remainingLives'] ?? 0,
       countryName: json['countryName'],
-      options: json['options'] != null
-          ? List<String>.from(json['options'])
-          : null,
-      message: json['message'],
-      finished: json['finished'],
       ghostName: json['ghostName'],
       ghostScore: json['ghostScore'],
       totalQuestions: json['totalQuestions'],
       remainingQuestions: json['remainingQuestions'],
+      options: json['options'] != null
+          ? List<String>.from(json['options'])
+          : null,
+      message: json['message'],
+      lastAnswerCorrect: json['lastAnswerCorrect'],
+      lastCorrectAnswer: json['lastCorrectAnswer'],
+      finished: json['finished'],
+      questionText: json['questionText'], // 🚨 EKLENDİ
     );
   }
 }

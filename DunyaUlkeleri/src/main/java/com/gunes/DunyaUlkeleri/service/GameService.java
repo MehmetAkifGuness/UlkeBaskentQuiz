@@ -8,7 +8,8 @@ import com.gunes.DunyaUlkeleri.dto.response.GameStatusResponse;
 //oyuna başla butonuna basınca burası tetiklenir ve oyun bitene kadar çalışır
 public interface GameService {
 
-    GameStatusResponse startGame(String username , String category);
+    // 🚨 YENİ: mode parametresi eklendi
+    GameStatusResponse startGame(String username , String category, String mode);
 
     GameStatusResponse submitAnswer(GameAnswerRequest request, String username);
 
