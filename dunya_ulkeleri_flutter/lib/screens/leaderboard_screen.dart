@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/user.service.dart'; // isme dikkat et, senin projende user_service.dart olabilir
+import '../services/user.service.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   @override
@@ -11,7 +11,6 @@ class LeaderboardScreen extends StatefulWidget {
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   final UserService _userService = UserService();
 
-  // 🚨 YENİ EKLENDİ: "🔥 Günün Görevi" listeye en başa alındı
   final List<String> _categories = [
     "🔥 Günün Görevi",
     "Dünya",
@@ -23,8 +22,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     "Okyanusya",
   ];
 
-  // 🚨 Varsayılan açılış kategorisi değiştirildi
   String _selectedCategory = "🔥 Günün Görevi";
+  String _selectedMode = "COUNTRY_TO_CAPITAL"; // 🚨 YENİ: Başlangıç Oyun Modu
 
   List<Map<String, dynamic>> _leaderboardData = [];
   bool _isLoading = true;
@@ -40,14 +39,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final token = Provider.of<AuthProvider>(context, listen: false).token;
       if (token != null) {
-        // 🚨 SİHİRLİ DOKUNUŞ: Eğer "Günün Görevi" seçiliyse, backend'e "DailyChallenge" yazısını yolla
         String apiCategory = _selectedCategory == "🔥 Günün Görevi"
             ? "DailyChallenge"
             : _selectedCategory;
 
+        // 🚨 YENİ: mode bilgisini de gönderiyoruz
         _leaderboardData = await _userService.getCategoryLeaderboard(
           token,
           apiCategory,
+          _selectedMode,
         );
       }
     } catch (e) {
@@ -57,26 +57,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
   }
 
-  // İlk 3 kişi için şık madalyalar
   Widget _getMedal(int index) {
     if (index == 0)
-      return Icon(
-        Icons.workspace_premium,
-        color: Colors.amber,
-        size: 32,
-      ); // Altın
+      return Icon(Icons.workspace_premium, color: Colors.amber, size: 32);
     if (index == 1)
-      return Icon(
-        Icons.workspace_premium,
-        color: Colors.grey[400],
-        size: 32,
-      ); // Gümüş
+      return Icon(Icons.workspace_premium, color: Colors.grey[400], size: 32);
     if (index == 2)
-      return Icon(
-        Icons.workspace_premium,
-        color: Colors.brown[300],
-        size: 32,
-      ); // Bronz
+      return Icon(Icons.workspace_premium, color: Colors.brown[300], size: 32);
     return CircleAvatar(
       backgroundColor: Colors.blueGrey,
       radius: 14,
@@ -103,7 +90,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 final category = _categories[index];
                 final isSelected = category == _selectedCategory;
 
-                // 🚨 TASARIM DOKUNUŞU: Günün Görevi seçili değilse arka planı Kırmızı kalsın ki dikkat çeksin!
                 Color? bgColor = isSelected ? Colors.amber : Colors.grey[800];
                 if (category == "🔥 Günün Görevi" && !isSelected) {
                   bgColor = Colors.red[900];
@@ -145,16 +131,63 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           ),
 
+          // 🚨 YENİ: MOD SEÇİCİ (Günün görevi hariç tüm modlarda görünür)
+          if (_selectedCategory != "🔥 Günün Görevi")
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Wrap(
+                spacing: 8.0,
+                alignment: WrapAlignment.center,
+                children: [
+                  ChoiceChip(
+                    label: Text(
+                      "Ülke ➡ Başkent",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    selected: _selectedMode == "COUNTRY_TO_CAPITAL",
+                    selectedColor: Colors.blueAccent,
+                    onSelected: (bool selected) {
+                      setState(() => _selectedMode = "COUNTRY_TO_CAPITAL");
+                      _fetchLeaderboard();
+                    },
+                  ),
+                  ChoiceChip(
+                    label: Text(
+                      "Başkent ➡ Ülke",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    selected: _selectedMode == "CAPITAL_TO_COUNTRY",
+                    selectedColor: Colors.blueAccent,
+                    onSelected: (bool selected) {
+                      setState(() => _selectedMode = "CAPITAL_TO_COUNTRY");
+                      _fetchLeaderboard();
+                    },
+                  ),
+                  ChoiceChip(
+                    label: Text(
+                      "🔀 Karışık",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    selected: _selectedMode == "MIXED",
+                    selectedColor: Colors.blueAccent,
+                    onSelected: (bool selected) {
+                      setState(() => _selectedMode = "MIXED");
+                      _fetchLeaderboard();
+                    },
+                  ),
+                ],
+              ),
+            ),
+
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: Colors.amber))
                 : _leaderboardData.isEmpty
                 ? Center(
-                    // 🚨 EĞER GÜNLÜK GÖREVSE MESAJI DAHA GÜZEL VERELİM
                     child: Text(
                       _selectedCategory == "🔥 Günün Görevi"
                           ? "Bugün listeye henüz kimse giremedi.\nİlk giren sen ol!"
-                          : "Bu kategoride henüz skor yok.",
+                          : "Bu modda henüz skor yok.",
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 16, color: Colors.grey[400]),
                     ),
@@ -168,7 +201,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        elevation: index < 3 ? 4 : 1, // İlk 3'e özel gölge
+                        elevation: index < 3 ? 4 : 1,
                         color: index == 0
                             ? Colors.amber.withOpacity(0.1)
                             : null,

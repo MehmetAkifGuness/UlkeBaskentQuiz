@@ -31,7 +31,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
-    private final GameSessionRepository gameSessionRepository; // 🚨 YENİ EKLENDİ
+    private final GameSessionRepository gameSessionRepository; 
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getUserProfile() {
@@ -51,17 +51,20 @@ public class UserController {
         return ResponseEntity.ok(user.getCategoryBestScores());
     }
 
+    // 🚨 YENİ: mode parametresi eklendi
     @GetMapping("/leaderboard/{category}")
-    public ResponseEntity<List<Map<String, Object>>> getCategoryLeaderboard(@PathVariable String category) {
+    public ResponseEntity<List<Map<String, Object>>> getCategoryLeaderboard(
+            @PathVariable String category,
+            @RequestParam(defaultValue = "MIXED") String mode) { // Varsayılan mod Karışıktır
+            
         List<Object[]> topUsers;
         
-        // 🚨 SİHİRLİ KONTROL: Eğer "DailyChallenge" ise sadece bugünün rekorlarını çek (Her gece sıfırlanır)
         if ("DailyChallenge".equals(category)) {
-            LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); // Gece 00:00:00
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); 
             topUsers = gameSessionRepository.findTop10DailyScores(category, startOfDay, PageRequest.of(0, 10));
         } else {
-            // Değilse eski taktikle (Kıtalar için) tüm zamanların en iyilerini çek
-            topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 10));
+            // 🚨 SİHİRLİ DEĞİŞİM: Artık User tablosundan değil, GameSession'dan mod seçimine göre çekiyoruz
+            topUsers = gameSessionRepository.findTop10ByCategoryAndMode(category, mode, PageRequest.of(0, 10));
         }
         
         List<Map<String, Object>> leaderboard = new ArrayList<>();
@@ -74,18 +77,12 @@ public class UserController {
         return ResponseEntity.ok(leaderboard);
     }
 
-    // Bunu enjekte etmeyi unutma
     private final QuestionRepository questionRepository; 
 
-    // --- HATA DEFTERİ METOTLARI ---
-@GetMapping("/mistakes")
+    @GetMapping("/mistakes")
     public ResponseEntity<Set<Question>> getUserMistakes(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-        
-        // 🚨 KONSOLA YAZDIR: Veritabanından Flutter'a kaç tane hata gidiyor görelim
-        System.out.println("🔥 Backend'den Gönderilen Hata Sayısı: " + user.getFailedQuestions().size());
-        
         return ResponseEntity.ok(user.getFailedQuestions());
     }
 
@@ -95,7 +92,7 @@ public class UserController {
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
         
         user.getFailedQuestions().removeIf(q -> q.getId().equals(questionId));
-        userRepository.save(user); // Değişikliği kaydet
+        userRepository.save(user); 
         return ResponseEntity.ok("Hata başarıyla silindi.");
     }
 }

@@ -37,21 +37,28 @@ class UserService {
   }
 
   // 2. Seçilen Kategoriye Göre Liderlik Tablosunu Getir
+  // --- LİDERLİK TABLOSUNU ÇEK ---
+  // 🚨 YENİ: mode parametresini ekledik
   Future<List<Map<String, dynamic>>> getCategoryLeaderboard(
     String token,
     String category,
+    String mode,
   ) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/leaderboard/$category'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    try {
+      // 📡 URL'ye mode parametresini koyduk
+      final response = await http.get(
+        Uri.parse('$baseUrl/leaderboard/$category?mode=$mode'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-    if (response.statusCode == 200) {
-      List<dynamic> jsonResponse = json.decode(utf8.decode(response.bodyBytes));
-      return jsonResponse.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception('Liderlik tablosu alınamadı!');
+      if (response.statusCode == 200) {
+        List jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+        return List<Map<String, dynamic>>.from(jsonResponse);
+      }
+    } catch (e) {
+      print("Liderlik tablosu çekilemedi: $e");
     }
+    return [];
   }
 
   // Hata Defterini Getir
