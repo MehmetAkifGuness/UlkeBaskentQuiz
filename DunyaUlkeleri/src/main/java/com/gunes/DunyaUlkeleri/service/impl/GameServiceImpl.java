@@ -10,7 +10,7 @@ import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
 import com.gunes.DunyaUlkeleri.repository.QuestionRepository;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.GameService;
-import org.springframework.data.domain.PageRequest; // 🚨 YENİ EKLENDİ (Hayaleti bulmak için)
+import org.springframework.data.domain.PageRequest; 
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,11 +33,11 @@ public class GameServiceImpl implements GameService {
     private final GameSessionRepository gameSessionRepository;
 
     @Override
-    public GameStatusResponse startGame(String username, String category, String mode) { // 🚨 YENİ: mode
+    public GameStatusResponse startGame(String username, String category, String mode) { 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + username));
 
-        // 🚨 GÜNÜN GÖREVİ KONTROLÜ: Kullanıcı bugün zaten oynamış mı?
+        // 🚨 GÜNÜN GÖREVİ KONTROLÜ
         if ("DailyChallenge".equals(category)) {
             if (user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now())) {
                 throw new RuntimeException("Bugün zaten Günün Görevi'ni tamamladın! Yarın tekrar gel.");
@@ -46,10 +46,9 @@ public class GameServiceImpl implements GameService {
 
         GameSession session = new GameSession();
         session.setUser(user);
-        session.setCategory(category); // Seçilen kategoriyi oturuma kaydediyoruz
-        session.setGameMode(mode); // 🚨 YENİ: Modu oturuma ekliyoruz
+        session.setCategory(category); 
+        session.setGameMode(mode); 
         
-        // Günün görevinde can sınırı yok, sadece 10 soru sınırı var. O yüzden canı sembolik olarak yüksek tutabiliriz.
         if ("DailyChallenge".equals(category)) {
             session.setRemainingLives(1); 
         }
@@ -73,7 +72,7 @@ public class GameServiceImpl implements GameService {
         }
 
         String previousCorrectAnswer = session.getCurrentCorrectAnswer();
-        Long previousQuestionId = session.getCurrentQuestionId(); // Cevapladığımız sorunun ID'si
+        Long previousQuestionId = session.getCurrentQuestionId(); 
         
         boolean isCorrect = request.getCapitalGuess().trim().equalsIgnoreCase(previousCorrectAnswer);
         boolean isDaily = "DailyChallenge".equals(session.getCategory());
@@ -100,21 +99,18 @@ public class GameServiceImpl implements GameService {
             }
         }
         else {
-            // YANLIŞ BİLDİYSE
             User user = session.getUser();
             Question currentQuestion = questionRepository.findById(session.getCurrentQuestionId()).orElse(null);
             
             if (currentQuestion != null) {
                 user.getFailedQuestions().add(currentQuestion);
-                userRepository.save(user); // Soruyu kullanıcının hata listesine ekle
+                userRepository.save(user); 
             }
             if (isDaily) {
-                // 🚨 GÜNÜN GÖREVİ MODU: Yanlış yapsa da can düşmez, soru pas geçilir.
                 if (previousQuestionId != null) {
                     session.getAskedQuestionIds().add(previousQuestionId);
                 }
             } else {
-                // NORMAL MOD: Can Düşür
                 session.setRemainingLives(session.getRemainingLives() - 1);
             }
         }
@@ -124,13 +120,11 @@ public class GameServiceImpl implements GameService {
         User user = session.getUser();
 
         if (isDaily) {
-            // 🚨 GÜNÜN GÖREVİ BİTİŞ KONTROLÜ: 10 Soru cevaplandı mı?
             if (session.getAskedQuestionIds().size() >= 10) {
                 gameFinished = true;
-                user.setLastDailyDate(LocalDate.now()); // BUGÜN OYNADI OLARAK İŞARETLE!
+                user.setLastDailyDate(LocalDate.now()); 
             }
         } else {
-            // NORMAL MOD BİTİŞ KONTROLÜ: Can 0 oldu mu?
             if (session.getRemainingLives() <= 0) {
                 gameFinished = true;
             }
@@ -139,12 +133,16 @@ public class GameServiceImpl implements GameService {
         if (gameFinished) {
             session.setFinished(true);
             
+            // 🚨 YENİ VE AKILLI USTALIK PUANI KAYDEDİCİ (MODA GÖRE AYIRIR)
             String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
+            String currentMode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
+            String mapKey = currentCategory + "_" + currentMode; // Örn: "Avrupa_COUNTRY_TO_CAPITAL"
+
             int currentScore = session.getCurrentScore();
-            int bestScore = user.getCategoryBestScores().getOrDefault(currentCategory, 0);
+            int bestScore = user.getCategoryBestScores().getOrDefault(mapKey, 0);
             
             if (currentScore > bestScore) {
-                user.getCategoryBestScores().put(currentCategory, currentScore);
+                user.getCategoryBestScores().put(mapKey, currentScore); // Artık puanlar ezilmeyecek!
             }
 
             if (session.getCurrentScore() > user.getMaxWinStreak()) {
@@ -163,7 +161,6 @@ public class GameServiceImpl implements GameService {
 
         gameSessionRepository.save(session);
         
-        // Yeni soruyu üret
         GameStatusResponse response = generateNextQuestion(session);
         response.setLastCorrectAnswer(previousCorrectAnswer);
         response.setLastAnswerCorrect(isCorrect);
@@ -175,7 +172,6 @@ public class GameServiceImpl implements GameService {
         Question question = null;
 
         if (isDaily) {
-            // 🚨 GÜNÜN GÖREVİ: O günkü sabit 10 soruyu al ve sıradakini bul
             List<Question> dailyQuestions = getDailyQuestions();
             for (Question q : dailyQuestions) {
                 if (!session.getAskedQuestionIds().contains(q.getId())) {
@@ -184,28 +180,29 @@ public class GameServiceImpl implements GameService {
                 }
             }
         } else {
-            // NORMAL MOD: Rastgele soru getir
             Set<Long> askedIds = session.getAskedQuestionIds().isEmpty() ? Set.of(-1L) : session.getAskedQuestionIds();
             String category = (session.getCategory() == null || session.getCategory().isEmpty()) ? "Dünya" : session.getCategory();
             question = questionRepository.findRandomQuestionByCategory(category, askedIds).orElse(null);
         }
 
-        // KATEGORİYİ BİTİRME (KAZANMA) DURUMU
         if (question == null) {
             session.setFinished(true); 
             User user = session.getUser();
             
-            // Eğer normal modsa ve tüm sorular bittiyse bonus ekle
             if (!isDaily) {
                 session.setCurrentScore(session.getCurrentScore() + 5000);
             }
 
+            // 🚨 KATEGORİ BİTİRİLDİĞİNDE DE MODA GÖRE KAYDEDİYORUZ
             String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
+            String currentMode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
+            String mapKey = currentCategory + "_" + currentMode;
+
             int currentScore = session.getCurrentScore();
-            int bestScore = user.getCategoryBestScores().getOrDefault(currentCategory, 0);
+            int bestScore = user.getCategoryBestScores().getOrDefault(mapKey, 0);
             
             if (currentScore > bestScore) {
-                user.getCategoryBestScores().put(currentCategory, currentScore);
+                user.getCategoryBestScores().put(mapKey, currentScore);
             }
 
             if (currentScore > user.getMaxWinStreak()) {
@@ -214,7 +211,7 @@ public class GameServiceImpl implements GameService {
             user.setTotalGamesPlayed(user.getTotalGamesPlayed() + 1);
             
             if (isDaily) {
-                user.setLastDailyDate(LocalDate.now()); // Günlük görev başarıyla bitti
+                user.setLastDailyDate(LocalDate.now()); 
             }
             
             userRepository.save(user);
@@ -224,7 +221,6 @@ public class GameServiceImpl implements GameService {
             return buildResponse(session, msg, true);
         }
 
-        // 🚨 YENİ: Veritabanındaki Mode'u okuyup Başkent mi yoksa Ülke mi soracağımızı anlıyoruz
         boolean askForCapital = true;
         if (isDaily) {
             long seed = LocalDate.now().toEpochDay() + question.getId();
@@ -236,7 +232,7 @@ public class GameServiceImpl implements GameService {
             } else if ("CAPITAL_TO_COUNTRY".equals(mode)) {
                 askForCapital = false;
             } else {
-                askForCapital = Math.random() < 0.5; // MIXED (Rastgele)
+                askForCapital = Math.random() < 0.5; 
             }
         }
 
@@ -263,10 +259,9 @@ public class GameServiceImpl implements GameService {
 
         GameStatusResponse response = buildResponse(session, "Yeni Soru!", false);
         response.setCountryName(question.getCountryName());
-        response.setQuestionText(questionText); // 🚨 Soruyu da yolluyoruz
+        response.setQuestionText(questionText); 
         response.setOptions(options);
         
-        // 🚨 Sadece Günlük Görevde kaçıncı soruda olduğunu göstermek için ufak bir hile:
         if (isDaily) {
             response.setMessage("Günün Görevi: Soru " + (session.getAskedQuestionIds().size() + 1) + "/10");
         }
@@ -274,20 +269,17 @@ public class GameServiceImpl implements GameService {
         return response;
     }
 
-    // 🚨 YENİ EKLENDİ: O güne özel HERKES İÇİN AYNI olan 10 soruyu belirler
     private List<Question> getDailyQuestions() {
-        List<Question> allQuestions = questionRepository.findAllByOrderByCountryNameAsc(); // Tüm soruları sabit sırada al
-        long seed = LocalDate.now().toEpochDay(); // Bugünün tarihini şifre (seed) yap
-        Collections.shuffle(allQuestions, new Random(seed)); // Rastgele ama herkes için aynı dizilim
-        return allQuestions.stream().limit(10).collect(Collectors.toList()); // Sadece ilk 10'unu al
+        List<Question> allQuestions = questionRepository.findAllByOrderByCountryNameAsc(); 
+        long seed = LocalDate.now().toEpochDay(); 
+        Collections.shuffle(allQuestions, new Random(seed)); 
+        return allQuestions.stream().limit(10).collect(Collectors.toList()); 
     }
 
-    // 🚨 YENİ EKLENDİ: Skor hedefini (Rekor) ve Kalan Soru Sayısını hesaplar
     private void calculateGhostAndQuestions(GameSession session, GameStatusResponse response) {
         String category = session.getCategory() == null ? "Dünya" : session.getCategory();
         boolean isDaily = "DailyChallenge".equals(category);
         
-        // 1. KALAN SORU HESAPLAMA
         int totalQ;
         if (isDaily) {
             totalQ = 10;
@@ -304,12 +296,12 @@ public class GameServiceImpl implements GameService {
         response.setTotalQuestions(totalQ);
         response.setRemainingQuestions(remainingQ);
 
-        // 2. REKOR PUANI HESAPLAMA
         List<Object[]> topUsers;
         if (isDaily) {
             topUsers = gameSessionRepository.findTop10DailyScores(category, LocalDate.now().atStartOfDay(), PageRequest.of(0, 1));
         } else {
-            topUsers = userRepository.findTop10ByCategory(category, PageRequest.of(0, 1));
+            String mode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
+            topUsers = gameSessionRepository.findTop10ByCategoryAndMode(category, mode, PageRequest.of(0, 1));
         }
 
         if (topUsers != null && !topUsers.isEmpty() && topUsers.get(0)[1] != null && ((Integer)topUsers.get(0)[1]) > 0) {
@@ -330,7 +322,6 @@ public class GameServiceImpl implements GameService {
         response.setMessage(message);
         response.setFinished(isFinished);
         
-        // 🚨 YENİ EKLENDİ: DTO'ya Hayalet ve Soru verilerini set et
         calculateGhostAndQuestions(session, response);
         
         return response;

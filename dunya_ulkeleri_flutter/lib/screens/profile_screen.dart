@@ -75,7 +75,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // 🚨 YENİ VE AKILLI ANALİZ ALGORİTMASI 🚨
-  String _generateAnalysisText(Map<String, int> scores) {
+  String _generateAnalysisText(Map<String, dynamic> scores) {
+    // 🚨 dynamic yapıldı çünkü gelen map type farklı olabilir
     final allCategories = [
       "Avrupa",
       "Asya",
@@ -89,11 +90,16 @@ class ProfileScreen extends StatelessWidget {
     List<String> weak = [];
 
     for (var cat in allCategories) {
-      int score = scores[cat] ?? 0;
+      // 🚨 SİHİRLİ BİRLEŞTİRME BURADA: 3 modu da toplayıp Kıta Ustalığını buluyoruz
+      int score =
+          (scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0) +
+          (scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0) +
+          (scores["${cat}_MIXED"] ?? 0);
+
       if (score == 0) {
         unplayed.add(cat);
-      } else if (score < 10000) {
-        // 20.000 puan hedefine göre 10.000 altını zayıf kabul ediyoruz
+      } else if (score < 30000) {
+        // 60.000 puan hedefine göre 30.000 altını zayıf kabul ediyoruz
         weak.add(cat);
       }
     }
@@ -108,7 +114,7 @@ class ProfileScreen extends StatelessWidget {
     // Zayıf olduğu kıtalar varsa
     if (weak.isNotEmpty) {
       message +=
-          "İstatistiklerine göre ${weak.join(", ")} bölgelerinde biraz zorlanıyorsun. Puanlarını artırmak için sözlükten bu kıtalara çalışabilirsin.\n\n";
+          "İstatistiklerine göre ${weak.join(", ")} bölgelerinde biraz zorlanıyorsun. Farklı oyun modlarında (Örn: Başkentten Ülkeye) pratik yaparak ustalık puanını artırabilirsin.\n\n";
     }
 
     // Hiç oynamadığı kıtalar varsa
@@ -120,7 +126,7 @@ class ProfileScreen extends StatelessWidget {
     // Her yerde mükemmelse
     if (weak.isEmpty && unplayed.isEmpty) {
       message =
-          "Harika bir iş çıkarıyorsun! Bütün kıtalarda gayet başarılısın, rekorlarını tazelemeye devam et!";
+          "Harika bir iş çıkarıyorsun! Bütün kıtalarda ve tüm modlarda gayet başarılısın, rekorlarını tazelemeye devam et!";
     }
 
     return message.trim();
@@ -146,7 +152,9 @@ class ProfileScreen extends StatelessWidget {
           }
 
           final profile = snapshot.data!['profile'] as UserProfileModel;
-          final scores = snapshot.data!['scores'] as Map<String, int>;
+          final scores =
+              snapshot.data!['scores']
+                  as Map<String, dynamic>; // 🚨 int yerine dynamic
 
           // Tarihi daha güzel göstermek için parçalayabiliriz
           final date = DateTime.parse(profile.creationDate);
@@ -155,7 +163,7 @@ class ProfileScreen extends StatelessWidget {
           // --- 🏆 LİG / RÜTBE HESAPLAMA ---
           int totalScore = scores.values.fold(
             0,
-            (sum, item) => sum + item,
+            (sum, item) => sum + (item as int), // 🚨 item as int eklendi
           ); // Tüm rekorların toplamı
 
           String tierName;
@@ -347,9 +355,14 @@ class ProfileScreen extends StatelessWidget {
                   "Güney Amerika",
                   "Okyanusya",
                 ].map((cat) {
-                  int score = scores[cat] ?? 0;
-                  // Hedef skoru 20.000 puan olarak varsayıyoruz
-                  double percentage = (score / 20000).clamp(0.0, 1.0);
+                  // 🚨 TÜM MODLARIN SKORUNU BİRLEŞTİREREK EKRANA YAZIYORUZ
+                  int score =
+                      (scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0) +
+                      (scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0) +
+                      (scores["${cat}_MIXED"] ?? 0);
+
+                  // Hedef skoru her mod için 20.000, toplamda 60.000 puan olarak varsayıyoruz
+                  double percentage = (score / 60000).clamp(0.0, 1.0);
 
                   Color barColor = Colors.red;
                   if (percentage >= 0.8)
