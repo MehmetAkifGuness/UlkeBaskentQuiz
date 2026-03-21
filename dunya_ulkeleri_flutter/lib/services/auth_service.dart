@@ -4,7 +4,7 @@ import '../models/auth_model.dart';
 
 class AuthService {
   // Eski hali: "http://10.0.2.2:8080/api/game"
-  final String baseUrl = "http://10.254.198.163:8080/api/auth";
+  final String baseUrl = "http://10.204.181.163:8080/api/auth";
 
   // KAYIT
   Future<AuthModel> register(

@@ -41,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setVerified(false);
         user.setGuest(false);
+        user.setAvatarId(1);
 
         String code = generateCode();
         user.setVerificationCode(code);
@@ -77,6 +78,7 @@ public class AuthServiceImpl implements AuthService {
         guestUser.setUsername(guestUsername);
         guestUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); 
         guestUser.setGuest(true);
+        guestUser.setAvatarId(1);
         guestUser.setVerified(true);
         userRepository.save(guestUser);
 

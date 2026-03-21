@@ -4,9 +4,10 @@ class UserProfileModel {
   final String creationDate;
   final int maxWinStreak;
   final int totalGamesPlayed;
-
-  // 🚨 YENİ EKLENEN DEĞİŞKEN (Bugün görevi yaptı mı?)
   final bool hasPlayedDaily;
+
+  // 🚨 YENİ EKLENEN
+  final int avatarId;
 
   UserProfileModel({
     required this.username,
@@ -14,7 +15,8 @@ class UserProfileModel {
     required this.creationDate,
     required this.maxWinStreak,
     required this.totalGamesPlayed,
-    required this.hasPlayedDaily, // 🚨 CONSTRUCTOR'A EKLENDİ
+    required this.hasPlayedDaily,
+    required this.avatarId, // 🚨 CONSTRUCTOR'A EKLENDİ
   });
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
@@ -24,9 +26,8 @@ class UserProfileModel {
       creationDate: json['creationDate'] ?? '',
       maxWinStreak: json['maxWinStreak'] ?? 0,
       totalGamesPlayed: json['totalGamesPlayed'] ?? 0,
-
-      // 🚨 JSON'DAN OKUNAN DEĞER (Eğer backendden null gelirse varsayılan olarak false yap)
       hasPlayedDaily: json['hasPlayedDaily'] ?? false,
+      avatarId: json['avatarId'] ?? 1, // 🚨 EĞER BOŞ GELİRSE 1. AVATARI VER
     );
   }
 }

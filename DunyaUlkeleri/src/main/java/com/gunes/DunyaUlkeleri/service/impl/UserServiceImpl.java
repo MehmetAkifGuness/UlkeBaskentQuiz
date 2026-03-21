@@ -27,6 +27,7 @@ public class UserServiceImpl implements UserService {
             UserProfileResponse response = new UserProfileResponse();
             response.setUsername(user.getUsername());
             response.setEmail(user.getEmail());
+            response.setAvatarId(user.getAvatarId());
             response.setCreationDate(user.getCreationDate());
             response.setMaxWinStreak(user.getMaxWinStreak());
             response.setTotalGamesPlayed(user.getTotalGamesPlayed());
@@ -36,5 +37,14 @@ public class UserServiceImpl implements UserService {
         }
         
         return null;
+    }
+
+    @Override
+    public void updateAvatar(String username, Integer avatarId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        
+        user.setAvatarId(avatarId);
+        userRepository.save(user);
     }
 }

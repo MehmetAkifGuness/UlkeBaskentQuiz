@@ -8,8 +8,22 @@ import 'forgot_password_dialog.dart'; // 🚨 Şifre yenileme popup'ı EKLENDİ
 import 'dictionary_screen.dart'; // 🚨 Sözlüğe yönlendirme yapabilmek için eklendi
 import 'mistake_screen.dart'; // 🚨 YENİ: Hata defterine yönlendirme yapabilmek için EKLENDİ
 
-class ProfileScreen extends StatelessWidget {
+// 🚨 YENİLİK: Ekranın anlık güncellenebilmesi için StatefulWidget yapıldı
+class ProfileScreen extends StatefulWidget {
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
+  late Future<Map<String, dynamic>> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    _profileFuture = _fetchProfileData(token!);
+  }
 
   // Hem profil bilgilerini hem de kategori skorlarını aynı anda çekmek için özel bir metod
   Future<Map<String, dynamic>> _fetchProfileData(String token) async {
@@ -71,6 +85,86 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // --- 🚨 YENİLİK: AVATAR SEÇİM MENÜSÜ 🚨 ---
+  void _showAvatarSelection(BuildContext context, String token) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            children: [
+              Text(
+                "Profil Fotoğrafı Seç",
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 15),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4, // Yanyana 4 resim
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                  ),
+                  itemCount: 15, // 15 adet avatar resmi olduğunu varsayıyoruz
+                  itemBuilder: (context, index) {
+                    int currentId = index + 1;
+                    return GestureDetector(
+                      onTap: () async {
+                        Navigator.pop(context); // Menüyü kapat
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Avatar güncelleniyor..."),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+
+                        bool success = await _userService.updateAvatar(
+                          token,
+                          currentId,
+                        );
+
+                        if (success) {
+                          setState(() {
+                            // Ekranı yeni verilerle güncelle
+                            _profileFuture = _fetchProfileData(token);
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Hata oluştu! Lütfen tekrar deneyin.",
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: CircleAvatar(
+                        backgroundColor: Colors.grey[800],
+                        backgroundImage: AssetImage(
+                          'assets/avatars/avatar_$currentId.png',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -139,7 +233,7 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text("Profilim & Analiz"), centerTitle: true),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _fetchProfileData(authProvider.token!),
+        future: _profileFuture, // 🚨 YENİLİK: State'deki Future'ı dinliyoruz
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -213,12 +307,37 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: tierColor.withOpacity(
-                    0.2,
-                  ), // Rütbeye göre renk değişir
-                  child: Icon(Icons.person, size: 50, color: tierColor),
+                // 🚨 YENİLİK: Düz ikon yerine düzenlenebilir Avatar tasarımı eklendi
+                Center(
+                  child: GestureDetector(
+                    onTap: () =>
+                        _showAvatarSelection(context, authProvider.token!),
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 55,
+                          backgroundColor: tierColor.withOpacity(0.3),
+                          backgroundImage: AssetImage(
+                            'assets/avatars/avatar_${profile.avatarId}.png',
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.amber,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black, width: 2),
+                          ),
+                          child: Icon(
+                            Icons.edit,
+                            size: 20,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 SizedBox(height: 20),
                 Text(

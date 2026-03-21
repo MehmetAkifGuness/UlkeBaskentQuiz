@@ -95,4 +95,11 @@ public class UserController {
         userRepository.save(user); 
         return ResponseEntity.ok("Hata başarıyla silindi.");
     }
+
+    @PutMapping("/avatar/{avatarId}")
+    public ResponseEntity<String> updateAvatar(@PathVariable Integer avatarId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.updateAvatar(username, avatarId);
+        return ResponseEntity.ok("Avatar başarıyla güncellendi.");
+    }
 }

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 
 class UserService {
-  final String baseUrl = "http://10.254.198.163:8080/api/user";
+  final String baseUrl = "http://10.204.181.163:8080/api/user";
 
   Future<UserProfileModel?> getUserProfile(String token) async {
     final response = await http.get(
@@ -94,5 +94,22 @@ class UserService {
     } catch (e) {
       return false;
     }
+  }
+
+  // --- 🚨 AVATAR GÜNCELLEME SERVİSİ ---
+  Future<bool> updateAvatar(String token, int avatarId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/avatar/$avatarId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      }
+    } catch (e) {
+      print("Avatar güncellenemedi: $e");
+    }
+    return false;
   }
 }

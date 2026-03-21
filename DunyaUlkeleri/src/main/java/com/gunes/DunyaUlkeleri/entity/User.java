@@ -50,6 +50,9 @@ public class User {
 
     private String resetCode;
 
+    @Column(columnDefinition = "integer default 1")
+    private Integer avatarId = 1;
+
     private LocalDate lastDailyDate;
 
     @Column(updatable = false)
