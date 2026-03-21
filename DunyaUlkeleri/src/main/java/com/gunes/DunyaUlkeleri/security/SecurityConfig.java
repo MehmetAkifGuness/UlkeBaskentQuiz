@@ -33,7 +33,8 @@ public class SecurityConfig {
                 
                 // YENİ VE GÜVENLİ KISIM: Sadece izin verdiğimiz yerlerden gelen istekler kabul edilecek
                 corsConfiguration.setAllowedOrigins(java.util.List.of(
-                    "http://localhost:3000", // Web için test adresi
+                    "http://localhost:3000",
+                    "http://10.254.198.163:8080/api/game", // Web için test adresi
                     "http://10.0.2.2:8080"   // Android Emülatör adresi
                 ));
                 

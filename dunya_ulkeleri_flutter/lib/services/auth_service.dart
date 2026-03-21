@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/auth_model.dart';
 
 class AuthService {
-  final String baseUrl = "http://10.0.2.2:8080/api/auth";
+  // Eski hali: "http://10.0.2.2:8080/api/game"
+  final String baseUrl = "http://10.254.198.163:8080/api/auth";
 
   // KAYIT
   Future<AuthModel> register(
@@ -31,18 +32,24 @@ class AuthService {
   }
 
   // GİRİŞ
+  // GİRİŞ
   Future<AuthModel> login(String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 10)); // 10 saniye sonra durdur
 
-    // YENİ GÜVENLİK KONTROLÜ
-    if (response.statusCode == 200) {
-      return AuthModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception(response.body);
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception(response.body);
+      }
+    } catch (e) {
+      throw Exception("Bağlantı zaman aşımına uğradı veya sunucu kapalı!");
     }
   }
 

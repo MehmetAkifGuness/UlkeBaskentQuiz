@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/game_status_model.dart';
 
 class GameService {
-  final String baseUrl = "http://10.0.2.2:8080/api/game";
+  final String baseUrl = "http://10.254.198.163:8080/api/game";
 
   Future<GameStatusModel> startGame(
     String token,

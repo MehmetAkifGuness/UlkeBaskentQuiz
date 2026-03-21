@@ -1,9 +1,10 @@
+// lib/screens/game_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/game_provider.dart';
-// ignore: unused_import
-import '../models/game_status_model.dart';
+import '../theme/app_theme.dart';
+import '../widgets/answer_button.dart';
 
 class GameScreen extends StatefulWidget {
   final String category;
@@ -39,17 +40,20 @@ class _GameScreenState extends State<GameScreen> {
     final status = gameProvider.status;
 
     if (gameProvider.isLoading && status == null) {
-      return Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryBlue),
+        ),
       );
     }
 
     if (status == null) {
       return Scaffold(
-        appBar: AppBar(title: Text("Hata")),
-        body: Center(
+        appBar: AppBar(title: const Text("Hata")),
+        body: const Center(
           child: Text(
             "Oyun yüklenirken hata oluştu veya bu kategoride soru yok.",
+            style: TextStyle(color: AppColors.textDark),
           ),
         ),
       );
@@ -63,7 +67,7 @@ class _GameScreenState extends State<GameScreen> {
           isDaily
               ? "Skor: ${status.currentScore} | 🎯 Günün Görevi"
               : "Skor: ${status.currentScore} | ❤️ Can: ${status.remainingLives}",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
@@ -77,181 +81,228 @@ class _GameScreenState extends State<GameScreen> {
             )
           : Stack(
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      status.message ?? "Oyun Devam Ediyor...",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.amber,
-                        fontWeight: FontWeight.bold,
-                      ),
+                // YENİ: SafeArea ve Scroll olmayan, esnek Column yapısı
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12.0,
                     ),
-                    SizedBox(height: 20),
-
-                    // ⏱️ --- KRONOMETRE UI ---
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Colors.amber, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.amber.withOpacity(0.3),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.timer, color: Colors.amber, size: 28),
-                          SizedBox(width: 10),
-                          Text(
-                            gameProvider.formattedTime,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Courier',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                    // 👻 --- AKILLI HAYALET SÜRÜCÜ BÖLÜMÜ ---
-                    if (status.ghostScore != null &&
-                        status.totalQuestions != null)
-                      // KİMSE OYNAMAMIŞSA: Motive edici mesaj
-                      if (status.ghostScore == 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                            vertical: 10.0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Kalan Soru: ${status.remainingQuestions}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 1. ÜST KISIM (Mesaj, Timer ve Bar)
+                        Column(
+                          children: [
+                            Text(
+                              status.message ?? "Oyun Devam Ediyor...",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.primaryBlue,
+                                fontWeight: FontWeight.bold,
                               ),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.emoji_events,
-                                    color: Colors.amber,
-                                    size: 24,
+                            ),
+                            const SizedBox(height: 12),
+
+                            // ⏱️ Kronometre UI
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
+                                  color: AppColors.borderBlueish,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryBlue.withOpacity(
+                                      0.1,
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
                                   ),
-                                  SizedBox(width: 8),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.timer_outlined,
+                                    color: AppColors.primaryBlue,
+                                    size: 26,
+                                  ),
+                                  const SizedBox(width: 8),
                                   Text(
-                                    "İlk rekoru sen kır!",
-                                    style: TextStyle(
-                                      color: Colors.amber,
+                                    gameProvider.formattedTime,
+                                    style: const TextStyle(
+                                      fontSize: 26,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                      color: AppColors.textDark,
+                                      fontFamily: 'Courier',
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        )
-                      else
-                        // REKOR VARSA: İkili Barı Göster
-                        ScoreProgressWidget(
-                          ghostName: status.ghostName!,
-                          ghostScore: status.ghostScore!,
-                          currentScore: status.currentScore,
-                          totalQuestions: status.totalQuestions!,
-                          remainingQuestions: status.remainingQuestions ?? 0,
-                        ),
-
-                    SizedBox(height: 20),
-
-                    // SORU METNİ
-                    Text(
-                      status.questionText ??
-                          "${status.countryName} ülkesinin başkenti neresidir?",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 30),
-
-                    // ŞIKLAR
-                    ...(status.options ?? []).map((option) {
-                      Color? buttonColor;
-                      if (gameProvider.showResult &&
-                          gameProvider.correctAnswer != null) {
-                        if (option == gameProvider.correctAnswer) {
-                          buttonColor = Colors.green;
-                        } else if (option == gameProvider.selectedAnswer) {
-                          buttonColor = Colors.red;
-                        }
-                      }
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 6,
-                        ),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: Size(double.infinity, 55),
-                            backgroundColor:
-                                buttonColor ?? Colors.blueGrey[800],
-                            disabledBackgroundColor: buttonColor,
-                            disabledForegroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
                             ),
-                          ),
-                          onPressed:
-                              (gameProvider.isLoading ||
-                                  gameProvider.showResult)
-                              ? null
-                              : () => gameProvider.sendGuess(
-                                  authProvider.token!,
-                                  option,
+                            const SizedBox(height: 16),
+
+                            // 👻 Akıllı Hayalet / Soru İlerlemesi
+                            if (status.ghostScore != null &&
+                                status.totalQuestions != null)
+                              if (status.ghostScore == 0)
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Kalan Soru: ${status.remainingQuestions}",
+                                      style: const TextStyle(
+                                        color: AppColors.textDark,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.emoji_events,
+                                          color: AppColors.yellow,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          "İlk rekoru sen kır!",
+                                          style: TextStyle(
+                                            color: AppColors.yellow,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                )
+                              else
+                                ScoreProgressWidget(
+                                  ghostName: status.ghostName!,
+                                  ghostScore: status.ghostScore!,
+                                  currentScore: status.currentScore,
+                                  totalQuestions: status.totalQuestions!,
+                                  remainingQuestions:
+                                      status.remainingQuestions ?? 0,
                                 ),
-                          child: Text(
-                            option,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          ],
+                        ),
+
+                        // YENİ: Soru Kartını ekranın ortasında kalan boşluğa yayarak ortalayan yapı
+                        Expanded(
+                          child: Center(
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppColors.borderLight,
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize
+                                    .min, // Kart sadece içeriği kadar büyür
+                                children: [
+                                  const Icon(
+                                    Icons.public,
+                                    color: AppColors.brown,
+                                    size: 44,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    status.questionText ??
+                                        "${status.countryName} ülkesinin başkenti neresidir?",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ],
+
+                        // 3. ALT KISIM (Şıklar - Sabit olarak en altta durur)
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: (status.options ?? []).map((option) {
+                            AnswerState state = AnswerState.normal;
+
+                            if (gameProvider.showResult) {
+                              if (option == gameProvider.correctAnswer) {
+                                state = AnswerState.correct;
+                              } else if (option ==
+                                  gameProvider.selectedAnswer) {
+                                state = AnswerState.wrong;
+                              } else {
+                                state = AnswerState.disabled;
+                              }
+                            }
+
+                            return AnswerButton(
+                              text: option,
+                              state: state,
+                              onPressed: () {
+                                if (!gameProvider.isLoading &&
+                                    !gameProvider.showResult) {
+                                  gameProvider.sendGuess(
+                                    authProvider.token!,
+                                    option,
+                                  );
+                                }
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ), // Ekranın en altında minik bir nefes boşluğu
+                      ],
+                    ),
+                  ),
                 ),
-                // ignore: unnecessary_null_comparison
+
+                // Yüklenme (Loading) Göstergesi
                 if (gameProvider.isLoading && status != null)
                   Center(
                     child: Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                          ),
+                        ],
                       ),
-                      child: CircularProgressIndicator(color: Colors.amber),
+                      child: const CircularProgressIndicator(
+                        color: AppColors.primaryBlue,
+                      ),
                     ),
                   ),
               ],
@@ -276,60 +327,67 @@ class _GameScreenState extends State<GameScreen> {
           Icon(
             isVictory ? Icons.emoji_events : Icons.videogame_asset_off,
             size: 100,
-            color: isVictory ? Colors.amber : Colors.red,
+            color: isVictory ? AppColors.yellow : AppColors.errorRed,
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Text(
             isDaily
                 ? "GÖREV TAMAMLANDI!"
                 : (isVictory ? "MUHTEŞEM ZAFER!" : "OYUN BİTTİ!"),
             style: TextStyle(
               fontSize: 32,
-              color: isVictory ? Colors.amber : Colors.red,
+              color: isVictory ? AppColors.yellow : AppColors.errorRed,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
           if (message != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
                 message,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.white70),
+                style: const TextStyle(fontSize: 18, color: AppColors.textDark),
               ),
             ),
-          SizedBox(height: 30),
+          const SizedBox(height: 30),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
             decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.2),
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.amber, width: 2),
+              border: Border.all(color: AppColors.yellow, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.yellow.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Text(
               "Skorun: $score",
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.amber,
+                color: AppColors.yellow,
               ),
             ),
           ),
-          SizedBox(height: 40),
+          const SizedBox(height: 40),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.black,
-              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+              backgroundColor: AppColors.primaryBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
             ),
-            icon: Icon(Icons.home),
-            label: Text(
+            icon: const Icon(Icons.home, color: AppColors.white),
+            label: const Text(
               "Ana Sayfaya Dön",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.white,
+              ),
             ),
             onPressed: () {
               Provider.of<GameProvider>(context, listen: false).resetGame();
@@ -342,7 +400,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-// 🏁 --- YENİ: İKİLİ İLERLEME ÇUBUĞU (SORU VE SKOR) --- 🏃
+// 🏁 --- İKİLİ İLERLEME ÇUBUĞU --- 🏃
 class ScoreProgressWidget extends StatelessWidget {
   final String ghostName;
   final int ghostScore;
@@ -361,14 +419,12 @@ class ScoreProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. SORU İLERLEMESİ HESAPLARI
     int answeredQuestions = totalQuestions - remainingQuestions;
     double questionProgress = totalQuestions > 0
         ? (answeredQuestions / totalQuestions)
         : 0.0;
     if (questionProgress > 1.0) questionProgress = 1.0;
 
-    // 2. SKOR İLERLEMESİ HESAPLARI (Maksimum Olası Skor: Soru Sayısı * 2000)
     int maxPossibleScore = totalQuestions * 2000;
     double scoreProgress = maxPossibleScore > 0
         ? (currentScore / maxPossibleScore)
@@ -380,156 +436,151 @@ class ScoreProgressWidget extends StatelessWidget {
     if (scoreProgress > 1.0) scoreProgress = 1.0;
     if (ghostProgress > 1.0) ghostProgress = 1.0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // --- 1. BAR: SORU DURUMU ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Soru İlerlemesi",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // --- 1. BAR: SORU DURUMU ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Soru İlerlemesi",
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
-              Text(
-                "$answeredQuestions / $totalQuestions",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
+            ),
+            Text(
+              "$answeredQuestions / $totalQuestions",
+              style: const TextStyle(
+                color: AppColors.primaryBlue,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
-            ],
-          ),
-          SizedBox(height: 5),
-          Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              Container(
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white24),
-                ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Container(
+              height: 10,
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: BorderRadius.circular(10),
               ),
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.0, end: questionProgress),
-                duration: Duration(milliseconds: 500),
-                curve: Curves.easeOut,
-                builder: (context, value, child) {
-                  return FractionallySizedBox(
-                    widthFactor: value > 0.0 ? value : 0.0,
-                    child: Container(
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+            ),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: questionProgress),
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return FractionallySizedBox(
+                  widthFactor: value > 0.0 ? value : 0.0,
+                  child: Container(
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: AppColors.successGreen,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                },
-              ),
-            ],
-          ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
 
-          SizedBox(height: 15),
+        const SizedBox(height: 12),
 
-          // --- 2. BAR: SKOR VE HAYALET DURUMU ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Sen ($currentScore Puan)",
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
+        // --- 2. BAR: SKOR VE HAYALET DURUMU ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Sen ($currentScore Puan)",
+              style: const TextStyle(
+                color: AppColors.primaryBlueHover,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
-              Text(
-                "👑 $ghostName ($ghostScore Puan)",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
+            ),
+            Text(
+              "👑 $ghostName ($ghostScore Puan)",
+              style: const TextStyle(
+                color: AppColors.brown,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
-            ],
-          ),
-          SizedBox(height: 5),
-          Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              // Arka Plan
-              Container(
-                height: 18,
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white24),
-                ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Container(
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: BorderRadius.circular(10),
               ),
-              // Senin Skorunun Çubuğu
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.0, end: scoreProgress),
-                duration: Duration(milliseconds: 800),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return FractionallySizedBox(
-                    widthFactor: value > 0.0 ? value : 0.0,
-                    child: Container(
-                      height: 18,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.orange, Colors.amber],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
+            ),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: scoreProgress),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return FractionallySizedBox(
+                  widthFactor: value > 0.0 ? value : 0.0,
+                  child: Container(
+                    height: 16,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          AppColors.lightBlueHover,
+                          AppColors.primaryBlue,
+                        ],
                       ),
-                      alignment: Alignment.centerRight,
-                      child: value > 0.05
-                          ? Padding(
-                              padding: const EdgeInsets.only(right: 2.0),
-                              child: Text("🏃", style: TextStyle(fontSize: 12)),
-                            )
-                          : null,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                },
-              ),
-              // Hayaletin Sabit Bayrağı (Rekor Konumu)
-              FractionallySizedBox(
-                widthFactor: ghostProgress,
-                child: Container(
-                  alignment: Alignment.centerRight,
-                  height: 18,
-                  child: OverflowBox(
-                    maxWidth: 30,
                     alignment: Alignment.centerRight,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 2,
-                          height: 18,
-                          color: Colors.redAccent,
-                        ),
-                        Text("🏁", style: TextStyle(fontSize: 12)),
-                      ],
-                    ),
+                    child: value > 0.05
+                        ? const Padding(
+                            padding: EdgeInsets.only(right: 2.0),
+                            child: Text("🏃", style: TextStyle(fontSize: 10)),
+                          )
+                        : null,
+                  ),
+                );
+              },
+            ),
+            /* FractionallySizedBox(
+              widthFactor: ghostProgress,
+              child: Container(
+                alignment: Alignment.centerRight,
+                height: 16,
+                child: OverflowBox(
+                  maxWidth: 30,
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 2,
+                        height: 16,
+                        color: AppColors.errorRed,
+                      ),
+                      const Text("🏁", style: TextStyle(fontSize: 10)),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
+            ),*/
+          ],
+        ),
+      ],
     );
   }
 }

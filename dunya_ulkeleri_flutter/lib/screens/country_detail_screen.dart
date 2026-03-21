@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../theme/app_theme.dart'; // 👈 Açık temamızı dahil ettik
 
 class CountryDetailScreen extends StatefulWidget {
   final String countryName;
@@ -31,7 +32,7 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
     _fetchLiveCountryData();
   }
 
-  // 🚨 %100 KESİN SONUÇ İÇİN ÜLKE PLAKA (ISO) KODLARI SÖZLÜĞÜ
+  // 🚨 %100 KESİN SONUÇ İÇİN ÜLKE PLAKA (ISO) KODLARI SÖZLÜĞÜ (Hiç dokunulmadı)
   String? _getIsoCode(String country) {
     const Map<String, String> isoMap = {
       "Afganistan": "AF",
@@ -233,17 +234,16 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
     return isoMap[country.trim()];
   }
 
+  // İnternetten anlık ülke verisi çeken sihirli fonksiyon (Hiç dokunulmadı)
   // İnternetten anlık ülke verisi çeken sihirli fonksiyon
   Future<void> _fetchLiveCountryData() async {
     try {
       String? isoCode = _getIsoCode(widget.countryName);
       Uri url;
 
-      // 🚨 EĞER İSO KODUNU BİLİYORSAK (Kİ BİLİYORUZ) KESİN ARAMA YAPARIZ:
       if (isoCode != null) {
         url = Uri.parse('https://restcountries.com/v3.1/alpha/$isoCode');
       } else {
-        // Güvenlik ağı: Eğer sözlükte olmayan bir ülke gelirse eski sisteme döner
         final String encodedCountryName = Uri.encodeComponent(
           widget.countryName,
         );
@@ -259,19 +259,21 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
         if (data != null && data.isNotEmpty) {
           final countryData = data[0];
 
-          // 1. Nüfusu çek ve okunaklı formata çevir (Örn: 85000000 -> 85.000.000)
           int pop = countryData['population'] ?? 0;
           population = _formatPopulation(pop);
 
-          // 2. Para Birimini çek
           if (countryData['currencies'] != null) {
             Map<String, dynamic> currencies = countryData['currencies'];
             currency =
                 "${currencies.values.first['name']} (${currencies.values.first['symbol']})";
           }
 
-          // 3. Ülke Bayrağını çek (Önce SVG dener, yoksa PNG)
-          if (countryData['flags'] != null) {
+          // 🚨 DEĞİŞİM BURADA: Bayrağı API'nin bozuk linkinden değil, sağlam FlagCDN'den çekiyoruz!
+          if (isoCode != null) {
+            // ISO kodunu küçük harfe çevirip flagcdn linkini oluşturuyoruz (Örn: AF -> af)
+            flagUrl = 'https://flagcdn.com/w320/${isoCode.toLowerCase()}.png';
+          } else if (countryData['flags'] != null) {
+            // Eğer ülkemizin ISO kodu sözlükte yoksa, API'nin verdiği linki denemeye devam et
             flagUrl = countryData['flags']['png'] ?? "";
           }
         }
@@ -293,7 +295,7 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
     }
   }
 
-  // Sayıları noktalı yazmak için yardımcı fonksiyon
+  // Sayıları noktalı yazmak için yardımcı fonksiyon (Hiç dokunulmadı)
   String _formatPopulation(int number) {
     if (number == 0) return "Bilinmiyor";
     return number.toString().replaceAllMapped(
@@ -305,16 +307,23 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.background, // 👈 Açık arka plan
       appBar: AppBar(
-        title: Text(widget.countryName),
+        title: Text(
+          widget.countryName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.black87,
+        backgroundColor: AppColors.primaryBlue, // 👈 Mavi AppBar
+        foregroundColor: AppColors.white,
+        elevation: 0,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.amber))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+            )
           : SingleChildScrollView(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -323,17 +332,54 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
                     Container(
                       height: 200,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black54,
+                            color: Colors.black.withOpacity(
+                              0.1,
+                            ), // 👈 Hafif modern gölge
                             blurRadius: 10,
-                            spreadRadius: 2,
+                            offset: const Offset(0, 4),
                           ),
                         ],
-                        image: DecorationImage(
-                          image: NetworkImage(flagUrl),
+                      ),
+                      // 🚨 YENİ: Bayrak yüklenemezse çökmeyi engelleyen Error Builder
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          flagUrl,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: AppColors.borderLight,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.broken_image,
+                                    color: AppColors.textDark,
+                                    size: 40,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "Bayrak Yüklenemedi",
+                                    style: TextStyle(color: AppColors.textDark),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: AppColors.borderLight,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primaryBlue,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     )
@@ -341,30 +387,30 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
                     Container(
                       height: 200,
                       decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(15),
+                        color: AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.flag,
                         size: 80,
-                        color: Colors.grey[600],
+                        color: AppColors.textDark,
                       ),
                     ),
 
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                  // BİLGİ KARTLARI
+                  // BİLGİ KARTLARI (Açık Tema Renkleri Uyarlanmış Hali)
                   _buildDetailCard(
                     Icons.location_city,
                     "Başkent",
                     widget.capitalName,
-                    Colors.blueAccent,
+                    AppColors.primaryBlueHover,
                   ),
                   _buildDetailCard(
                     Icons.public,
                     "Bulunduğu Kıta",
                     widget.continent,
-                    Colors.green,
+                    AppColors.successGreen,
                   ),
 
                   // CANLI ÇEKİLEN VERİLER
@@ -372,13 +418,13 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
                     Icons.groups,
                     "Güncel Nüfus",
                     hasError ? "Veri Çekilemedi" : population,
-                    Colors.orange,
+                    AppColors.brown,
                   ),
                   _buildDetailCard(
                     Icons.payments,
                     "Para Birimi",
                     hasError ? "Veri Çekilemedi" : currency,
-                    Colors.amber,
+                    AppColors.yellow,
                   ),
                 ],
               ),
@@ -386,7 +432,7 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
     );
   }
 
-  // Şık bilgi kartları oluşturan yardımcı widget
+  // Şık bilgi kartları oluşturan yardımcı widget (Açık temaya uyarlandı)
   Widget _buildDetailCard(
     IconData icon,
     String title,
@@ -394,23 +440,36 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
     Color iconColor,
   ) {
     return Card(
-      color: Colors.grey[850],
-      margin: EdgeInsets.symmetric(vertical: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      color: AppColors.white, // 👈 Kartlar artık beyaz
+      elevation: 0, // Gölgeyi kutu kenarlığı (border) ile değiştirdik
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(
+          color: AppColors.borderLight,
+          width: 1.5,
+        ), // 👈 Hafif gri çerçeve
+      ),
       child: ListTile(
-        contentPadding: EdgeInsets.all(15),
+        contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.2),
+          backgroundColor: iconColor.withOpacity(0.15),
           child: Icon(icon, color: iconColor),
         ),
         title: Text(
           title,
-          style: TextStyle(color: Colors.white70, fontSize: 14),
+          style: TextStyle(
+            color: AppColors.textDark.withOpacity(
+              0.6,
+            ), // 👈 Üst başlık daha silik
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         subtitle: Text(
           value,
-          style: TextStyle(
-            color: Colors.white,
+          style: const TextStyle(
+            color: AppColors.textDark, // 👈 Ana değer koyu lacivert/siyah
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),

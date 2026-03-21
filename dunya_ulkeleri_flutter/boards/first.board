@@ -1,0 +1,15 @@
+{
+    "showGrid": false,
+    "canvases": [
+        {
+            "x": 561.0,
+            "y": 497.0,
+            "w": 400.0,
+            "h": 402.0,
+            "widget": "const MainScreen()",
+            "deps": [
+                "lib/screens/main_screen.dart"
+            ]
+        }
+    ]
+}

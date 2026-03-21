@@ -3,8 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 
 class UserService {
-  final String baseUrl =
-      "http://10.0.2.2:8080/api/user"; // Kendi IP/Portuna göre ayarla
+  final String baseUrl = "http://10.254.198.163:8080/api/user";
 
   Future<UserProfileModel?> getUserProfile(String token) async {
     final response = await http.get(

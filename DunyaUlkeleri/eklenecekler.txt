@@ -5,3 +5,4 @@ profil kısmında yeşil yer düzenlenecek(şifremi değiştir kısmında eğer 
 sonsuz mod ekleme
 profil fotoğrafı ekleme
 ayarlar kısmını geliştirme
+puan ilerlemesinde bitiş çizgisi eklemsi yapılacak 
