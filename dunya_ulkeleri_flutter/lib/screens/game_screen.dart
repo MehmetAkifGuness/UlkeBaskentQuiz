@@ -286,6 +286,7 @@ class _GameScreenState extends State<GameScreen> {
                 ),
 
                 // Yüklenme (Loading) Göstergesi
+                // ignore: unnecessary_null_comparison
                 if (gameProvider.isLoading && status != null)
                   Center(
                     child: Container(
