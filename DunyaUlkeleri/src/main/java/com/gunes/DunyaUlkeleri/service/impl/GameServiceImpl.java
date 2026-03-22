@@ -49,8 +49,11 @@ public class GameServiceImpl implements GameService {
         session.setCategory(category); 
         session.setGameMode(mode); 
         
-        if ("DailyChallenge".equals(category)) {
+        // 🚨 YENİ EKLENDİ: Başlangıçta canları kesin olarak atıyoruz
+        if ("DailyChallenge".equals(category) || "ENDLESS".equals(mode)) {
             session.setRemainingLives(1); 
+        } else {
+            session.setRemainingLives(3);
         }
 
         session = gameSessionRepository.save(session); 
@@ -110,6 +113,9 @@ public class GameServiceImpl implements GameService {
                 if (previousQuestionId != null) {
                     session.getAskedQuestionIds().add(previousQuestionId);
                 }
+            } else if ("ENDLESS".equals(session.getGameMode())) {
+                // 🚨 YENİ EKLENDİ: Sonsuz modda 1 yanlış yapıldığı an can direkt 0 yapılır (Kesin elenme garantisi)
+                session.setRemainingLives(0);
             } else {
                 session.setRemainingLives(session.getRemainingLives() - 1);
             }
@@ -183,6 +189,13 @@ public class GameServiceImpl implements GameService {
             Set<Long> askedIds = session.getAskedQuestionIds().isEmpty() ? Set.of(-1L) : session.getAskedQuestionIds();
             String category = (session.getCategory() == null || session.getCategory().isEmpty()) ? "Dünya" : session.getCategory();
             question = questionRepository.findRandomQuestionByCategory(category, askedIds).orElse(null);
+
+            // 🚨 YENİ EKLENDİ: Gerçek Sonsuzluk (Eğer sorular tükenirse listeyi sıfırla ve yeniden soru seç)
+            if (question == null && "ENDLESS".equals(session.getGameMode())) {
+                session.getAskedQuestionIds().clear();
+                askedIds = Set.of(-1L);
+                question = questionRepository.findRandomQuestionByCategory(category, askedIds).orElse(null);
+            }
         }
 
         if (question == null) {

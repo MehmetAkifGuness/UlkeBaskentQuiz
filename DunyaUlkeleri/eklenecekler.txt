@@ -3,6 +3,11 @@
 başarımlar (uygulama bittikten sonra eklenecek)
 profil kısmında yeşil yer düzenlenecek(şifremi değiştir kısmında eğer bu bilgilere ait bir hesap varsa kısmı giriş ekranında oalcak ama profilde olmayacak)
 sonsuz mod ekleme
-profil fotoğrafı ekleme
 ayarlar kısmını geliştirme
 puan ilerlemesinde bitiş çizgisi eklemsi yapılacak 
+oyun bitince görev tamamlandı yazısının üstündeki o kırmızı işareti değiştirmem lazım
+hata defterin bomboş yazısı beyaza şuanda onun rengi değişecek 
+sözlük kısmında ülkelerin arka planındaki gri renk çok kötü duruyor o değişecek 
+oyuna bir kere girdikten sonra bir hesaptan oyun silinene , oyuncu çıkış yapana kadar veyahut sistem kapanana kadar açık kalmalı (yani ip adresten tanıma diyebiliriz yani)
+sayfa düzenleri iyileştirilecek
+yeni proje fikri (dünya üzerindeki hayvaların tutulduğu bir uygulama soru olmayacak sadece bilgilendirme amaçlı)

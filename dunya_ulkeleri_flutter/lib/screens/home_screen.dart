@@ -173,18 +173,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ? Center(child: CircularProgressIndicator(color: Colors.amber))
           : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              // 🚨 YENİ: Ekran taşmasın diye Column yerine ListView kullandık
+              child: ListView(
+                physics: BouncingScrollPhysics(),
                 children: [
+                  SizedBox(height: 30),
                   Text(
                     "Hoş Geldin, ${authProvider.username}!",
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 40),
+                  SizedBox(height: 30),
 
-                  // 🚨 YENİ EKLENEN GÜNÜN GÖREVİ KARTI 🚨
+                  // 🎯 GÜNÜN GÖREVİ KARTI (Eski Kodların Aynı)
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
@@ -204,11 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   builder: (context) => GameScreen(
                                     category: "DailyChallenge",
                                     mode: "MIXED",
-                                  ), // 🚨 YENİ: Günlük görev hep karışıktır
+                                  ),
                                 ),
-                              ).then(
-                                (_) => _checkDailyStatus(),
-                              ); // Dönüşte kartı güncelle
+                              ).then((_) => _checkDailyStatus());
                             },
                       child: Padding(
                         padding: const EdgeInsets.all(25.0),
@@ -251,9 +250,62 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
+                  SizedBox(height: 20), // Kartlar arası boşluk
+                  // ♾️ YENİ: SONSUZ MOD KARTI
+                  Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    color: Colors.redAccent[700], // İddialı bir kırmızı renk
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        // Kategori "Dünya", Mod "ENDLESS" olarak başlatıyoruz
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                GameScreen(category: "Dünya", mode: "ENDLESS"),
+                          ),
+                        ).then((_) => _checkDailyStatus());
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(25.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.all_inclusive,
+                              size: 60,
+                              color: Colors.white,
+                            ),
+                            SizedBox(height: 15),
+                            Text(
+                              "Sonsuz Mod",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              "Tek bir yanlışta oyun biter!\nBakalım ne kadar dayanacaksın?",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                   SizedBox(height: 30),
 
-                  // ESKİ OYUNA BAŞLA (SERBEST MOD) BUTONU
+                  // SERBEST MODDA OYNA BUTONU (Eski Kod)
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 20),
@@ -273,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     onPressed: () => _showCategorySelection(context),
                   ),
+                  SizedBox(height: 30),
                 ],
               ),
             ),

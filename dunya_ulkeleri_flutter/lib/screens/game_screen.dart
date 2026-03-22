@@ -39,6 +39,10 @@ class _GameScreenState extends State<GameScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final status = gameProvider.status;
 
+    bool isDaily = widget.category == "DailyChallenge";
+    // ignore: unused_local_variable
+    bool isEndless = widget.mode == "ENDLESS";
+
     if (gameProvider.isLoading && status == null) {
       return const Scaffold(
         body: Center(
@@ -59,13 +63,14 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
-    bool isDaily = widget.category == "DailyChallenge";
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
+          // 🚨 YENİ EKLENDİ: Sonsuz moddaysa kalpler yerine sonsuzluk işareti gösterilir
           isDaily
               ? "Skor: ${status.currentScore} | 🎯 Günün Görevi"
+              : isEndless
+              ? "Skor: ${status.currentScore} | ♾️ Sonsuz Mod"
               : "Skor: ${status.currentScore} | ❤️ Can: ${status.remainingLives}",
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
@@ -151,7 +156,55 @@ class _GameScreenState extends State<GameScreen> {
                             const SizedBox(height: 16),
 
                             // 👻 Akıllı Hayalet / Soru İlerlemesi
-                            if (status.ghostScore != null &&
+                            // 🚨 YENİ EKLENDİ: Sonsuz moddaysa kalan soru sayısı yazmaz, kırmızı bir uyarı çıkar.
+                            if (isEndless)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(
+                                    color: Colors.redAccent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: Colors.redAccent,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          "Tek Yanlışta Biter!",
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      "👑 Rekor: ${status.ghostScore == 0 ? 'Yok' : status.ghostScore}",
+                                      style: const TextStyle(
+                                        color: AppColors.brown,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (status.ghostScore != null &&
                                 status.totalQuestions != null)
                               if (status.ghostScore == 0)
                                 Row(
@@ -198,7 +251,7 @@ class _GameScreenState extends State<GameScreen> {
                           ],
                         ),
 
-                        // YENİ: Soru Kartını ekranın ortasında kalan boşluğa yayarak ortalayan yapı
+                        // Soru Kartını ekranın ortasında kalan boşluğa yayarak ortalayan yapı
                         Expanded(
                           child: Center(
                             child: Container(
@@ -321,6 +374,9 @@ class _GameScreenState extends State<GameScreen> {
         message != null &&
         (message.contains("TEBRİKLER") || message.contains("Tamamlandı"));
 
+    // 🚨 YENİ EKLENDİ: _buildGameOver içinde sonsuz mod değişkenini yakaladık
+    bool isEndless = widget.mode == "ENDLESS";
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -332,8 +388,11 @@ class _GameScreenState extends State<GameScreen> {
           ),
           const SizedBox(height: 20),
           Text(
+            // 🚨 YENİ EKLENDİ: Sonsuz mod için Game Over mesajı eklendi
             isDaily
                 ? "GÖREV TAMAMLANDI!"
+                : isEndless
+                ? "YANDIN! SONSUZ MOD BİTTİ"
                 : (isVictory ? "MUHTEŞEM ZAFER!" : "OYUN BİTTİ!"),
             style: TextStyle(
               fontSize: 32,
@@ -557,28 +616,6 @@ class ScoreProgressWidget extends StatelessWidget {
                 );
               },
             ),
-            /* FractionallySizedBox(
-              widthFactor: ghostProgress,
-              child: Container(
-                alignment: Alignment.centerRight,
-                height: 16,
-                child: OverflowBox(
-                  maxWidth: 30,
-                  alignment: Alignment.centerRight,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 2,
-                        height: 16,
-                        color: AppColors.errorRed,
-                      ),
-                      const Text("🏁", style: TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                ),
-              ),
-            ),*/
           ],
         ),
       ],
