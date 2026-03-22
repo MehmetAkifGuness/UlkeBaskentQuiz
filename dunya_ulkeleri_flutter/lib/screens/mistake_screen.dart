@@ -112,7 +112,7 @@ class _MistakeScreenState extends State<MistakeScreen> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black,
             ),
           ),
           SizedBox(height: 10),

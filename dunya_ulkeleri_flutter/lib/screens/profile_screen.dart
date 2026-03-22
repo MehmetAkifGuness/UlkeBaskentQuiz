@@ -1,3 +1,4 @@
+// lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -82,6 +83,129 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text("Kapat", style: TextStyle(color: Colors.amber)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 🚨 YENİ EKLENDİ: RÜTBE BİLGİ LİSTESİ POPUP'I ---
+  void _showTierInfoDialog(BuildContext context) {
+    // Rütbelerin özellikleri (Senin belirlediğin isimler ve puanlarla)
+    final List<Map<String, dynamic>> tiers = [
+      {
+        "name": "Turist",
+        "score": "0 - 99.999",
+        "color": Colors.green,
+        "icon": Icons.backpack,
+      },
+      {
+        "name": "Gezgin",
+        "score": "100.000 - 249.999",
+        "color": Colors.blue,
+        "icon": Icons.explore,
+      },
+      {
+        "name": "Yol Kaşifi",
+        "score": "250.000 - 499.999",
+        "color": Colors.yellow,
+        "icon": Icons.explore,
+      },
+      {
+        "name": "Dünya Yolcusu",
+        "score": "500.000 - 999.999",
+        "color": Colors.brown,
+        "icon": Icons.explore,
+      },
+      {
+        "name": "Kıta Fatihi",
+        "score": "1.000.000 - 4.999.999",
+        "color": Colors.cyanAccent,
+        "icon": Icons.explore,
+      },
+      {
+        "name": "Harita Ustası",
+        "score": "5.000.000 - 9.999.999",
+        "color": Colors.teal,
+        "icon": Icons.explore,
+      },
+      {
+        "name": "Küresel Zihin",
+        "score": "10.000.000 - 19.999.999",
+        "color": const Color.fromARGB(255, 1, 90, 90),
+        "icon": Icons.map,
+      },
+      {
+        "name": "Evrensel Bilge",
+        "score": "20.000.000+",
+        "color": Colors.amber,
+        "icon": Icons.school,
+      },
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.military_tech, color: Colors.amber, size: 28),
+            SizedBox(width: 10),
+            Text(
+              "Rütbe Sistemi",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          width: double.maxFinite,
+          height: 400, // Popup yüksekliği
+          child: ListView.builder(
+            itemCount: tiers.length,
+            itemBuilder: (context, index) {
+              final tier = tiers[index];
+              return Card(
+                color: Colors.grey[800],
+                margin: EdgeInsets.symmetric(vertical: 5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: tier['color'].withOpacity(0.2),
+                    child: Icon(tier['icon'], color: tier['color']),
+                  ),
+                  title: Text(
+                    tier['name'],
+                    style: TextStyle(
+                      color: tier['color'],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    "${tier['score']} Puan",
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Anladım",
+              style: TextStyle(
+                color: Colors.amber,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ),
         ],
       ),
@@ -273,27 +397,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             tierColor = Colors.blue;
             tierIcon = Icons.explore;
           } else if (totalScore < 500000) {
-            tierName = "Gezgin";
+            tierName = "Yol Kaşifi";
             tierColor = Colors.yellow;
             tierIcon = Icons.explore;
           } else if (totalScore < 1000000) {
-            tierName = "Gezgin";
+            tierName = "Dünya Yolcusu";
             tierColor = Colors.brown;
             tierIcon = Icons.explore;
           } else if (totalScore < 5000000) {
-            tierName = "Gezgin";
+            tierName = "Kıta Fatihi";
             tierColor = Colors.cyanAccent;
             tierIcon = Icons.explore;
           } else if (totalScore < 10000000) {
-            tierName = "Gezgin";
+            tierName = "Harita Ustası";
             tierColor = Colors.teal;
             tierIcon = Icons.explore;
           } else if (totalScore < 20000000) {
-            tierName = "Kâşif";
+            tierName = "Küresel Zihin";
             tierColor = const Color.fromARGB(255, 1, 90, 90);
             tierIcon = Icons.map;
           } else {
-            tierName = "Coğrafya Profesörü";
+            tierName = "Evrensel Bilge";
             tierColor = Colors.amber;
             tierIcon = Icons.school;
           }
@@ -347,31 +471,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 10),
 
-                // --- 🏆 RÜTBE ROZETİ ---
-                Center(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: tierColor.withOpacity(0.2),
-                      border: Border.all(color: tierColor, width: 2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(tierIcon, color: tierColor, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          "$tierName Seviyesi",
-                          style: TextStyle(
-                            color: tierColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                // --- 🏆 🚨 YENİ EKLENDİ: RÜTBE ROZETİ VE BİLGİ BUTONU ---
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tierColor.withOpacity(0.2),
+                        border: Border.all(color: tierColor, width: 2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(tierIcon, color: tierColor, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            "$tierName Seviyesi",
+                            style: TextStyle(
+                              color: tierColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    SizedBox(width: 10),
+                    // 🚨 Soru İşareti Butonu
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.help_outline, color: Colors.amber),
+                        tooltip: "Rütbeler ve Puanlar",
+                        onPressed: () => _showTierInfoDialog(context),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 30),
 
@@ -472,9 +615,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 SizedBox(height: 30),
 
-                // 🚨 YENİ EKLENEN: KITA USTALIK ÇUBUKLARI
+                // 🚨 YENİ GÜNCELLEME: Kıta Ustalık -> Ustalık Seviyeleri (Günlük ve Sonsuz dahil)
                 Text(
-                  "Kıta Ustalık Seviyeleri",
+                  "Ustalık Seviyeleri",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -482,6 +625,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 Divider(color: Colors.amber),
+
+                // 1. Önce "Günün Görevi" ve "Sonsuz Mod" için özel barları ekliyoruz
+                ...[
+                  {
+                    "title": "Günün Görevi",
+                    "icon": "🔥",
+                    "scoreKey": "DailyChallenge_MIXED",
+                    "max": 20000,
+                  },
+                  {
+                    "title": "Sonsuz Mod",
+                    "icon": "♾️",
+                    "scoreKey": "Dünya_ENDLESS",
+                    "max": 100000,
+                  }, // Sonsuz Modda hedef yüksek :)
+                ].map((specialCat) {
+                  int score = scores[specialCat["scoreKey"]] ?? 0;
+                  int maxScore = specialCat["max"] as int;
+                  double percentage = (score / maxScore).clamp(0.0, 1.0);
+
+                  // 🚨 YENİ EKLENDİ: Kıta renkleriyle (Avrupa vs) birebir aynı algoritma yapıldı
+                  Color barColor = Colors.red;
+                  if (percentage >= 0.8)
+                    barColor = Colors.green;
+                  else if (percentage >= 0.4)
+                    barColor = Colors.orange;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "${specialCat["icon"]} ${specialCat["title"]}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                // 🚨 YENİ EKLENDİ: Beyaz renk kısıtlaması kaldırılarak Avrupa başlığıyla aynı renge getirildi
+                              ),
+                            ),
+                            Text(
+                              "$score Puan",
+                              style: TextStyle(
+                                color: Colors.grey[400],
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: percentage,
+                            minHeight: 12,
+                            backgroundColor: Colors.grey[800],
+                            color:
+                                barColor, // 🚨 Kırmızı/Turuncu/Yeşil mantığı buraya da işledi
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+
+                SizedBox(height: 10),
+
+                // 2. Sonra normal Kıta istatistiklerini çiziyoruz
                 ...[
                   "Avrupa",
                   "Asya",
@@ -490,13 +705,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   "Güney Amerika",
                   "Okyanusya",
                 ].map((cat) {
-                  // 🚨 TÜM MODLARIN SKORUNU BİRLEŞTİREREK EKRANA YAZIYORUZ
+                  // TÜM MODLARIN SKORUNU BİRLEŞTİREREK EKRANA YAZIYORUZ
                   int score =
                       (scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0) +
                       (scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0) +
                       (scores["${cat}_MIXED"] ?? 0);
 
-                  // Hedef skoru her mod için 20.000, toplamda 60.000 puan olarak varsayıyoruz
+                  // Hedef skoru her kıta için 60.000 puan olarak varsayıyoruz
                   double percentage = (score / 60000).clamp(0.0, 1.0);
 
                   Color barColor = Colors.red;
