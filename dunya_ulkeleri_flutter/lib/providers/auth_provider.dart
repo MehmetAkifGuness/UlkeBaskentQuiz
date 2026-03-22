@@ -116,4 +116,18 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> tryAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!prefs.containsKey('token')) {
+      return false;
+    }
+
+    _token = prefs.getString('token');
+    _username = prefs.getString('username');
+
+    notifyListeners();
+    return true;
+  }
 }

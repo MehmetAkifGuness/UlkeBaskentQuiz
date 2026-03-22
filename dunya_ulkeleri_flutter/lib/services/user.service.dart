@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 
 class UserService {
-  final String baseUrl = "http://10.228.213.163:8080/api/user";
+  final String baseUrl = "http://10.229.146.163:8080/api/user";
 
   Future<UserProfileModel?> getUserProfile(String token) async {
     final response = await http.get(
