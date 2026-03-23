@@ -1,7 +1,13 @@
+// lib/providers/game_provider.dart
 import 'dart:async'; // ⏱️ Timer için gerekli
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 🚨 YENİ EKLENDİ: Titreşim (HapticFeedback) için
+import 'package:audioplayers/audioplayers.dart'; // 🚨 YENİ EKLENDİ: Ses efektleri için
 import '../models/game_status_model.dart';
 import '../services/game_service.dart';
+import 'settings_provider.dart'; // 🚨 YENİ EKLENDİ: Ayarları okuyabilmek için
+import '../main.dart'; // 🚨 YENİ EKLENDİ: navigatorKey üzerinden settingsProvider'a ulaşmak için
+import 'package:provider/provider.dart';
 
 class GameProvider with ChangeNotifier {
   final GameService _gameService = GameService();
@@ -11,6 +17,9 @@ class GameProvider with ChangeNotifier {
   bool _showResult = false;
   String? _selectedAnswer;
   String? _correctAnswer;
+
+  // 🚨 YENİ EKLENDİ: Ses Oynatıcı Motoru
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   // ⏱️ --- KRONOMETRE DEĞİŞKENLERİ ---
   final Stopwatch _stopwatch = Stopwatch();
@@ -49,6 +58,41 @@ class GameProvider with ChangeNotifier {
     _uiTimer?.cancel();
   }
 
+  // 🚨 YENİ EKLENDİ: Ses ve Titreşim Motoru (Ayarlara Bakarak Çalışır)
+  // 🚨 YENİ EKLENDİ: Ses ve Titreşim Motoru (Ayarlara Bakarak Çalışır)
+  Future<void> _playFeedback(bool isCorrect) async {
+    try {
+      // main.dart'taki navigatorKey sayesinde global ayarlara erişiyoruz
+      final context = navigatorKey.currentContext;
+      if (context == null) return;
+
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+
+      // Titreşim (Haptic Feedback) Açıksa
+      if (settings.isVibrationEnabled) {
+        if (isCorrect) {
+          HapticFeedback.lightImpact(); // Doğruda hafif tıklama hissi
+        } else {
+          HapticFeedback.heavyImpact(); // Yanlışta güçlü ve tok bir hata titreşimi
+        }
+      }
+
+      // Ses (Audio) Açıksa
+      if (settings.isSoundEnabled) {
+        // 🚨 DÜZELTME: Üst üste aynı sesin yutulmasını engellemek için önce oynatıcıyı sıfırlıyoruz.
+        await _audioPlayer.stop();
+
+        if (isCorrect) {
+          await _audioPlayer.play(AssetSource('sounds/correct.mp3')); // Ting!
+        } else {
+          await _audioPlayer.play(AssetSource('sounds/wrong.mp3')); // Bzz!
+        }
+      }
+    } catch (e) {
+      print("Ses/Titreşim oynatılırken hata: $e");
+    }
+  }
+
   Future<void> startNewGame(String token, String category, String mode) async {
     // 🚨 YENİ: mode eklendi
     _isLoading = true;
@@ -85,6 +129,13 @@ class GameProvider with ChangeNotifier {
       );
 
       _correctAnswer = nextStatus.lastCorrectAnswer;
+
+      // 🚨 YENİ EKLENDİ: DOĞRU/YANLIŞ KONTROLÜ VE SES/TİTREŞİM TETİKLEME
+      bool isGuessCorrect =
+          (_selectedAnswer?.trim().toLowerCase() ==
+          _correctAnswer?.trim().toLowerCase());
+      _playFeedback(isGuessCorrect);
+
       notifyListeners();
 
       await Future.delayed(Duration(milliseconds: 1500));
@@ -121,6 +172,7 @@ class GameProvider with ChangeNotifier {
   @override
   void dispose() {
     _uiTimer?.cancel();
+    _audioPlayer.dispose(); // 🚨 YENİ EKLENDİ: Ses motorunu hafızadan temizle
     super.dispose();
   }
 }

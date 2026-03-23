@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'package:dunya_ulkeleri_flutter/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,6 +18,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => GameProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: MyApp(),
     ),

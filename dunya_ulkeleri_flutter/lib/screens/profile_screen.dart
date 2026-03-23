@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ: Ayarları dinlemek için
 import '../models/user_profile_model.dart';
 import '../services/user.service.dart'; // Kendi import yoluna dikkat et
 import 'login_screen.dart'; // Çıkış yapınca yönlendirmek için EKLENDİ
@@ -45,46 +46,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- 🚨 AYARLAR MENÜSÜ (Artık parametre olarak profili alıyor) ---
+  // --- 🚨 GÜNCELLENDİ: AYARLAR MENÜSÜ CANLANDIRILDI ---
   void _showSettings(BuildContext context, UserProfileModel profile) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: Text("Ayarlar", style: TextStyle(color: Colors.amber)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
-                foregroundColor: Colors.white,
-              ),
-              icon: Icon(Icons.lock_reset),
-              label: Text("Şifremi Değiştir"),
-              onPressed: () {
-                Navigator.pop(context); // Önce Ayarlar menüsünü kapat
-                // 🚨 E-POSTAYI POPUP'A GÖNDERİYORUZ:
-                showDialog(
-                  context: context,
-                  builder: (context) =>
-                      ForgotPasswordDialog(email: profile.email),
-                );
-              },
-            ),
-            SizedBox(height: 15),
-            Text(
-              "Ses ve titreşim ayarları çok yakında eklenecek!",
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        title: Text(
+          "Ayarlar",
+          style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+        ),
+        // 🚨 YENİLİK: Ayarları anlık dinleyebilmek için Consumer kullandık
+        content: Consumer<SettingsProvider>(
+          builder: (context, settings, child) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 🔊 Ses Ayarı
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    "Ses Efektleri",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  secondary: Icon(
+                    settings.isSoundEnabled
+                        ? Icons.volume_up_rounded
+                        : Icons.volume_off_rounded,
+                    color: settings.isSoundEnabled ? Colors.amber : Colors.grey,
+                  ),
+                  activeColor: Colors.amber,
+                  activeTrackColor: Colors.amber.withOpacity(0.4),
+                  inactiveThumbColor: Colors.grey,
+                  inactiveTrackColor: Colors.grey.shade800,
+                  value: settings.isSoundEnabled,
+                  onChanged: (value) => settings.toggleSound(value),
+                ),
+
+                // 📳 Titreşim Ayarı
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    "Titreşim",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  secondary: Icon(
+                    settings.isVibrationEnabled
+                        ? Icons.vibration_rounded
+                        : Icons.smartphone_rounded,
+                    color: settings.isVibrationEnabled
+                        ? Colors.amber
+                        : Colors.grey,
+                  ),
+                  activeColor: Colors.amber,
+                  activeTrackColor: Colors.amber.withOpacity(0.4),
+                  inactiveThumbColor: Colors.grey,
+                  inactiveTrackColor: Colors.grey.shade800,
+                  value: settings.isVibrationEnabled,
+                  onChanged: (value) => settings.toggleVibration(value),
+                ),
+
+                SizedBox(height: 20),
+
+                // 🔑 Şifre Değiştirme Butonu
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade800,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: Icon(Icons.lock_reset),
+                  label: Text(
+                    "Şifremi Değiştir",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context); // Önce Ayarlar menüsünü kapat
+                    showDialog(
+                      context: context,
+                      builder: (context) =>
+                          ForgotPasswordDialog(email: profile.email),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Kapat", style: TextStyle(color: Colors.amber)),
+            child: Text(
+              "Kapat",
+              style: TextStyle(color: Colors.amber, fontSize: 16),
+            ),
           ),
         ],
       ),
