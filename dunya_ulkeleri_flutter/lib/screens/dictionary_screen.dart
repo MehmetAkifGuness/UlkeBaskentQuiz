@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/game_service.dart';
 import '../models/dictionary_model.dart'; // Model dosyanın yolunun doğru olduğundan emin ol
-import 'country_detail_screen.dart'; // 🚨 YENİ EKLENDİ: Detay sayfasına geçiş için
+import 'country_detail_screen.dart'; // Detay sayfasına geçiş için
 
 class DictionaryScreen extends StatefulWidget {
   const DictionaryScreen({super.key});
@@ -70,7 +70,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     } else {
       setState(() {
         _filteredData = _allData.where((item) {
-          // 🚨 Null güvenliği eklendi (item.değişken ?? '')
+          // Null güvenliği eklendi (item.değişken ?? '')
           // ignore: duplicate_ignore
           // ignore: dead_null_aware_expression, dead_code
           final countryLower = (item.countryName ?? '').toLowerCase();
@@ -88,8 +88,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     }
   }
 
-  // 🚨 YENİ EKLENEN: Ülke isimlerini emoji bayraklara çeviren sözlük!
-  // 🚨 EKSİKSİZ BAYRAK KÜTÜPHANESİ (143 ÜLKE)
+  // Ülke isimlerini emoji bayraklara çeviren sözlük!
+  // EKSİKSİZ BAYRAK KÜTÜPHANESİ (143 ÜLKE)
   String _getFlagEmoji(String country) {
     const Map<String, String> flagMap = {
       // A
@@ -289,13 +289,18 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: Colors.blueGrey[800],
+                        // 🚨 DÜZELTİLDİ: Kötü duran mavi-gri yerine premium, derin siyah/gri bir tasarım.
+                        color: Colors.grey[900],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
+                          side: BorderSide(
+                            color: Colors.white12,
+                            width: 1,
+                          ), // Hafif beyaz bir kenar çizgisi (Ayrıntı ve şıklık için)
                         ),
                         elevation: 3,
                         child: ListTile(
-                          // 🚨 YENİ EKLENDİ: Ülkeye tıklandığında detay sayfasına yönlendirir
+                          // Ülkeye tıklandığında detay sayfasına yönlendirir
                           onTap: () {
                             Navigator.push(
                               context,
@@ -310,14 +315,12 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                               ),
                             );
                           },
-                          // 🚨 YENİ EKLENDİ: Sağ tarafa küçük bir ok koyarak tıklanabilir hissi verir
+                          // Sağ tarafa küçük bir ok koyarak tıklanabilir hissi verir
                           trailing: Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
                             color: Colors.white54,
                           ),
-
-                          // 🚨 DEĞİŞİKLİK BURADA YAPILDI: CircleAvatar kaldırıldı, Bayrak Emojisi eklendi.
                           leading: Text(
                             // ignore: dead_null_aware_expression
                             _getFlagEmoji(item.countryName ?? ''),
@@ -326,7 +329,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                             ), // Emojinin boyutunu ayarlayabilirsin
                           ),
                           title: Text(
-                            // 🚨 Null güvenliği eklendi
+                            // Null güvenliği eklendi
                             // ignore: dead_null_aware_expression
                             item.countryName ?? 'Bilinmiyor',
                             style: TextStyle(
@@ -336,7 +339,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                             ),
                           ),
                           subtitle: Text(
-                            // 🚨 Null güvenliği eklendi
+                            // Null güvenliği eklendi
                             // ignore: dead_null_aware_expression
                             "${item.capitalName ?? 'Bilinmiyor'} • ${item.continent ?? 'Bilinmiyor'}",
                             style: TextStyle(color: Colors.amber[200]),

@@ -21,7 +21,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   @override
   void initState() {
     super.initState();
-    // 🚨 SİHİRLİ KISIM: Eğer email hazır gelmişse (Yani Profil ekranındaysak)
+    // Eğer email hazır gelmişse (Yani Profil ekranındaysak)
     if (widget.email != null && widget.email!.isNotEmpty) {
       _emailController.text = widget.email!;
       // Ekran açılır açılmaz arka planda otomatik olarak kodu gönder:
@@ -44,8 +44,15 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       setState(() {
         _step = 2;
       }); // Başarılıysa 2. aşamaya geç
+
+      // 🚨 DÜZELTİLDİ: Giriş ekranındayken güvenlik amaçlı "eğer hesap varsa" der.
+      // Ancak profil ekranındayken hesabın olduğunu bildiğimiz için doğrudan başarı mesajı verir.
+      String successMessage = widget.email != null
+          ? "Sıfırlama kodu e-postanıza başarıyla gönderildi!"
+          : "Eğer bu bilgilere ait bir hesap varsa, sıfırlama kodu gönderildi.";
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message!), backgroundColor: Colors.green),
+        SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,7 +111,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       backgroundColor: Colors.grey[900],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
-        "Şifre Değiştir", // Başlığı da daha genel yaptık
+        "Şifre Değiştir",
         style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
       ),
       content: SingleChildScrollView(
@@ -122,7 +129,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                 controller: _emailController,
                 style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  labelText: "E-posta veya Kullanıcı Adı", // 🚨 ETİKET DEĞİŞTİ
+                  labelText: "E-posta veya Kullanıcı Adı",
                   labelStyle: TextStyle(color: Colors.amber),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey),

@@ -1,7 +1,7 @@
 ülkelerin yöresel müziği eklenecek 
 ülkelerin bulunduğu konumun(haritasını) eklenecek
 başarımlar (uygulama bittikten sonra eklenecek)
-profil kısmında yeşil yer düzenlenecek(şifremi değiştir kısmında eğer bu bilgilere ait bir hesap varsa kısmı giriş ekranında oalcak ama profilde olmayacak)
+profil kısmında yeşil yer düzenlenecek(şifremi değiştir kısmında eğer bu bilgilere ait bir hesap varsa kısmı giriş ekranında oalcak ama profilde olmayacak profilde sıfırlama kodu gönderildi şeklinde olacak )
 ayarlar kısmını geliştirme
 puan ilerlemesinde bitiş çizgisi eklemsi yapılacak 
 sözlük kısmında ülkelerin arka planındaki gri renk çok kötü duruyor o değişecek 
@@ -9,3 +9,4 @@ sayfa düzenleri iyileştirilecek
 sorular bittikten sonraki ekranda ufak değişiklikler yapılacak görünüş olarak
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
 ustalık seviyelerinde toplam skor değilde max skor tutulsa ve her bölüm için içindeki soru sayısına da bakarak bir ustallık şeyi oluşturulsa mesela 50 soru var diyelim max puan 100.000 ya kullanıcı 80k üstü yaptıysa çok iyi 60k üstü yaptıysa iyi 40k üstü yaptıysa ortalama 20k üzeri çalışılmalı 20k altı ise kötü olarak bölebiliriz 
+kalıcı ip adresi ekleme url değişme zorunda kalmama
