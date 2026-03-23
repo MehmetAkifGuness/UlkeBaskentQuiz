@@ -13,7 +13,7 @@ class GameProvider with ChangeNotifier {
   String? _correctAnswer;
 
   // ⏱️ --- KRONOMETRE DEĞİŞKENLERİ ---
-  Stopwatch _stopwatch = Stopwatch();
+  final Stopwatch _stopwatch = Stopwatch();
   Timer? _uiTimer;
   String _formattedTime = "00.00";
   String get formattedTime => _formattedTime;

@@ -11,11 +11,11 @@ class AnswerButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const AnswerButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.state,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

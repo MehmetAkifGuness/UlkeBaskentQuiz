@@ -1,10 +1,44 @@
+// lib/services/game_service.dart
 import 'dart:convert';
 import 'package:dunya_ulkeleri_flutter/models/dictionary_model.dart';
 import 'package:http/http.dart' as http;
 import '../models/game_status_model.dart';
 
+// 🚨 YENİ İMPORTLAR: Yönlendirme ve yetki temizliği için gerekli
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../main.dart'; // navigatorKey için
+import '../screens/login_screen.dart';
+
 class GameService {
   final String baseUrl = "http://10.229.146.163:8080/api/game";
+
+  // 🚨 YENİ EKLENDİ: Token süresi dolduğunda tüm sistemi temizleyip Login'e atan fonksiyon
+  void _handleUnauthorized() {
+    if (navigatorKey.currentContext != null) {
+      // AuthProvider üzerinden çıkış yap ve cihaz hafızasını sil
+      Provider.of<AuthProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      ).logout();
+
+      // Kullanıcıya şık bir uyarı göster
+      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+        const SnackBar(
+          content: Text("Oturum süresi doldu. Lütfen tekrar giriş yapın."),
+          backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+
+    // Tüm oyun/profil sayfalarını kapatıp zorla Login ekranına yönlendir
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
+  }
 
   Future<GameStatusModel> startGame(
     String token,
@@ -20,6 +54,12 @@ class GameService {
         'Authorization': 'Bearer $token',
       },
     );
+
+    // 🚨 YENİ EKLENDİ: Yetki Kontrolü
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
+    }
 
     print("--- OYUN BAŞLATMA İSTEĞİ ---");
     print("Seçilen Kategori: $category, Seçilen Mod: $mode");
@@ -41,6 +81,12 @@ class GameService {
       Uri.parse('$baseUrl/dictionary'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    // 🚨 YENİ EKLENDİ: Yetki Kontrolü
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
+    }
 
     if (response.statusCode == 200) {
       List jsonResponse = json.decode(utf8.decode(response.bodyBytes));
@@ -71,6 +117,12 @@ class GameService {
         'timeTaken': timeTaken, // ⏱️ Süreyi JSON'a ekledik
       }),
     );
+
+    // 🚨 YENİ EKLENDİ: Yetki Kontrolü
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
+    }
 
     print("--- TAHMİN İSTEĞİ ---");
     print("Geçen Süre: $timeTaken saniye");

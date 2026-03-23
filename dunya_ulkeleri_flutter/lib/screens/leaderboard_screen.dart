@@ -5,6 +5,8 @@ import '../providers/auth_provider.dart';
 import '../services/user.service.dart';
 
 class LeaderboardScreen extends StatefulWidget {
+  const LeaderboardScreen({super.key});
+
   @override
   _LeaderboardScreenState createState() => _LeaderboardScreenState();
 }
@@ -68,12 +70,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _getMedal(int index) {
-    if (index == 0)
+    if (index == 0) {
       return Icon(Icons.workspace_premium, color: Colors.amber, size: 32);
-    if (index == 1)
+    }
+    if (index == 1) {
       return Icon(Icons.workspace_premium, color: Colors.grey[400], size: 32);
-    if (index == 2)
+    }
+    if (index == 2) {
       return Icon(Icons.workspace_premium, color: Colors.brown[300], size: 32);
+    }
     return CircleAvatar(
       backgroundColor: Colors.blueGrey,
       radius: 14,
@@ -91,7 +96,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       body: Column(
         children: [
           // YATAY KATEGORİ SEÇİCİ
-          Container(
+          SizedBox(
             height: 60,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,

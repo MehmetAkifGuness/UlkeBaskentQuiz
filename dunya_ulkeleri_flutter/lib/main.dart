@@ -8,6 +8,9 @@ import 'screens/login_screen.dart';
 import 'screens/main_screen.dart'; // 🚨 DÜZELTME: HomeScreen yerine MainScreen'i import ettik!
 import 'theme/app_theme.dart';
 
+// 🚨 YENİ EKLENDİ: Tüm uygulamayı her yerden (Servislerden bile) yönlendirebilmek için Global Anahtar
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   runApp(
     MultiProvider(
@@ -21,9 +24,13 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // 🚨 YENİ EKLENDİ: Global anahtarı uygulamaya bağladık
+      navigatorKey: navigatorKey,
       title: 'Dünya Ülkeleri Quiz',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

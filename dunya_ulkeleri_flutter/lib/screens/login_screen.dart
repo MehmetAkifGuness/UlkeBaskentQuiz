@@ -6,6 +6,8 @@ import 'forgot_password_dialog.dart';
 import 'main_screen.dart'; // ✅ Artık MainScreen'e gideceğiz
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }

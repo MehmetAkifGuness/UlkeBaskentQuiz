@@ -5,6 +5,8 @@ import 'dictionary_screen.dart';
 import 'leaderboard_screen.dart'; // YENİ EKRANI IMPORT ETTİK
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }

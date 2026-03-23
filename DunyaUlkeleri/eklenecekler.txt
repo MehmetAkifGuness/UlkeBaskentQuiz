@@ -7,5 +7,5 @@ puan ilerlemesinde bitiş çizgisi eklemsi yapılacak
 sözlük kısmında ülkelerin arka planındaki gri renk çok kötü duruyor o değişecek 
 sayfa düzenleri iyileştirilecek
 sorular bittikten sonraki ekranda ufak değişiklikler yapılacak görünüş olarak
-gezgin seviyesi tarzı rütbeler var ya profilde rütbenin sağına bir soru işareti butonu ekleyip oradan tüm rütbelere ve kaç puan istediklerini erişebilmek 
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
+ustalık seviyelerinde toplam skor değilde max skor tutulsa ve her bölüm için içindeki soru sayısına da bakarak bir ustallık şeyi oluşturulsa mesela 50 soru var diyelim max puan 100.000 ya kullanıcı 80k üstü yaptıysa çok iyi 60k üstü yaptıysa iyi 40k üstü yaptıysa ortalama 20k üzeri çalışılmalı 20k altı ise kötü olarak bölebiliriz 

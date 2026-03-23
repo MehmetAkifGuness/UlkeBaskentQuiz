@@ -11,6 +11,8 @@ import 'mistake_screen.dart'; // 🚨 YENİ: Hata defterine yönlendirme yapabil
 
 // 🚨 YENİLİK: Ekranın anlık güncellenebilmesi için StatefulWidget yapıldı
 class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -161,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
           height: 400, // Popup yüksekliği
           child: ListView.builder(
@@ -647,9 +649,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // 🚨 YENİ EKLENDİ: Kıta renkleriyle (Avrupa vs) birebir aynı algoritma yapıldı
                   Color barColor = Colors.red;
-                  if (percentage >= 0.8)
+                  if (percentage >= 0.8) {
                     barColor = Colors.green;
-                  else if (percentage >= 0.4)
+                  } else if (percentage >= 0.4)
                     barColor = Colors.orange;
 
                   return Padding(
@@ -692,7 +694,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
                 SizedBox(height: 10),
 
@@ -715,9 +717,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   double percentage = (score / 60000).clamp(0.0, 1.0);
 
                   Color barColor = Colors.red;
-                  if (percentage >= 0.8)
+                  if (percentage >= 0.8) {
                     barColor = Colors.green;
-                  else if (percentage >= 0.4)
+                  } else if (percentage >= 0.4)
                     barColor = Colors.orange;
 
                   return Padding(
@@ -757,7 +759,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
                 SizedBox(height: 30),
 

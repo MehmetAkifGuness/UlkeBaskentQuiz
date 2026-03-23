@@ -6,7 +6,7 @@ class VerifyScreen extends StatelessWidget {
   final _codeController = TextEditingController();
   final _authService = AuthService();
 
-  VerifyScreen({required this.email});
+  VerifyScreen({super.key, required this.email});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,11 @@ class VerifyScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Icon(Icons.mark_email_unread_outlined, size: 80, color: Colors.blue),
+            Icon(
+              Icons.mark_email_unread_outlined,
+              size: 80,
+              color: Colors.blue,
+            ),
             SizedBox(height: 20),
             Text(
               "$email adresine gelen 6 haneli kodu giriniz:",
@@ -53,14 +57,15 @@ class VerifyScreen extends StatelessWidget {
                 );
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(result.message ?? "İşlem yapılıyor...")),
+                  SnackBar(
+                    content: Text(result.message ?? "İşlem yapılıyor..."),
+                  ),
                 );
 
                 // Backend mesajını kontrol et (küçük/büyük harf duyarsız)
                 if (result.message != null &&
                     (result.message!.toLowerCase().contains("başarı") ||
                         result.message!.toLowerCase().contains("success"))) {
-
                   // Giriş ekranına (ilk sayfaya) geri dön
                   Navigator.popUntil(context, (route) => route.isFirst);
                 }

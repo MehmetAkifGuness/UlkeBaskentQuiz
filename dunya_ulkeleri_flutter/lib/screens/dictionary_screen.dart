@@ -8,6 +8,8 @@ import '../models/dictionary_model.dart'; // Model dosyanın yolunun doğru oldu
 import 'country_detail_screen.dart'; // 🚨 YENİ EKLENDİ: Detay sayfasına geçiş için
 
 class DictionaryScreen extends StatefulWidget {
+  const DictionaryScreen({super.key});
+
   @override
   _DictionaryScreenState createState() => _DictionaryScreenState();
 }

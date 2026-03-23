@@ -1,15 +1,50 @@
+// lib/services/user.service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 
+// 🚨 YENİ İMPORTLAR: Yönlendirme ve yetki temizliği için gerekli
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../main.dart'; // navigatorKey için
+import '../screens/login_screen.dart';
+
 class UserService {
   final String baseUrl = "http://10.229.146.163:8080/api/user";
+
+  // 🚨 YENİ EKLENDİ: Token süresi dolduğunda tüm sistemi temizleyip Login'e atan fonksiyon
+  void _handleUnauthorized() {
+    if (navigatorKey.currentContext != null) {
+      Provider.of<AuthProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      ).logout();
+      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+        const SnackBar(
+          content: Text("Oturum süresi doldu. Lütfen tekrar giriş yapın."),
+          backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
+  }
 
   Future<UserProfileModel?> getUserProfile(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/profile'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    // 🚨 YENİ EKLENDİ
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      return null;
+    }
 
     if (response.statusCode == 200) {
       return UserProfileModel.fromJson(json.decode(response.body));
@@ -24,6 +59,12 @@ class UserService {
       Uri.parse('$baseUrl/my-category-scores'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    // 🚨 YENİ EKLENDİ
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw Exception("Oturum süresi doldu.");
+    }
 
     if (response.statusCode == 200) {
       Map<String, dynamic> jsonResponse = json.decode(
@@ -50,6 +91,12 @@ class UserService {
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      // 🚨 YENİ EKLENDİ
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        _handleUnauthorized();
+        return [];
+      }
+
       if (response.statusCode == 200) {
         List jsonResponse = json.decode(utf8.decode(response.bodyBytes));
         return List<Map<String, dynamic>>.from(jsonResponse);
@@ -61,8 +108,6 @@ class UserService {
   }
 
   // Hata Defterini Getir
-  // Hata Defterini Getir
-  // Hata Defterini Getir
   Future<List<dynamic>> getMistakes(String token) async {
     try {
       final response = await http.get(
@@ -70,6 +115,12 @@ class UserService {
         Uri.parse('$baseUrl/mistakes'),
         headers: {'Authorization': 'Bearer $token'},
       );
+
+      // 🚨 YENİ EKLENDİ
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        _handleUnauthorized();
+        return [];
+      }
 
       print("🎯 API Cevap Kodu: ${response.statusCode}");
 
@@ -90,6 +141,13 @@ class UserService {
         Uri.parse('$baseUrl/mistakes/$questionId'),
         headers: {'Authorization': 'Bearer $token'},
       );
+
+      // 🚨 YENİ EKLENDİ
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        _handleUnauthorized();
+        return false;
+      }
+
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -103,6 +161,12 @@ class UserService {
         Uri.parse('$baseUrl/avatar/$avatarId'),
         headers: {'Authorization': 'Bearer $token'},
       );
+
+      // 🚨 YENİ EKLENDİ
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        _handleUnauthorized();
+        return false;
+      }
 
       if (response.statusCode == 200) {
         return true;

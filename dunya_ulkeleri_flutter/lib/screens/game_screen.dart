@@ -9,8 +9,7 @@ import '../widgets/answer_button.dart';
 class GameScreen extends StatefulWidget {
   final String category;
   final String mode;
-  const GameScreen({Key? key, required this.category, required this.mode})
-    : super(key: key);
+  const GameScreen({super.key, required this.category, required this.mode});
 
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -383,9 +382,9 @@ class _GameScreenState extends State<GameScreen> {
     if (isVictory) {
       titleText = isDaily ? "GÖREV TAMAMLANDI!" : "MUHTEŞEM ZAFER!";
     } else {
-      if (isDaily)
+      if (isDaily) {
         titleText = "GÜZEL DENEME!";
-      else if (isEndless)
+      } else if (isEndless)
         titleText = "HARİKA BİR TURDU!";
       else
         titleText = "YENİDEN DENE!";
@@ -550,13 +549,13 @@ class ScoreProgressWidget extends StatelessWidget {
   final int remainingQuestions;
 
   const ScoreProgressWidget({
-    Key? key,
+    super.key,
     required this.ghostName,
     required this.ghostScore,
     required this.currentScore,
     required this.totalQuestions,
     required this.remainingQuestions,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

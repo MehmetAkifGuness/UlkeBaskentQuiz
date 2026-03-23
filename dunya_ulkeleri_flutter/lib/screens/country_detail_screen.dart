@@ -9,11 +9,11 @@ class CountryDetailScreen extends StatefulWidget {
   final String continent;
 
   const CountryDetailScreen({
-    Key? key,
+    super.key,
     required this.countryName,
     required this.capitalName,
     required this.continent,
-  }) : super(key: key);
+  });
 
   @override
   _CountryDetailScreenState createState() => _CountryDetailScreenState();

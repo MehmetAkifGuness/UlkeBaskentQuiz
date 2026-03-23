@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../services/user.service.dart';
 
 class MistakeScreen extends StatefulWidget {
+  const MistakeScreen({super.key});
+
   @override
   _MistakeScreenState createState() => _MistakeScreenState();
 }

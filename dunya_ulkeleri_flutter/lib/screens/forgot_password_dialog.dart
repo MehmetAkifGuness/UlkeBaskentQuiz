@@ -5,7 +5,7 @@ import '../providers/auth_provider.dart';
 class ForgotPasswordDialog extends StatefulWidget {
   final String? email; // 🚨 DIŞARIDAN GELEN OTOMATİK MAİL İÇİN EKLENDİ
 
-  const ForgotPasswordDialog({Key? key, this.email}) : super(key: key);
+  const ForgotPasswordDialog({super.key, this.email});
 
   @override
   _ForgotPasswordDialogState createState() => _ForgotPasswordDialogState();
@@ -54,8 +54,9 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
           backgroundColor: Colors.red,
         ),
       );
-      if (widget.email != null)
+      if (widget.email != null) {
         Navigator.pop(context); // Otomatik gönderimde hata varsa popup'ı kapat
+      }
     }
   }
 

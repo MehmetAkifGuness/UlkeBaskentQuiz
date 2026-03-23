@@ -6,6 +6,8 @@ import '../services/user.service.dart';
 import 'game_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
