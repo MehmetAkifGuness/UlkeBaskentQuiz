@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'package:dunya_ulkeleri_flutter/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
@@ -12,7 +13,9 @@ import 'theme/app_theme.dart';
 // 🚨 YENİ EKLENDİ: Tüm uygulamayı her yerden (Servislerden bile) yönlendirebilmek için Global Anahtar
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // 🚨 YENİ: Asenkron işlemlerden önce Flutter motorunu hazırla
+  await dotenv.load(fileName: ".env");
   runApp(
     MultiProvider(
       providers: [

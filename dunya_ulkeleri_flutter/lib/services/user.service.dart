@@ -1,5 +1,6 @@
 // lib/services/user.service.dart
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 
@@ -11,7 +12,7 @@ import '../main.dart'; // navigatorKey için
 import '../screens/login_screen.dart';
 
 class UserService {
-  final String baseUrl = "http://10.229.146.163:8080/api/user";
+  final String baseUrl = "${dotenv.env['API_BASE_URL']}/user";
 
   // 🚨 YENİ EKLENDİ: Token süresi dolduğunda tüm sistemi temizleyip Login'e atan fonksiyon
   void _handleUnauthorized() {

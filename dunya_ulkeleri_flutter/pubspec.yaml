@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.5.4
   # 🚨 YENİ EKLENDİ: Ses efektleri oynatabilmek için 
   audioplayers: ^5.2.1
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -37,4 +38,5 @@ flutter:
   # 🚨 RESİMLER VE SESLER BURAYA EKLENİR 🚨
   assets:
     - assets/avatars/
-    - assets/sounds/ # 🚨 YENİ EKLENDİ: İleride ekleyeceğimiz ses dosyaları için (Örn: correct.mp3, wrong.mp3)
+    - assets/sounds/
+    - .env # 🚨 YENİ EKLENDİ: İleride ekleyeceğimiz ses dosyaları için (Örn: correct.mp3, wrong.mp3)

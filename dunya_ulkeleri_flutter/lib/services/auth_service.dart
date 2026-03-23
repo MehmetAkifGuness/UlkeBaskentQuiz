@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/auth_model.dart';
 
 class AuthService {
   // Eski hali: "http://10.0.2.2:8080/api/game"
-  final String baseUrl = "http://10.229.146.163:8080/api/auth";
+  final String baseUrl = "${dotenv.env['API_BASE_URL']}/auth";
 
   // KAYIT
   Future<AuthModel> register(

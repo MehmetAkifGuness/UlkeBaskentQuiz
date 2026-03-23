@@ -1,6 +1,7 @@
 // lib/services/game_service.dart
 import 'dart:convert';
 import 'package:dunya_ulkeleri_flutter/models/dictionary_model.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/game_status_model.dart';
 
@@ -12,7 +13,7 @@ import '../main.dart'; // navigatorKey için
 import '../screens/login_screen.dart';
 
 class GameService {
-  final String baseUrl = "http://10.229.146.163:8080/api/game";
+  final String baseUrl = "${dotenv.env['API_BASE_URL']}/game";
 
   // 🚨 YENİ EKLENDİ: Token süresi dolduğunda tüm sistemi temizleyip Login'e atan fonksiyon
   void _handleUnauthorized() {
