@@ -77,7 +77,7 @@ class GameProvider with ChangeNotifier {
         }
       }
 
-      // Ses (Audio) Açıksa
+      // Ses (Audio) Açıksas
       if (settings.isSoundEnabled) {
         // 🚨 DÜZELTME: Üst üste aynı sesin yutulmasını engellemek için önce oynatıcıyı sıfırlıyoruz.
         await _audioPlayer.stop();

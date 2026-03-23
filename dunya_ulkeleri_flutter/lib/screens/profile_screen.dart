@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ: Ayarları dinlemek için
+import '../providers/settings_provider.dart';
 import '../models/user_profile_model.dart';
 import '../services/user.service.dart'; // Kendi import yoluna dikkat et
 import 'login_screen.dart'; // Çıkış yapınca yönlendirmek için EKLENDİ
@@ -359,32 +359,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // 🚨 YENİ: Ustalık Yüzdesine Göre Derece ve Renk Döndüren Fonksiyon
+  Map<String, dynamic> _getMasteryLevel(double percentage) {
+    if (percentage == 0) return {"text": "Oynanmadı", "color": Colors.grey};
+    if (percentage >= 0.8) return {"text": "Çok İyi", "color": Colors.green};
+    if (percentage >= 0.6) return {"text": "İyi", "color": Colors.lightGreen};
+    if (percentage >= 0.4) return {"text": "Ortalama", "color": Colors.amber};
+    if (percentage >= 0.2)
+      return {"text": "Çalışılmalı", "color": Colors.orange};
+    return {"text": "Kötü", "color": Colors.red};
+  }
+
   // 🚨 YENİ VE AKILLI ANALİZ ALGORİTMASI 🚨
   String _generateAnalysisText(Map<String, dynamic> scores) {
-    // 🚨 dynamic yapıldı çünkü gelen map type farklı olabilir
-    final allCategories = [
-      "Avrupa",
-      "Asya",
-      "Afrika",
-      "Kuzey Amerika",
-      "Güney Amerika",
-      "Okyanusya",
+    // Soru sayılarını gerçek rakamlarla veriyoruz
+    final categories = [
+      {"name": "Avrupa", "q": 44},
+      {"name": "Asya", "q": 48},
+      {"name": "Afrika", "q": 54},
+      {"name": "Kuzey Amerika", "q": 23},
+      {"name": "Güney Amerika", "q": 12},
+      {"name": "Okyanusya", "q": 14},
     ];
 
     List<String> unplayed = [];
     List<String> weak = [];
 
-    for (var cat in allCategories) {
-      // 🚨 SİHİRLİ BİRLEŞTİRME BURADA: 3 modu da toplayıp Kıta Ustalığını buluyoruz
-      int score =
-          (scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0) +
-          (scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0) +
-          (scores["${cat}_MIXED"] ?? 0);
+    for (var catData in categories) {
+      String cat = catData["name"] as String;
+      int questions = catData["q"] as int;
 
-      if (score == 0) {
+      int c2c = scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0;
+      int c2cRev = scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0;
+      int mixed = scores["${cat}_MIXED"] ?? 0;
+
+      // 🚨 DÜZELTME: Toplam yerine, kullanıcının o kıtadaki EN YÜKSEK skorunu alıyoruz (Max)
+      int maxScoreMode = [c2c, c2cRev, mixed].reduce((a, b) => a > b ? a : b);
+
+      // Kıtadaki soru sayısına göre alınabilecek tahmini max puan (Soru başı ~2000 puan)
+      int maxPossible = questions * 2000;
+      double percentage = maxPossible > 0 ? (maxScoreMode / maxPossible) : 0;
+
+      if (maxScoreMode == 0) {
         unplayed.add(cat);
-      } else if (score < 30000) {
-        // 60.000 puan hedefine göre 30.000 altını zayıf kabul ediyoruz
+      } else if (percentage < 0.4) {
+        // %40 altı ise (Kötü veya Çalışılmalı derecesindeyse) buraya girer
         weak.add(cat);
       }
     }
@@ -445,11 +464,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final date = DateTime.parse(profile.creationDate);
           final formattedDate = "${date.day}/${date.month}/${date.year}";
 
-          // --- 🏆 LİG / RÜTBE HESAPLAMA ---
+          // --- 🏆 LİG / RÜTBE HESAPLAMA (Genel Puan) ---
           int totalScore = scores.values.fold(
             0,
-            (sum, item) => sum + (item as int), // 🚨 item as int eklendi
-          ); // Tüm rekorların toplamı
+            (sum, item) => sum + (item as int),
+          );
 
           String tierName;
           Color tierColor;
@@ -492,13 +511,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // 🚨 Dinamik Analiz Metnini Oluşturuyoruz
           String analysisText = _generateAnalysisText(scores);
 
-          // Ekrana sığması için SingleChildScrollView kullanıyoruz
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 🚨 YENİLİK: Düz ikon yerine düzenlenebilir Avatar tasarımı eklendi
                 Center(
                   child: GestureDetector(
                     onTap: () =>
@@ -569,7 +586,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     SizedBox(width: 10),
-                    // 🚨 Soru İşareti Butonu
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.grey[800],
@@ -585,7 +601,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SizedBox(height: 30),
 
-                // 🚨 YENİ EKLENEN: ZAYIF YÖN ANALİZ KARTI
                 Card(
                   elevation: 5,
                   color: Colors.red[900]!.withOpacity(0.8),
@@ -616,12 +631,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         SizedBox(height: 10),
                         Text(
-                          analysisText, // 🚨 ÜRETTİĞİMİZ DİNAMİK METİN BURAYA GELDİ
+                          analysisText,
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 15,
-                            height:
-                                1.4, // Satır arası boşluk, okumayı kolaylaştırır
+                            height: 1.4,
                           ),
                         ),
                         SizedBox(height: 15),
@@ -652,8 +666,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                SizedBox(height: 15), // İki kart arası boşluk
-                // 🚨 YENİ EKLENEN: HATA DEFTERİ BUTONU 🚨
+                SizedBox(height: 15),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange[800],
@@ -682,7 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 SizedBox(height: 30),
 
-                // 🚨 YENİ GÜNCELLEME: Kıta Ustalık -> Ustalık Seviyeleri (Günlük ve Sonsuz dahil)
+                // 🚨 YENİ GÜNCELLEME: Kıta Ustalık -> Ustalık Seviyeleri
                 Text(
                   "Ustalık Seviyeleri",
                   style: TextStyle(
@@ -694,30 +707,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Divider(color: Colors.amber),
 
                 // 1. Önce "Günün Görevi" ve "Sonsuz Mod" için özel barları ekliyoruz
+                // 1. Önce "Günün Görevi" ve "Sonsuz Mod" için özel barları ekliyoruz
                 ...[
                   {
                     "title": "Günün Görevi",
                     "icon": "🔥",
                     "scoreKey": "DailyChallenge_MIXED",
-                    "max": 20000,
+                    "max": 20000, // 10 Soru * 2000 Puan
                   },
                   {
                     "title": "Sonsuz Mod",
                     "icon": "♾️",
                     "scoreKey": "Dünya_ENDLESS",
-                    "max": 100000,
-                  }, // Sonsuz Modda hedef yüksek :)
+                    // 🚨 Sonsuz modda 20-25 arası ülkeyi arka arkaya bilmek "Ustalık" sayılır.
+                    "max": 40000,
+                  },
                 ].map((specialCat) {
                   int score = scores[specialCat["scoreKey"]] ?? 0;
-                  int maxScore = specialCat["max"] as int;
-                  double percentage = (score / maxScore).clamp(0.0, 1.0);
 
-                  // 🚨 YENİ EKLENDİ: Kıta renkleriyle (Avrupa vs) birebir aynı algoritma yapıldı
-                  Color barColor = Colors.red;
-                  if (percentage >= 0.8) {
-                    barColor = Colors.green;
-                  } else if (percentage >= 0.4)
-                    barColor = Colors.orange;
+                  // 🚨 DÜZELTME: Soru sayısıyla çarpmayı bırakıp doğrudan kendi gerçekçi max hedefini alıyoruz
+                  int maxScore = specialCat["max"] as int;
+                  double percentage = maxScore > 0
+                      ? (score / maxScore).clamp(0.0, 1.0)
+                      : 0;
+
+                  // Derece ve renk ataması
+                  Map<String, dynamic> mastery = _getMasteryLevel(percentage);
+                  if (score == 0)
+                    mastery = {"text": "Oynanmadı", "color": Colors.grey};
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -732,13 +749,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                // 🚨 YENİ EKLENDİ: Beyaz renk kısıtlaması kaldırılarak Avrupa başlığıyla aynı renge getirildi
                               ),
                             ),
                             Text(
-                              "$score Puan",
+                              "$score Puan (${mastery["text"]})",
                               style: TextStyle(
-                                color: Colors.grey[400],
+                                color: mastery["color"],
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -752,8 +768,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: percentage,
                             minHeight: 12,
                             backgroundColor: Colors.grey[800],
-                            color:
-                                barColor, // 🚨 Kırmızı/Turuncu/Yeşil mantığı buraya da işledi
+                            color: mastery["color"],
                           ),
                         ),
                       ],
@@ -765,27 +780,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // 2. Sonra normal Kıta istatistiklerini çiziyoruz
                 ...[
-                  "Avrupa",
-                  "Asya",
-                  "Afrika",
-                  "Kuzey Amerika",
-                  "Güney Amerika",
-                  "Okyanusya",
-                ].map((cat) {
-                  // TÜM MODLARIN SKORUNU BİRLEŞTİREREK EKRANA YAZIYORUZ
-                  int score =
-                      (scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0) +
-                      (scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0) +
-                      (scores["${cat}_MIXED"] ?? 0);
+                  {"name": "Avrupa", "q": 44},
+                  {"name": "Asya", "q": 48},
+                  {"name": "Afrika", "q": 54},
+                  {"name": "Kuzey Amerika", "q": 23},
+                  {"name": "Güney Amerika", "q": 12},
+                  {"name": "Okyanusya", "q": 14},
+                ].map((catData) {
+                  String cat = catData["name"] as String;
+                  int questions = catData["q"] as int;
 
-                  // Hedef skoru her kıta için 60.000 puan olarak varsayıyoruz
-                  double percentage = (score / 60000).clamp(0.0, 1.0);
+                  int c2c = scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0;
+                  int c2cRev = scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0;
+                  int mixed = scores["${cat}_MIXED"] ?? 0;
 
-                  Color barColor = Colors.red;
-                  if (percentage >= 0.8) {
-                    barColor = Colors.green;
-                  } else if (percentage >= 0.4)
-                    barColor = Colors.orange;
+                  // 🚨 DÜZELTME: Toplam yerine EN YÜKSEK (max) skoru alıyoruz
+                  int score = [
+                    c2c,
+                    c2cRev,
+                    mixed,
+                  ].reduce((a, b) => a > b ? a : b);
+
+                  // Kıtaya özel dinamik max skor hesaplaması
+                  int maxScore = questions * 2000;
+                  double percentage = maxScore > 0
+                      ? (score / maxScore).clamp(0.0, 1.0)
+                      : 0;
+
+                  Map<String, dynamic> mastery = _getMasteryLevel(percentage);
+                  if (score == 0)
+                    mastery = {"text": "Oynanmadı", "color": Colors.grey};
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -803,10 +827,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             Text(
-                              "$score Puan",
+                              "$score Puan (${mastery["text"]})",
                               style: TextStyle(
-                                color: Colors.grey[400],
+                                color: mastery["color"],
                                 fontSize: 14,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
@@ -818,7 +843,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             value: percentage,
                             minHeight: 12,
                             backgroundColor: Colors.grey[800],
-                            color: barColor,
+                            color: mastery["color"],
                           ),
                         ),
                       ],
