@@ -1,6 +1,8 @@
+// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/game_provider.dart'; // 🚨 YENİ EKLENDİ: Yarım kalan oyunu kontrol etmek için
 import '../models/user_profile_model.dart';
 import '../services/user.service.dart';
 import 'game_screen.dart';
@@ -138,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 builder: (context) => GameScreen(
                                   category: category,
                                   mode: selectedMode,
+                                  isContinuing: false, // 🚨 YENİ
                                 ), // 🚨 YENİ: Seçilen modu gönderdik
                               ),
                             ).then(
@@ -160,6 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    // 🚨 YENİ EKLENDİ: Yarım kalan oyun var mı diye kontrol ediyoruz
+    final gameProvider = Provider.of<GameProvider>(context);
+    bool hasActiveGame =
+        gameProvider.status != null && gameProvider.status?.finished == false;
 
     return Scaffold(
       appBar: AppBar(
@@ -187,6 +194,64 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SizedBox(height: 30),
 
+                  // 🚨 YENİ EKLENDİ: EĞER YARIM KALAN OYUN VARSA BURADA YEŞİL "DEVAM ET" BUTONU ÇIKAR
+                  if (hasActiveGame) ...[
+                    Container(
+                      margin: EdgeInsets.only(bottom: 20),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          backgroundColor: Colors.green[600],
+                          foregroundColor: Colors.white,
+                          elevation: 8,
+                          shadowColor: Colors.green.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            side: BorderSide(
+                              color: Colors.lightGreenAccent,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        icon: Icon(Icons.play_arrow_rounded, size: 30),
+                        label: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Kaldığın Yerden Devam Et",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              "Skor: ${gameProvider.status?.currentScore ?? 0} | Can: ${gameProvider.status?.remainingLives ?? 0}",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                        onPressed: () {
+                          // Oyuna kaldığı yerden yönlendir (isContinuing: true)
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GameScreen(
+                                category: "Devam",
+                                mode: "Devam",
+                                isContinuing:
+                                    true, // 🚨 Sıfırdan başlatma, kaldığı yerden aç!
+                              ),
+                            ),
+                          ).then((_) => _checkDailyStatus());
+                        },
+                      ),
+                    ),
+                  ],
+
                   // 🎯 GÜNÜN GÖREVİ KARTI (Eski Kodların Aynı)
                   Card(
                     elevation: 8,
@@ -201,12 +266,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: _hasPlayedDaily
                           ? null
                           : () {
+                              Provider.of<GameProvider>(
+                                context,
+                                listen: false,
+                              ).resetGame(); // 🚨 Eski oyunu sil
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => GameScreen(
                                     category: "DailyChallenge",
                                     mode: "MIXED",
+                                    isContinuing: false, // 🚨 YENİ
                                   ),
                                 ),
                               ).then((_) => _checkDailyStatus());
@@ -263,12 +333,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
                       onTap: () {
+                        Provider.of<GameProvider>(
+                          context,
+                          listen: false,
+                        ).resetGame(); // 🚨 Eski oyunu sil
                         // Kategori "Dünya", Mod "ENDLESS" olarak başlatıyoruz
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                GameScreen(category: "Dünya", mode: "ENDLESS"),
+                            builder: (context) => GameScreen(
+                              category: "Dünya",
+                              mode: "ENDLESS",
+                              isContinuing: false,
+                            ),
                           ),
                         ).then((_) => _checkDailyStatus());
                       },

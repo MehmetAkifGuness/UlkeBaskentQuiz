@@ -9,7 +9,15 @@ import '../widgets/answer_button.dart';
 class GameScreen extends StatefulWidget {
   final String category;
   final String mode;
-  const GameScreen({super.key, required this.category, required this.mode});
+  // 🚨 YENİ EKLENDİ: Oyun sıfırdan mı başlıyor yoksa yarım kalandan mı devam ediyor?
+  final bool isContinuing;
+
+  const GameScreen({
+    super.key,
+    required this.category,
+    required this.mode,
+    required this.isContinuing,
+  });
 
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -23,13 +31,70 @@ class _GameScreenState extends State<GameScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-      gameProvider.resetGame();
-      gameProvider.startNewGame(
-        authProvider.token!,
-        widget.category,
-        widget.mode,
-      );
+      // 🚨 YENİ: Sadece SIFIRDAN başlanıyorsa API'ye istek at, yoksa atma (Hafızadan kullan)
+      if (!widget.isContinuing) {
+        gameProvider.resetGame();
+        gameProvider.startNewGame(
+          authProvider.token!,
+          widget.category,
+          widget.mode,
+        );
+      }
     });
+  }
+
+  // 🚨 YENİ EKLENDİ: Kullanıcı çıkış butonuna veya telefonun geri tuşuna basarsa çıkacak onay penceresi
+  Future<bool> _onWillPop() async {
+    final gameProvider = Provider.of<GameProvider>(context, listen: false);
+
+    // Eğer oyun bitmişse direkt çıkabilir, uyarıya gerek yok.
+    if (gameProvider.status?.finished == true) {
+      gameProvider.resetGame(); // Oyun bittiyse çıkarken hafızadan sil
+      return true;
+    }
+
+    bool shouldPop =
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.pause_circle_filled, color: Colors.amber, size: 28),
+                SizedBox(width: 10),
+                Text('Oyunu Duraklat', style: TextStyle(color: Colors.white)),
+              ],
+            ),
+            content: Text(
+              'Oyundan çıkmak istediğinize emin misiniz? İlerlemeniz kaydedilecek ve Ana Sayfadan devam edebileceksiniz.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  'Hayır, Devam Et',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('Evet, Çık'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    // Eğer "Evet Çık" derse hafızayı silmiyoruz, böylece ana ekranda devam et butonu kalıyor.
+    return shouldPop;
   }
 
   @override
@@ -40,8 +105,40 @@ class _GameScreenState extends State<GameScreen> {
 
     bool isDaily = widget.category == "DailyChallenge";
     // ignore: unused_local_variable
-    bool isEndless = widget.mode == "ENDLESS";
+    bool isEndless =
+        widget.mode == "ENDLESS" ||
+        (status?.totalQuestions ==
+            195); // 🚨 Devam ederken mod adını bilebilmesi için minik düzeltme
 
+    // 🚨 YENİ EKLENDİ: PopScope Widget'ı ile fiziksel geri tuşunu ve Appbar geri tuşunu yakalıyoruz
+    return PopScope(
+      canPop: false, // Otomatik çıkışı engelle
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        final bool shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: _buildBody(
+        context,
+        gameProvider,
+        authProvider,
+        status,
+        isDaily,
+        isEndless,
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    GameProvider gameProvider,
+    AuthProvider authProvider,
+    dynamic status,
+    bool isDaily,
+    bool isEndless,
+  ) {
     if (gameProvider.isLoading && status == null) {
       return const Scaffold(
         body: Center(
@@ -74,7 +171,14 @@ class _GameScreenState extends State<GameScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        automaticallyImplyLeading: false,
+        // 🚨 YENİ EKLENDİ: Sol üstteki geri okuna tıklandığında _onWillPop tetiklensin
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () async {
+            bool shouldPop = await _onWillPop();
+            if (shouldPop && mounted) Navigator.pop(context);
+          },
+        ),
       ),
       body: (status.remainingLives <= 0 || status.finished == true)
           ? _buildGameOver(
@@ -300,34 +404,39 @@ class _GameScreenState extends State<GameScreen> {
                         // 3. ALT KISIM (Şıklar - Sabit olarak en altta durur)
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: (status.options ?? []).map((option) {
-                            AnswerState state = AnswerState.normal;
+                          // 🚨 ÇÖZÜM BURADA: .map<Widget> ekleyerek tip güvenliğini sağladık
+                          children: (status.options as List<dynamic>? ?? [])
+                              .map<Widget>((option) {
+                                AnswerState state = AnswerState.normal;
 
-                            if (gameProvider.showResult) {
-                              if (option == gameProvider.correctAnswer) {
-                                state = AnswerState.correct;
-                              } else if (option ==
-                                  gameProvider.selectedAnswer) {
-                                state = AnswerState.wrong;
-                              } else {
-                                state = AnswerState.disabled;
-                              }
-                            }
-
-                            return AnswerButton(
-                              text: option,
-                              state: state,
-                              onPressed: () {
-                                if (!gameProvider.isLoading &&
-                                    !gameProvider.showResult) {
-                                  gameProvider.sendGuess(
-                                    authProvider.token!,
-                                    option,
-                                  );
+                                if (gameProvider.showResult) {
+                                  if (option == gameProvider.correctAnswer) {
+                                    state = AnswerState.correct;
+                                  } else if (option ==
+                                      gameProvider.selectedAnswer) {
+                                    state = AnswerState.wrong;
+                                  } else {
+                                    state = AnswerState.disabled;
+                                  }
                                 }
-                              },
-                            );
-                          }).toList(),
+
+                                return AnswerButton(
+                                  text: option
+                                      .toString(), // 🚨 ToString ile güvene aldık
+                                  state: state,
+                                  onPressed: () {
+                                    if (!gameProvider.isLoading &&
+                                        !gameProvider.showResult) {
+                                      gameProvider.sendGuess(
+                                        authProvider.token!,
+                                        option
+                                            .toString(), // 🚨 ToString ile güvene aldık
+                                      );
+                                    }
+                                  },
+                                );
+                              })
+                              .toList(),
                         ),
                         const SizedBox(
                           height: 8,
@@ -529,7 +638,10 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
               onPressed: () {
-                Provider.of<GameProvider>(context, listen: false).resetGame();
+                Provider.of<GameProvider>(
+                  context,
+                  listen: false,
+                ).resetGame(); // Oyun bittiğinde çıkarsa sıfırlasın
                 Navigator.pop(context);
               },
             ),

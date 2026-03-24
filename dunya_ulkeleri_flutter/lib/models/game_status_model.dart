@@ -1,3 +1,5 @@
+// lib/models/game_status_model.dart
+
 class GameStatusModel {
   final int? sessionId;
   final int currentScore;
@@ -32,7 +34,7 @@ class GameStatusModel {
     this.lastAnswerCorrect,
     this.lastCorrectAnswer,
     this.finished,
-    this.questionText, // 🚨 EKLENDİ
+    this.questionText,
   });
 
   factory GameStatusModel.fromJson(Map<String, dynamic> json) {
@@ -52,7 +54,27 @@ class GameStatusModel {
       lastAnswerCorrect: json['lastAnswerCorrect'],
       lastCorrectAnswer: json['lastCorrectAnswer'],
       finished: json['finished'],
-      questionText: json['questionText'], // 🚨 EKLENDİ
+      questionText: json['questionText'],
     );
+  }
+
+  // 🚨 YENİ EKLENDİ: Cihaz hafızasına yazabilmek için JSON'a çevirme metodu
+  Map<String, dynamic> toJson() {
+    return {
+      'sessionId': sessionId,
+      'currentScore': currentScore,
+      'remainingLives': remainingLives,
+      'countryName': countryName,
+      'ghostName': ghostName,
+      'ghostScore': ghostScore,
+      'totalQuestions': totalQuestions,
+      'remainingQuestions': remainingQuestions,
+      'options': options,
+      'message': message,
+      'lastAnswerCorrect': lastAnswerCorrect,
+      'lastCorrectAnswer': lastCorrectAnswer,
+      'finished': finished,
+      'questionText': questionText,
+    };
   }
 }
