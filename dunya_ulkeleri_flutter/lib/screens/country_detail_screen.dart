@@ -236,6 +236,7 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
 
   // İnternetten anlık ülke verisi çeken sihirli fonksiyon (Hiç dokunulmadı)
   // İnternetten anlık ülke verisi çeken sihirli fonksiyon
+  // İnternetten anlık ülke verisi çeken sihirli fonksiyon
   Future<void> _fetchLiveCountryData() async {
     try {
       String? isoCode = _getIsoCode(widget.countryName);
@@ -252,7 +253,8 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
         );
       }
 
-      final response = await http.get(url);
+      // 🚨 ÇÖZÜM BURADA: Eğer 3 saniye içinde cevap gelmezse patlat, bekleme!
+      final response = await http.get(url).timeout(const Duration(seconds: 3));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -268,12 +270,10 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
                 "${currencies.values.first['name']} (${currencies.values.first['symbol']})";
           }
 
-          // 🚨 DEĞİŞİM BURADA: Bayrağı API'nin bozuk linkinden değil, sağlam FlagCDN'den çekiyoruz!
+          // 🚨 Bayrağı sağlam FlagCDN'den çekiyoruz
           if (isoCode != null) {
-            // ISO kodunu küçük harfe çevirip flagcdn linkini oluşturuyoruz (Örn: AF -> af)
             flagUrl = 'https://flagcdn.com/w320/${isoCode.toLowerCase()}.png';
           } else if (countryData['flags'] != null) {
-            // Eğer ülkemizin ISO kodu sözlükte yoksa, API'nin verdiği linki denemeye devam et
             flagUrl = countryData['flags']['png'] ?? "";
           }
         }
@@ -284,7 +284,8 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
         hasError = true;
       }
     } catch (e) {
-      print("Bağlantı Hatası: $e");
+      // 🚨 3 saniyede cevap gelmezse buraya düşer ve sayfayı anında açar
+      print("Bağlantı Hatası veya API Yavaş: $e");
       hasError = true;
     } finally {
       if (mounted) {
