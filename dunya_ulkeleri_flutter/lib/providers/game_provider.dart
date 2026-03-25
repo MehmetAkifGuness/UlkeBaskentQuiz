@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // 🚨 Hafıza için
 import '../models/game_status_model.dart';
 import '../services/game_service.dart';
+import 'package:audioplayers/audioplayers.dart'; // 🚨 Ses için eklendi
+import 'package:flutter/services.dart'; // 🚨 Titreşim (HapticFeedback) için eklendi
 
 class GameProvider with ChangeNotifier {
   final GameService _gameService = GameService();
@@ -100,7 +102,13 @@ class GameProvider with ChangeNotifier {
     }
   }
 
-  Future<void> sendGuess(String token, String capital) async {
+  // 🚨 Parametrelere playSound ve vibrate eklendi
+  Future<void> sendGuess(
+    String token,
+    String capital, {
+    bool playSound = true,
+    bool vibrate = true,
+  }) async {
     if (_status?.sessionId == null || _showResult) return;
 
     _stopStopwatch();
@@ -121,6 +129,33 @@ class GameProvider with ChangeNotifier {
       _correctAnswer = nextStatus.lastCorrectAnswer;
       notifyListeners();
 
+      // 🚨 SES VE TİTREŞİM TETİKLEME ALANI BAŞLANGICI 🚨
+      bool isCorrect = (_selectedAnswer == _correctAnswer);
+
+      if (playSound) {
+        final player = AudioPlayer();
+        if (isCorrect) {
+          // Doğru bilirse correct.mp3 çal
+          player.play(AssetSource('sounds/correct.mp3'));
+        } else {
+          // Yanlış bilirse wrong.mp3 çal
+          player.play(AssetSource('sounds/wrong.mp3'));
+        }
+      }
+
+      if (vibrate) {
+        if (isCorrect) {
+          // Doğru cevapta hafif titreşim
+          HapticFeedback.vibrate();
+        } else {
+          // Yanlış cevapta daha belirgin titreşim
+          HapticFeedback.heavyImpact();
+          await Future.delayed(Duration(milliseconds: 100));
+          HapticFeedback.heavyImpact();
+        }
+      }
+      // 🚨 SES VE TİTREŞİM TETİKLEME ALANI BİTİŞİ 🚨
+
       await Future.delayed(Duration(milliseconds: 1500));
 
       _status = nextStatus;
@@ -128,7 +163,7 @@ class GameProvider with ChangeNotifier {
       _selectedAnswer = null;
       _correctAnswer = null;
 
-      await _saveGameLocally(); // 🚨 YENİ SORU GELDİ, HAFIZAYI GÜNCELLE!
+      await _saveGameLocally();
 
       if (_status?.finished == false) {
         _startStopwatch();

@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/game_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/answer_button.dart';
+import '../providers/settings_provider.dart';
 
 class GameScreen extends StatefulWidget {
   final String category;
@@ -405,38 +406,49 @@ class _GameScreenState extends State<GameScreen> {
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           // 🚨 ÇÖZÜM BURADA: .map<Widget> ekleyerek tip güvenliğini sağladık
-                          children: (status.options as List<dynamic>? ?? [])
-                              .map<Widget>((option) {
-                                AnswerState state = AnswerState.normal;
+                          children: (status.options as List<dynamic>? ?? []).map<Widget>((
+                            option,
+                          ) {
+                            AnswerState state = AnswerState.normal;
 
-                                if (gameProvider.showResult) {
-                                  if (option == gameProvider.correctAnswer) {
-                                    state = AnswerState.correct;
-                                  } else if (option ==
-                                      gameProvider.selectedAnswer) {
-                                    state = AnswerState.wrong;
-                                  } else {
-                                    state = AnswerState.disabled;
-                                  }
-                                }
+                            if (gameProvider.showResult) {
+                              if (option == gameProvider.correctAnswer) {
+                                state = AnswerState.correct;
+                              } else if (option ==
+                                  gameProvider.selectedAnswer) {
+                                state = AnswerState.wrong;
+                              } else {
+                                state = AnswerState.disabled;
+                              }
+                            }
 
-                                return AnswerButton(
-                                  text: option
-                                      .toString(), // 🚨 ToString ile güvene aldık
-                                  state: state,
-                                  onPressed: () {
-                                    if (!gameProvider.isLoading &&
-                                        !gameProvider.showResult) {
-                                      gameProvider.sendGuess(
-                                        authProvider.token!,
-                                        option
-                                            .toString(), // 🚨 ToString ile güvene aldık
+                            // Eski hali: gameProvider.sendGuess(authProvider.token!, option.toString());
+
+                            return AnswerButton(
+                              text: option.toString(),
+                              state: state,
+                              onPressed: () {
+                                if (!gameProvider.isLoading &&
+                                    !gameProvider.showResult) {
+                                  // 🚨 YENİ EKLENDİ: Ayarları provider'dan okuyup sendGuess'e gönderiyoruz
+                                  final settingsProvider =
+                                      Provider.of<SettingsProvider>(
+                                        context,
+                                        listen: false,
                                       );
-                                    }
-                                  },
-                                );
-                              })
-                              .toList(),
+
+                                  gameProvider.sendGuess(
+                                    authProvider.token!,
+                                    option.toString(),
+                                    playSound: settingsProvider
+                                        .isSoundEnabled, // Ses açık mı?
+                                    vibrate: settingsProvider
+                                        .isVibrationEnabled, // Titreşim açık mı?
+                                  );
+                                }
+                              },
+                            );
+                          }).toList(),
                         ),
                         const SizedBox(
                           height: 8,

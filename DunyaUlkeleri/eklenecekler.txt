@@ -8,3 +8,8 @@ Her rütbeye özel ikon fikri rank atlama animasyonu fikri
 kalıcı ip adresi ekleme url değişme zorunda kalmama
 oyundayken yanlışlıkla geri tuşuna basılırsa oyundan atıyor ve sıfırdan başlıyor oyun ekranına çıkış butonu koyuyoruz onun haricinde yanlışlıkla geri tuşuna bassak bile kaldığı yerden devam edebilmeli oyundan çıkıp girsen bile devam butonu olmalı
 rütbeleri backende taşımak 
+email doğrulama mesajı kod ortada olsun 
+email doğrulama kısmı düznelnsin
+yanlıış şehirler eklenecek ona göre yanlış şehirler eklenecek 
+ilk tıklamalar düzenlenecek 
+sayfa geçiş optimizasyonları 
