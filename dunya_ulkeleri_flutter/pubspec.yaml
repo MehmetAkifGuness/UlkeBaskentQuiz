@@ -20,6 +20,7 @@ dependencies:
   # 🚨 YENİ EKLENDİ: Ses efektleri oynatabilmek için 
   audioplayers: ^5.2.1
   flutter_dotenv: ^5.1.0
+  vibration: ^3.1.8
 
 dev_dependencies:
   flutter_test:

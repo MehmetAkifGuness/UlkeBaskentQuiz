@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import '../services/user.service.dart';
 
 class LeaderboardScreen extends StatefulWidget {
@@ -115,6 +116,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
                 return GestureDetector(
                   onTap: () {
+                    Provider.of<SettingsProvider>(
+                      context,
+                      listen: false,
+                    ).triggerButtonVibration(); // 🚨 YENİ
                     setState(() {
                       _selectedCategory = category;
                     });
@@ -166,6 +171,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     selected: _selectedMode == "COUNTRY_TO_CAPITAL",
                     selectedColor: Colors.blueAccent,
                     onSelected: (bool selected) {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration(); // 🚨 YENİ
                       setState(() => _selectedMode = "COUNTRY_TO_CAPITAL");
                       _fetchLeaderboard();
                     },
@@ -178,6 +187,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     selected: _selectedMode == "CAPITAL_TO_COUNTRY",
                     selectedColor: Colors.blueAccent,
                     onSelected: (bool selected) {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration(); // 🚨 YENİ
                       setState(() => _selectedMode = "CAPITAL_TO_COUNTRY");
                       _fetchLeaderboard();
                     },
@@ -190,6 +203,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     selected: _selectedMode == "MIXED",
                     selectedColor: Colors.blueAccent,
                     onSelected: (bool selected) {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration(); // 🚨 YENİ
                       setState(() => _selectedMode = "MIXED");
                       _fetchLeaderboard();
                     },

@@ -1,9 +1,11 @@
+// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import 'register_screen.dart';
 import 'forgot_password_dialog.dart';
-import 'main_screen.dart'; // ✅ Artık MainScreen'e gideceğiz
+import 'main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,11 +48,15 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // --- 🚨 YENİ EKLENEN: ŞİFREMİ UNUTTUM BUTONU ---
+            // --- 🚨 ŞİFREMİ UNUTTUM BUTONU ---
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
+                  Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).triggerButtonVibration(); // 🚨 YENİ
                   showDialog(
                     context: context,
                     builder: (context) => ForgotPasswordDialog(),
@@ -65,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 10), // Arayı biraz açtık
+            SizedBox(height: 10),
 
             authProvider.isLoading
                 ? CircularProgressIndicator()
@@ -77,13 +83,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size(double.infinity, 50),
                         ),
                         onPressed: () async {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration(); // 🚨 YENİ
                           final result = await authProvider.login(
                             _usernameController.text,
                             _passwordController.text,
                           );
 
                           if (authProvider.token != null) {
-                            // ✅ DEĞİŞİKLİK BURADA: HomeScreen yerine MainScreen'e gidiyoruz!
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -110,9 +119,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       // --- MİSAFİR GİRİŞİ BUTONU ---
                       OutlinedButton(
                         onPressed: () async {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration(); // 🚨 YENİ
                           bool success = await authProvider.loginAsGuest();
                           if (success) {
-                            // ✅ Misafir girişinde de HomeScreen yerine MainScreen'e gidiyoruz
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -143,6 +155,10 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(height: 20),
             TextButton(
               onPressed: () {
+                Provider.of<SettingsProvider>(
+                  context,
+                  listen: false,
+                ).triggerButtonVibration(); // 🚨 YENİ
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => RegisterScreen()),

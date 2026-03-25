@@ -1,9 +1,11 @@
+// lib/screens/forgot_password_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 
 class ForgotPasswordDialog extends StatefulWidget {
-  final String? email; // 🚨 DIŞARIDAN GELEN OTOMATİK MAİL İÇİN EKLENDİ
+  final String? email;
 
   const ForgotPasswordDialog({super.key, this.email});
 
@@ -12,8 +14,7 @@ class ForgotPasswordDialog extends StatefulWidget {
 }
 
 class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
-  int _step =
-      1; // 1: Email/Username girme aşaması, 2: Kod ve yeni şifre aşaması
+  int _step = 1;
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -21,10 +22,8 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   @override
   void initState() {
     super.initState();
-    // Eğer email hazır gelmişse (Yani Profil ekranındaysak)
     if (widget.email != null && widget.email!.isNotEmpty) {
       _emailController.text = widget.email!;
-      // Ekran açılır açılmaz arka planda otomatik olarak kodu gönder:
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _sendEmail();
       });
@@ -39,14 +38,11 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       _emailController.text.trim(),
     );
 
-    // Mesajın içinde hata ("Exception") geçmiyorsa başarılıdır
     if (!result.message!.contains("Exception")) {
       setState(() {
         _step = 2;
-      }); // Başarılıysa 2. aşamaya geç
+      });
 
-      // 🚨 DÜZELTİLDİ: Giriş ekranındayken güvenlik amaçlı "eğer hesap varsa" der.
-      // Ancak profil ekranındayken hesabın olduğunu bildiğimiz için doğrudan başarı mesajı verir.
       String successMessage = widget.email != null
           ? "Sıfırlama kodu e-postanıza başarıyla gönderildi!"
           : "Eğer bu bilgilere ait bir hesap varsa, sıfırlama kodu gönderildi.";
@@ -62,7 +58,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         ),
       );
       if (widget.email != null) {
-        Navigator.pop(context); // Otomatik gönderimde hata varsa popup'ı kapat
+        Navigator.pop(context);
       }
     }
   }
@@ -89,7 +85,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
     );
 
     if (!result.message!.contains("Exception")) {
-      Navigator.pop(context); // İşlem bittiyse popup'ı kapat
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.message!), backgroundColor: Colors.green),
       );
@@ -118,7 +114,6 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Eğer dışarıdan email GELMEMİŞSE (Giriş ekranından açılmışsa)
             if (_step == 1 && widget.email == null) ...[
               Text(
                 "Hesabınıza kayıtlı e-posta adresinizi veya kullanıcı adınızı girin. Kayıtlı e-postanıza bir doğrulama kodu göndereceğiz.",
@@ -136,13 +131,11 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                   ),
                 ),
               ),
-              // Eğer dışarıdan email GELMİŞSE (Profil ekranından otomatik kod gönderiliyorsa)
             ] else if (_step == 1 && widget.email != null) ...[
               Text(
                 "Kayıtlı e-postanıza doğrulama kodu gönderiliyor...",
                 style: TextStyle(color: Colors.white70),
               ),
-              // 2. Aşama: Şifre ve Kod girme ekranı
             ] else if (_step == 2) ...[
               Text(
                 "E-postanıza gelen 6 haneli kodu ve yeni şifrenizi girin.",
@@ -179,7 +172,13 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Provider.of<SettingsProvider>(
+              context,
+              listen: false,
+            ).triggerButtonVibration(); // 🚨 YENİ
+            Navigator.pop(context);
+          },
           child: Text("İptal", style: TextStyle(color: Colors.grey)),
         ),
         isLoading
@@ -192,7 +191,13 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                   backgroundColor: Colors.amber,
                   foregroundColor: Colors.black,
                 ),
-                onPressed: _step == 1 ? _sendEmail : _changePassword,
+                onPressed: () {
+                  Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).triggerButtonVibration(); // 🚨 YENİ
+                  _step == 1 ? _sendEmail() : _changePassword();
+                },
                 child: Text(
                   _step == 1 ? "Kod Gönder" : "Şifreyi Değiştir",
                   style: TextStyle(fontWeight: FontWeight.bold),

@@ -1,8 +1,11 @@
+// lib/screens/main_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'dictionary_screen.dart';
-import 'leaderboard_screen.dart'; // YENİ EKRANI IMPORT ETTİK
+import 'leaderboard_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -34,6 +37,12 @@ class _MainScreenState extends State<MainScreen> {
             .amber, // Seçilen sekmenin rengi (Oyunun temasına uygun altın sarısı)
         unselectedItemColor: Colors.grey, // Seçili olmayanların rengi
         onTap: (index) {
+          // 🚨 YENİ EKLENDİ: Alt sekmelere tıklandığında titreşim
+          Provider.of<SettingsProvider>(
+            context,
+            listen: false,
+          ).triggerButtonVibration();
+
           setState(() {
             _currentIndex = index;
           });

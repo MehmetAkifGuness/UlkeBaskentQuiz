@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/game_provider.dart'; // 🚨 YENİ EKLENDİ: Yarım kalan oyunu kontrol etmek için
+import '../providers/game_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import '../models/user_profile_model.dart';
 import '../services/user.service.dart';
 import 'game_screen.dart';
@@ -49,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
     "Okyanusya",
   ];
 
-  // 🚨 YENİ: Şık BottomSheet ile hem Mod hem Kategori Seçimi
+  // Şık BottomSheet ile hem Mod hem Kategori Seçimi
   void _showCategorySelection(BuildContext context) {
     String selectedMode = "COUNTRY_TO_CAPITAL"; // Varsayılan mod
 
@@ -83,6 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: Text("Ülke ➡ Başkent"),
                         selected: selectedMode == "COUNTRY_TO_CAPITAL",
                         onSelected: (bool selected) {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration(); // 🚨 YENİ
                           setModalState(() {
                             selectedMode = "COUNTRY_TO_CAPITAL";
                           });
@@ -92,6 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: Text("Başkent ➡ Ülke"),
                         selected: selectedMode == "CAPITAL_TO_COUNTRY",
                         onSelected: (bool selected) {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration(); // 🚨 YENİ
                           setModalState(() {
                             selectedMode = "CAPITAL_TO_COUNTRY";
                           });
@@ -101,6 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         label: Text("🔀 Karışık"),
                         selected: selectedMode == "MIXED",
                         onSelected: (bool selected) {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration(); // 🚨 YENİ
                           setModalState(() {
                             selectedMode = "MIXED";
                           });
@@ -133,6 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: Text(category, style: TextStyle(fontSize: 18)),
                           trailing: Icon(Icons.arrow_forward_ios, size: 16),
                           onTap: () {
+                            Provider.of<SettingsProvider>(
+                              context,
+                              listen: false,
+                            ).triggerButtonVibration(); // 🚨 YENİ
                             Navigator.pop(context);
                             Navigator.push(
                               context,
@@ -140,8 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 builder: (context) => GameScreen(
                                   category: category,
                                   mode: selectedMode,
-                                  isContinuing: false, // 🚨 YENİ
-                                ), // 🚨 YENİ: Seçilen modu gönderdik
+                                  isContinuing: false,
+                                ),
                               ),
                             ).then(
                               (_) => _checkDailyStatus(),
@@ -163,7 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    // 🚨 YENİ EKLENDİ: Yarım kalan oyun var mı diye kontrol ediyoruz
     final gameProvider = Provider.of<GameProvider>(context);
     bool hasActiveGame =
         gameProvider.status != null && gameProvider.status?.finished == false;
@@ -174,7 +190,13 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Provider.of<SettingsProvider>(
+                context,
+                listen: false,
+              ).triggerButtonVibration(); // 🚨 YENİ
+              Navigator.pop(context);
+            },
           ),
         ],
       ),
@@ -182,7 +204,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ? Center(child: CircularProgressIndicator(color: Colors.amber))
           : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              // 🚨 YENİ: Ekran taşmasın diye Column yerine ListView kullandık
               child: ListView(
                 physics: BouncingScrollPhysics(),
                 children: [
@@ -194,7 +215,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SizedBox(height: 30),
 
-                  // 🚨 YENİ EKLENDİ: EĞER YARIM KALAN OYUN VARSA BURADA YEŞİL "DEVAM ET" BUTONU ÇIKAR
                   if (hasActiveGame) ...[
                     Container(
                       margin: EdgeInsets.only(bottom: 20),
@@ -235,6 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         onPressed: () {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration(); // 🚨 YENİ
                           // Oyuna kaldığı yerden yönlendir (isContinuing: true)
                           Navigator.push(
                             context,
@@ -242,8 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               builder: (context) => GameScreen(
                                 category: "Devam",
                                 mode: "Devam",
-                                isContinuing:
-                                    true, // 🚨 Sıfırdan başlatma, kaldığı yerden aç!
+                                isContinuing: true,
                               ),
                             ),
                           ).then((_) => _checkDailyStatus());
@@ -252,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
 
-                  // 🎯 GÜNÜN GÖREVİ KARTI (Eski Kodların Aynı)
+                  // 🎯 GÜNÜN GÖREVİ KARTI
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
@@ -266,17 +289,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: _hasPlayedDaily
                           ? null
                           : () {
+                              Provider.of<SettingsProvider>(
+                                context,
+                                listen: false,
+                              ).triggerButtonVibration(); // 🚨 YENİ
                               Provider.of<GameProvider>(
                                 context,
                                 listen: false,
-                              ).resetGame(); // 🚨 Eski oyunu sil
+                              ).resetGame();
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => GameScreen(
                                     category: "DailyChallenge",
                                     mode: "MIXED",
-                                    isContinuing: false, // 🚨 YENİ
+                                    isContinuing: false,
                                   ),
                                 ),
                               ).then((_) => _checkDailyStatus());
@@ -323,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   SizedBox(height: 20), // Kartlar arası boşluk
-                  // ♾️ YENİ: SONSUZ MOD KARTI
+                  // ♾️ SONSUZ MOD KARTI
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
@@ -333,11 +360,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
                       onTap: () {
+                        Provider.of<SettingsProvider>(
+                          context,
+                          listen: false,
+                        ).triggerButtonVibration(); // 🚨 YENİ
                         Provider.of<GameProvider>(
                           context,
                           listen: false,
-                        ).resetGame(); // 🚨 Eski oyunu sil
-                        // Kategori "Dünya", Mod "ENDLESS" olarak başlatıyoruz
+                        ).resetGame();
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -384,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   SizedBox(height: 30),
 
-                  // SERBEST MODDA OYNA BUTONU (Eski Kod)
+                  // SERBEST MODDA OYNA BUTONU
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 20),
@@ -402,7 +432,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onPressed: () => _showCategorySelection(context),
+                    onPressed: () {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration(); // 🚨 YENİ
+                      _showCategorySelection(context);
+                    },
                   ),
                   SizedBox(height: 30),
                 ],

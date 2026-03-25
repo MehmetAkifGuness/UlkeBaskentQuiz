@@ -1,4 +1,7 @@
+// lib/screens/register_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import '../services/auth_service.dart';
 import 'verify_screen.dart';
 
@@ -42,6 +45,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: () async {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration(); // 🚨 YENİ
                       setState(() => _isLoading = true);
                       final result = await _authService.register(
                         _usernameController.text,
@@ -54,11 +61,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         SnackBar(content: Text(result.message ?? "")),
                       );
 
-                      // Kayıt başarılıysa doğrulama ekranına geç
-                      // ❌ HATALI:
-                      // if (result.message?.contains("başarılı"))
-
-                      // ✅ DOĞRU (Eğer sonuç null ise 'false' kabul et diyoruz):
                       if ((result.message?.contains("başarılı") ?? false) ||
                           (result.message?.contains("doğrulayın") ?? false)) {
                         Navigator.push(

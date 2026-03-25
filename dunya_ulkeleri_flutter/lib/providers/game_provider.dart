@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // 🚨 Hafıza iç
 import '../models/game_status_model.dart';
 import '../services/game_service.dart';
 import 'package:audioplayers/audioplayers.dart'; // 🚨 Ses için eklendi
-import 'package:flutter/services.dart'; // 🚨 Titreşim (HapticFeedback) için eklendi
+import 'package:vibration/vibration.dart'; // 🚨 YENİ EKLENDİ (Gerçek titreşim motoru için)
 
 class GameProvider with ChangeNotifier {
   final GameService _gameService = GameService();
@@ -143,15 +143,19 @@ class GameProvider with ChangeNotifier {
         }
       }
 
+      // 🚨 YENİ TİTREŞİM MANTIĞI: VIBRATION PAKETİ KULLANILDI 🚨
       if (vibrate) {
-        if (isCorrect) {
-          // Doğru cevapta hafif titreşim
-          HapticFeedback.vibrate();
-        } else {
-          // Yanlış cevapta daha belirgin titreşim
-          HapticFeedback.heavyImpact();
-          await Future.delayed(Duration(milliseconds: 100));
-          HapticFeedback.heavyImpact();
+        // Cihazda gerçekten titreşim motoru var mı kontrol et
+        bool? hasVibrator = await Vibration.hasVibrator();
+
+        if (hasVibrator == true) {
+          if (isCorrect) {
+            // Doğru cevapta 100 milisaniyelik kısa, tatlı titreşim
+            Vibration.vibrate(duration: 100);
+          } else {
+            // Yanlış cevapta 400 milisaniyelik belirgin, uyarıcı titreşim
+            Vibration.vibrate(duration: 400);
+          }
         }
       }
       // 🚨 SES VE TİTREŞİM TETİKLEME ALANI BİTİŞİ 🚨

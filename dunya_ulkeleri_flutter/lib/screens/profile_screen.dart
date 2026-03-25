@@ -84,7 +84,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   inactiveThumbColor: Colors.grey,
                   inactiveTrackColor: Colors.grey.shade800,
                   value: settings.isSoundEnabled,
-                  onChanged: (value) => settings.toggleSound(value),
+                  onChanged: (value) {
+                    Provider.of<SettingsProvider>(
+                      context,
+                      listen: false,
+                    ).triggerButtonVibration();
+                    settings.toggleSound(value);
+                  },
                 ),
 
                 // 📳 Titreşim Ayarı
@@ -110,7 +116,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   inactiveThumbColor: Colors.grey,
                   inactiveTrackColor: Colors.grey.shade800,
                   value: settings.isVibrationEnabled,
-                  onChanged: (value) => settings.toggleVibration(value),
+                  onChanged: (value) {
+                    Provider.of<SettingsProvider>(
+                      context,
+                      listen: false,
+                    ).triggerButtonVibration();
+                    settings.toggleVibration(value);
+                  },
                 ),
 
                 SizedBox(height: 20),
@@ -131,6 +143,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
+                    Provider.of<SettingsProvider>(
+                      context,
+                      listen: false,
+                    ).triggerButtonVibration();
                     Navigator.pop(context); // Önce Ayarlar menüsünü kapat
                     showDialog(
                       context: context,
@@ -145,7 +161,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Provider.of<SettingsProvider>(
+                context,
+                listen: false,
+              ).triggerButtonVibration();
+              Navigator.pop(context);
+            },
             child: Text(
               "Kapat",
               style: TextStyle(color: Colors.amber, fontSize: 16),
@@ -264,7 +286,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Provider.of<SettingsProvider>(
+                context,
+                listen: false,
+              ).triggerButtonVibration();
+              Navigator.pop(context);
+            },
             child: Text(
               "Anladım",
               style: TextStyle(
@@ -313,6 +341,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     int currentId = index + 1;
                     return GestureDetector(
                       onTap: () async {
+                        Provider.of<SettingsProvider>(
+                          context,
+                          listen: false,
+                        ).triggerButtonVibration();
                         Navigator.pop(context); // Menüyü kapat
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -518,8 +550,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Center(
                   child: GestureDetector(
-                    onTap: () =>
-                        _showAvatarSelection(context, authProvider.token!),
+                    onTap: () {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration();
+                      _showAvatarSelection(context, authProvider.token!);
+                    },
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [
@@ -594,7 +631,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: IconButton(
                         icon: Icon(Icons.help_outline, color: Colors.amber),
                         tooltip: "Rütbeler ve Puanlar",
-                        onPressed: () => _showTierInfoDialog(context),
+                        onPressed: () {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+                          _showTierInfoDialog(context);
+                        },
                       ),
                     ),
                   ],
@@ -653,6 +696,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           onPressed: () {
+                            Provider.of<SettingsProvider>(
+                              context,
+                              listen: false,
+                            ).triggerButtonVibration();
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -686,6 +733,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   onPressed: () {
+                    Provider.of<SettingsProvider>(
+                      context,
+                      listen: false,
+                    ).triggerButtonVibration();
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => MistakeScreen()),
@@ -706,7 +757,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 Divider(color: Colors.amber),
 
-                // 1. Önce "Günün Görevi" ve "Sonsuz Mod" için özel barları ekliyoruz
                 // 1. Önce "Günün Görevi" ve "Sonsuz Mod" için özel barları ekliyoruz
                 ...[
                   {
@@ -907,7 +957,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         // 🚨 PROFİLİ PARAMETRE OLARAK VERİYORUZ
-                        onPressed: () => _showSettings(context, profile),
+                        onPressed: () {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+                          _showSettings(context, profile);
+                        },
                       ),
                     ),
                     SizedBox(width: 15),
@@ -928,7 +984,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           "Çıkış Yap",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () => _handleLogout(context),
+                        onPressed: () {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+                          _handleLogout(context);
+                        },
                       ),
                     ),
                   ],

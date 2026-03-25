@@ -1,4 +1,7 @@
+// lib/screens/verify_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import '../services/auth_service.dart';
 
 class VerifyScreen extends StatelessWidget {
@@ -31,18 +34,16 @@ class VerifyScreen extends StatelessWidget {
             TextField(
               controller: _codeController,
               keyboardType: TextInputType.number,
-              textAlign: TextAlign.center, // Kodu kutunun ortasına yazar
-              // ✅ DOĞRU YER: Yazı stili burada tanımlanır
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 10, // Harf boşluğu artık burada
+                letterSpacing: 10,
               ),
               decoration: InputDecoration(
                 labelText: "Doğrulama Kodu",
                 hintText: "000000",
                 border: OutlineInputBorder(),
-                // ❌ letterSpacing buradan kaldırıldı
               ),
             ),
             SizedBox(height: 20),
@@ -51,6 +52,10 @@ class VerifyScreen extends StatelessWidget {
                 minimumSize: Size(double.infinity, 50),
               ),
               onPressed: () async {
+                Provider.of<SettingsProvider>(
+                  context,
+                  listen: false,
+                ).triggerButtonVibration(); // 🚨 YENİ
                 final result = await _authService.verify(
                   email,
                   _codeController.text,
@@ -62,11 +67,9 @@ class VerifyScreen extends StatelessWidget {
                   ),
                 );
 
-                // Backend mesajını kontrol et (küçük/büyük harf duyarsız)
                 if (result.message != null &&
                     (result.message!.toLowerCase().contains("başarı") ||
                         result.message!.toLowerCase().contains("success"))) {
-                  // Giriş ekranına (ilk sayfaya) geri dön
                   Navigator.popUntil(context, (route) => route.isFirst);
                 }
               },

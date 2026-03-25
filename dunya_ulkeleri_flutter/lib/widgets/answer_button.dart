@@ -1,6 +1,8 @@
 // lib/widgets/answer_button.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
 import '../theme/app_theme.dart';
+import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 
 // Butonun alabileceği 4 farklı durumu tanımlıyoruz
 enum AnswerState { normal, correct, wrong, disabled }
@@ -43,7 +45,16 @@ class AnswerButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
-        onTap: (state == AnswerState.normal) ? onPressed : null,
+        // 🚨 YENİ EKLENDİ: Tıklanma anında global titreşimi tetikliyoruz
+        onTap: (state == AnswerState.normal)
+            ? () {
+                Provider.of<SettingsProvider>(
+                  context,
+                  listen: false,
+                ).triggerButtonVibration();
+                onPressed();
+              }
+            : null,
         borderRadius: BorderRadius.circular(
           16,
         ), // 9. Kural: 10-16px Border radius

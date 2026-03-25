@@ -10,7 +10,6 @@ import '../providers/settings_provider.dart';
 class GameScreen extends StatefulWidget {
   final String category;
   final String mode;
-  // 🚨 YENİ EKLENDİ: Oyun sıfırdan mı başlıyor yoksa yarım kalandan mı devam ediyor?
   final bool isContinuing;
 
   const GameScreen({
@@ -32,7 +31,6 @@ class _GameScreenState extends State<GameScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-      // 🚨 YENİ: Sadece SIFIRDAN başlanıyorsa API'ye istek at, yoksa atma (Hafızadan kullan)
       if (!widget.isContinuing) {
         gameProvider.resetGame();
         gameProvider.startNewGame(
@@ -44,13 +42,11 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  // 🚨 YENİ EKLENDİ: Kullanıcı çıkış butonuna veya telefonun geri tuşuna basarsa çıkacak onay penceresi
   Future<bool> _onWillPop() async {
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-    // Eğer oyun bitmişse direkt çıkabilir, uyarıya gerek yok.
     if (gameProvider.status?.finished == true) {
-      gameProvider.resetGame(); // Oyun bittiyse çıkarken hafızadan sil
+      gameProvider.resetGame();
       return true;
     }
 
@@ -75,7 +71,13 @@ class _GameScreenState extends State<GameScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () {
+                  Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).triggerButtonVibration(); // 🚨 YENİ
+                  Navigator.of(context).pop(false);
+                },
                 child: Text(
                   'Hayır, Devam Et',
                   style: TextStyle(color: Colors.grey),
@@ -86,7 +88,13 @@ class _GameScreenState extends State<GameScreen> {
                   backgroundColor: Colors.amber,
                   foregroundColor: Colors.black,
                 ),
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed: () {
+                  Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).triggerButtonVibration(); // 🚨 YENİ
+                  Navigator.of(context).pop(true);
+                },
                 child: Text('Evet, Çık'),
               ),
             ],
@@ -94,7 +102,6 @@ class _GameScreenState extends State<GameScreen> {
         ) ??
         false;
 
-    // Eğer "Evet Çık" derse hafızayı silmiyoruz, böylece ana ekranda devam et butonu kalıyor.
     return shouldPop;
   }
 
@@ -107,13 +114,10 @@ class _GameScreenState extends State<GameScreen> {
     bool isDaily = widget.category == "DailyChallenge";
     // ignore: unused_local_variable
     bool isEndless =
-        widget.mode == "ENDLESS" ||
-        (status?.totalQuestions ==
-            195); // 🚨 Devam ederken mod adını bilebilmesi için minik düzeltme
+        widget.mode == "ENDLESS" || (status?.totalQuestions == 195);
 
-    // 🚨 YENİ EKLENDİ: PopScope Widget'ı ile fiziksel geri tuşunu ve Appbar geri tuşunu yakalıyoruz
     return PopScope(
-      canPop: false, // Otomatik çıkışı engelle
+      canPop: false,
       onPopInvoked: (didPop) async {
         if (didPop) return;
         final bool shouldPop = await _onWillPop();
@@ -163,7 +167,6 @@ class _GameScreenState extends State<GameScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          // 🚨 YENİ EKLENDİ: Sonsuz moddaysa kalpler yerine sonsuzluk işareti gösterilir
           isDaily
               ? "Skor: ${status.currentScore} | 🎯 Günün Görevi"
               : isEndless
@@ -172,10 +175,13 @@ class _GameScreenState extends State<GameScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        // 🚨 YENİ EKLENDİ: Sol üstteki geri okuna tıklandığında _onWillPop tetiklensin
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () async {
+            Provider.of<SettingsProvider>(
+              context,
+              listen: false,
+            ).triggerButtonVibration(); // 🚨 YENİ
             bool shouldPop = await _onWillPop();
             if (shouldPop && mounted) Navigator.pop(context);
           },
@@ -190,7 +196,6 @@ class _GameScreenState extends State<GameScreen> {
             )
           : Stack(
               children: [
-                // YENİ: SafeArea ve Scroll olmayan, esnek Column yapısı
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -200,7 +205,6 @@ class _GameScreenState extends State<GameScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 1. ÜST KISIM (Mesaj, Timer ve Bar)
                         Column(
                           children: [
                             Text(
@@ -213,7 +217,6 @@ class _GameScreenState extends State<GameScreen> {
                             ),
                             const SizedBox(height: 12),
 
-                            // ⏱️ Kronometre UI
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -259,8 +262,6 @@ class _GameScreenState extends State<GameScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // 👻 Akıllı Hayalet / Soru İlerlemesi
-                            // 🚨 YENİ EKLENDİ: Sonsuz moddaysa kalan soru sayısı yazmaz, kırmızı bir uyarı çıkar.
                             if (isEndless)
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -355,7 +356,6 @@ class _GameScreenState extends State<GameScreen> {
                           ],
                         ),
 
-                        // Soru Kartını ekranın ortasında kalan boşluğa yayarak ortalayan yapı
                         Expanded(
                           child: Center(
                             child: Container(
@@ -377,8 +377,7 @@ class _GameScreenState extends State<GameScreen> {
                                 ],
                               ),
                               child: Column(
-                                mainAxisSize: MainAxisSize
-                                    .min, // Kart sadece içeriği kadar büyür
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(
                                     Icons.public,
@@ -402,64 +401,55 @@ class _GameScreenState extends State<GameScreen> {
                           ),
                         ),
 
-                        // 3. ALT KISIM (Şıklar - Sabit olarak en altta durur)
                         Column(
                           mainAxisSize: MainAxisSize.min,
-                          // 🚨 ÇÖZÜM BURADA: .map<Widget> ekleyerek tip güvenliğini sağladık
-                          children: (status.options as List<dynamic>? ?? []).map<Widget>((
-                            option,
-                          ) {
-                            AnswerState state = AnswerState.normal;
+                          children: (status.options as List<dynamic>? ?? [])
+                              .map<Widget>((option) {
+                                AnswerState state = AnswerState.normal;
 
-                            if (gameProvider.showResult) {
-                              if (option == gameProvider.correctAnswer) {
-                                state = AnswerState.correct;
-                              } else if (option ==
-                                  gameProvider.selectedAnswer) {
-                                state = AnswerState.wrong;
-                              } else {
-                                state = AnswerState.disabled;
-                              }
-                            }
-
-                            // Eski hali: gameProvider.sendGuess(authProvider.token!, option.toString());
-
-                            return AnswerButton(
-                              text: option.toString(),
-                              state: state,
-                              onPressed: () {
-                                if (!gameProvider.isLoading &&
-                                    !gameProvider.showResult) {
-                                  // 🚨 YENİ EKLENDİ: Ayarları provider'dan okuyup sendGuess'e gönderiyoruz
-                                  final settingsProvider =
-                                      Provider.of<SettingsProvider>(
-                                        context,
-                                        listen: false,
-                                      );
-
-                                  gameProvider.sendGuess(
-                                    authProvider.token!,
-                                    option.toString(),
-                                    playSound: settingsProvider
-                                        .isSoundEnabled, // Ses açık mı?
-                                    vibrate: settingsProvider
-                                        .isVibrationEnabled, // Titreşim açık mı?
-                                  );
+                                if (gameProvider.showResult) {
+                                  if (option == gameProvider.correctAnswer) {
+                                    state = AnswerState.correct;
+                                  } else if (option ==
+                                      gameProvider.selectedAnswer) {
+                                    state = AnswerState.wrong;
+                                  } else {
+                                    state = AnswerState.disabled;
+                                  }
                                 }
-                              },
-                            );
-                          }).toList(),
+
+                                return AnswerButton(
+                                  text: option.toString(),
+                                  state: state,
+                                  onPressed: () {
+                                    if (!gameProvider.isLoading &&
+                                        !gameProvider.showResult) {
+                                      final settingsProvider =
+                                          Provider.of<SettingsProvider>(
+                                            context,
+                                            listen: false,
+                                          );
+
+                                      gameProvider.sendGuess(
+                                        authProvider.token!,
+                                        option.toString(),
+                                        playSound:
+                                            settingsProvider.isSoundEnabled,
+                                        vibrate:
+                                            settingsProvider.isVibrationEnabled,
+                                      );
+                                    }
+                                  },
+                                );
+                              })
+                              .toList(),
                         ),
-                        const SizedBox(
-                          height: 8,
-                        ), // Ekranın en altında minik bir nefes boşluğu
+                        const SizedBox(height: 8),
                       ],
                     ),
                   ),
                 ),
 
-                // Yüklenme (Loading) Göstergesi
-                // ignore: unnecessary_null_comparison
                 if (gameProvider.isLoading && status != null)
                   Center(
                     child: Container(
@@ -484,21 +474,18 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // 🚨 YENİ TASARIM: Stresli kırımızı renk yerine çok daha iç açıcı ve motive edici ekran
   Widget _buildGameOver(
     BuildContext context,
     int score,
     String? message,
     bool isDaily,
   ) {
-    // ZAFER KONTROLÜ: Mesajın içinde Tebrikler veya Tamamlandı geçiyorsa kazanmıştır.
     bool isVictory =
         message != null &&
         (message.contains("TEBRİKLER") || message.contains("Tamamlandı"));
 
     bool isEndless = widget.mode == "ENDLESS";
 
-    // 🌟 Kırmızı/stresli mesajlar yerine daha tatlı ve motive edici mesajlar
     String titleText;
     if (isVictory) {
       titleText = isDaily ? "GÖREV TAMAMLANDI!" : "MUHTEŞEM ZAFER!";
@@ -511,12 +498,10 @@ class _GameScreenState extends State<GameScreen> {
         titleText = "YENİDEN DENE!";
     }
 
-    // 🌟 Kan kırmızısı yerine ferahlatıcı açık mavi/cyan tonu
     Color mainColor = isVictory
         ? Colors.amberAccent
         : Colors.cyanAccent.shade400;
 
-    // 🌟 Kırık, bozuk ikon yerine motive edici roket ikonu (Yükselmeye devam)
     IconData mainIcon = isVictory
         ? Icons.emoji_events_rounded
         : Icons.rocket_launch_rounded;
@@ -526,7 +511,6 @@ class _GameScreenState extends State<GameScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 🏆 GÖZ ALICI İKON (Arkasında Yumuşak Parlama Glow Efekti Var)
             Container(
               padding: const EdgeInsets.all(30),
               decoration: BoxDecoration(
@@ -544,7 +528,6 @@ class _GameScreenState extends State<GameScreen> {
             ),
             const SizedBox(height: 35),
 
-            // BAŞLIK
             Text(
               titleText,
               textAlign: TextAlign.center,
@@ -557,7 +540,6 @@ class _GameScreenState extends State<GameScreen> {
             ),
             const SizedBox(height: 15),
 
-            // BACKEND'DEN GELEN MESAJ (Varsa)
             if (message != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -574,17 +556,13 @@ class _GameScreenState extends State<GameScreen> {
               ),
             const SizedBox(height: 40),
 
-            // 💰 ŞIK GRADİENT SKOR KARTI (Ferah Renkler)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isVictory
                       ? [Colors.amber.shade700, Colors.orangeAccent]
-                      : [
-                          Colors.lightBlue.shade400,
-                          Colors.indigo.shade400,
-                        ], // Mat gri yerine ferah mavi-mor geçişi
+                      : [Colors.lightBlue.shade400, Colors.indigo.shade400],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -622,7 +600,6 @@ class _GameScreenState extends State<GameScreen> {
             ),
             const SizedBox(height: 50),
 
-            // ANA SAYFA BUTONU
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
@@ -650,10 +627,11 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
               onPressed: () {
-                Provider.of<GameProvider>(
+                Provider.of<SettingsProvider>(
                   context,
                   listen: false,
-                ).resetGame(); // Oyun bittiğinde çıkarsa sıfırlasın
+                ).triggerButtonVibration(); // 🚨 YENİ
+                Provider.of<GameProvider>(context, listen: false).resetGame();
                 Navigator.pop(context);
               },
             ),
@@ -703,7 +681,6 @@ class ScoreProgressWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // --- 1. BAR: SORU DURUMU ---
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -758,7 +735,6 @@ class ScoreProgressWidget extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // --- 2. BAR: SKOR VE HAYALET DURUMU ---
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
