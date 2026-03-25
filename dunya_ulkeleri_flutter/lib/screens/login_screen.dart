@@ -1,4 +1,5 @@
 // lib/screens/login_screen.dart
+import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -95,9 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (authProvider.token != null) {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => MainScreen(),
-                              ),
+                              FadePageRoute(page: MainScreen()),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -127,9 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (success) {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => MainScreen(),
-                              ),
+                              FadePageRoute(page: MainScreen()),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -159,10 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   context,
                   listen: false,
                 ).triggerButtonVibration(); // 🚨 YENİ
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterScreen()),
-                );
+                Navigator.push(context, FadePageRoute(page: RegisterScreen()));
               },
               child: Text("Hesabın yok mu? Kayıt Ol"),
             ),

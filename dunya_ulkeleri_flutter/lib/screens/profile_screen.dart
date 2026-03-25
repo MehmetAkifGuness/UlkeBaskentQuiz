@@ -1,4 +1,5 @@
 // lib/screens/profile_screen.dart
+import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -41,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await Provider.of<AuthProvider>(context, listen: false).logout();
     // Tüm önceki ekranları kapatıp Giriş Ekranına (Login) yönlendirir
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => LoginScreen()),
+      FadePageRoute(page: LoginScreen()),
       (Route<dynamic> route) => false,
     );
   }
@@ -702,9 +703,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ).triggerButtonVibration();
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => DictionaryScreen(),
-                              ),
+                              FadePageRoute(page: DictionaryScreen()),
                             );
                           },
                         ),
@@ -739,7 +738,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ).triggerButtonVibration();
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MistakeScreen()),
+                      FadePageRoute(page: MistakeScreen()),
                     );
                   },
                 ),

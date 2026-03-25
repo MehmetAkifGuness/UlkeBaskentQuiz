@@ -1,11 +1,13 @@
-// ignore_for_file: dead_code
+// ignore_for_file: dead_null_aware_expression, dead_code
 
+import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 TİTREŞİM İÇİN EKLENDİ
 import '../services/game_service.dart';
-import '../models/dictionary_model.dart'; // Model dosyanın yolunun doğru olduğundan emin ol
-import 'country_detail_screen.dart'; // Detay sayfasına geçiş için
+import '../models/dictionary_model.dart';
+import 'country_detail_screen.dart';
 
 class DictionaryScreen extends StatefulWidget {
   const DictionaryScreen({super.key});
@@ -48,7 +50,6 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     }
   }
 
-  // Arama çubuğuna yazı yazıldıkça listeyi filtreleyen metod
   // ignore: unused_element
   String _toTurkishLowerCase(String text) {
     return text
@@ -70,16 +71,11 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     } else {
       setState(() {
         _filteredData = _allData.where((item) {
-          // Null güvenliği eklendi (item.değişken ?? '')
-          // ignore: duplicate_ignore
-          // ignore: dead_null_aware_expression, dead_code
           final countryLower = (item.countryName ?? '').toLowerCase();
-          // ignore: dead_null_aware_expression
           final capitalLower = (item.capitalName ?? '').toLowerCase();
           final continentLower = (item.continent ?? '').toLowerCase();
           final searchLower = query.toLowerCase();
 
-          // Ülke, Başkent veya Kıtaya göre arama yapabilir
           return countryLower.contains(searchLower) ||
               capitalLower.contains(searchLower) ||
               continentLower.contains(searchLower);
@@ -88,132 +84,203 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     }
   }
 
-  // Ülke isimlerini emoji bayraklara çeviren sözlük!
-  // EKSİKSİZ BAYRAK KÜTÜPHANESİ (143 ÜLKE)
   String _getFlagEmoji(String country) {
     const Map<String, String> flagMap = {
-      // A
       "Afganistan": "🇦🇫",
       "Almanya": "🇩🇪",
       "Amerika Birleşik Devletleri": "🇺🇸",
-      "Andorra": "🇦🇩", "Angola": "🇦🇴", "Antigua ve Barbuda": "🇦🇬",
-      "Arjantin": "🇦🇷", "Arnavutluk": "🇦🇱", "Avustralya": "🇦🇺",
-      "Avusturya": "🇦🇹", "Azerbaycan": "🇦🇿",
-
-      // B
-      "Bahamalar": "🇧🇸", "Bahreyn": "🇧🇭", "Bangladeş": "🇧🇩",
-      "Barbados": "🇧🇧", "Belçika": "🇧🇪", "Belize": "🇧🇿",
-      "Benin": "🇧🇯", "Belarus (Beyaz Rusya)": "🇧🇾", "Bhutan": "🇧🇹",
-      "Birleşik Arap Emirlikleri": "🇦🇪", "Birleşik Krallık": "🇬🇧",
-      "Bolivya": "🇧🇴", "Bosna-Hersek": "🇧🇦", "Botsvana": "🇧🇼",
-      "Brezilya": "🇧🇷", "Brunei": "🇧🇳", "Bulgaristan": "🇧🇬",
-      "Burkina Faso": "🇧🇫", "Burundi": "🇧🇮",
-
-      // C - Ç
-      "Cezayir": "🇩🇿", "Cibuti": "🇩🇯", "Çad": "🇹🇩",
-      "Çekya": "🇨🇿", "Çin": "🇨🇳",
-
-      // D
-      "Danimarka": "🇩🇰", "Doğu Timor": "🇹🇱", "Dominik Cumhuriyeti": "🇩🇴",
+      "Andorra": "🇦🇩",
+      "Angola": "🇦🇴",
+      "Antigua ve Barbuda": "🇦🇬",
+      "Arjantin": "🇦🇷",
+      "Arnavutluk": "🇦🇱",
+      "Avustralya": "🇦🇺",
+      "Avusturya": "🇦🇹",
+      "Azerbaycan": "🇦🇿",
+      "Bahamalar": "🇧🇸",
+      "Bahreyn": "🇧🇭",
+      "Bangladeş": "🇧🇩",
+      "Barbados": "🇧🇧",
+      "Belçika": "🇧🇪",
+      "Belize": "🇧🇿",
+      "Benin": "🇧🇯",
+      "Belarus (Beyaz Rusya)": "🇧🇾",
+      "Bhutan": "🇧🇹",
+      "Birleşik Arap Emirlikleri": "🇦🇪",
+      "Birleşik Krallık": "🇬🇧",
+      "Bolivya": "🇧🇴",
+      "Bosna-Hersek": "🇧🇦",
+      "Botsvana": "🇧🇼",
+      "Brezilya": "🇧🇷",
+      "Brunei": "🇧🇳",
+      "Bulgaristan": "🇧🇬",
+      "Burkina Faso": "🇧🇫",
+      "Burundi": "🇧🇮",
+      "Cezayir": "🇩🇿",
+      "Cibuti": "🇩🇯",
+      "Çad": "🇹🇩",
+      "Çekya": "🇨🇿",
+      "Çin": "🇨🇳",
+      "Danimarka": "🇩🇰",
+      "Doğu Timor": "🇹🇱",
+      "Dominik Cumhuriyeti": "🇩🇴",
       "Dominika": "🇩🇲",
-
-      // E
-      "Ekvador": "🇪🇨", "Ekvator Ginesi": "🇬🇶", "El Salvador": "🇸🇻",
-      "Endonezya": "🇮🇩", "Eritre": "🇪🇷", "Ermenistan": "🇦🇲",
-      "Estonya": "🇪🇪", "Esvatini": "🇸🇿", "Etiyopya": "🇪🇹",
-
-      // F
-      "Fas": "🇲🇦", "Fiji": "🇫🇯", "Fildişi Sahili": "🇨🇮",
-      "Filipinler": "🇵🇭", "Filistin": "🇵🇸", "Finlandiya": "🇫🇮",
+      "Ekvador": "🇪🇨",
+      "Ekvator Ginesi": "🇬🇶",
+      "El Salvador": "🇸🇻",
+      "Endonezya": "🇮🇩",
+      "Eritre": "🇪🇷",
+      "Ermenistan": "🇦🇲",
+      "Estonya": "🇪🇪",
+      "Esvatini": "🇸🇿",
+      "Etiyopya": "🇪🇹",
+      "Fas": "🇲🇦",
+      "Fiji": "🇫🇯",
+      "Fildişi Sahili": "🇨🇮",
+      "Filipinler": "🇵🇭",
+      "Filistin": "🇵🇸",
+      "Finlandiya": "🇫🇮",
       "Fransa": "🇫🇷",
-
-      // G
-      "Gabon": "🇬🇦", "Gambiya": "🇬🇲", "Gana": "🇬🇭",
-      "Gine": "🇬🇳", "Gine-Bissau": "🇬🇼", "Grenada": "🇬🇩",
-      "Guatemala": "🇬🇹", "Guyana": "🇬🇾", "Güney Afrika": "🇿🇦",
-      "Güney Kore": "🇰🇷", "Güney Sudan": "🇸🇸", "Gürcistan": "🇬🇪",
-
-      // H
-      "Haiti": "🇭🇹", "Hırvatistan": "🇭🇷", "Hindistan": "🇮🇳",
-      "Hollanda": "🇳🇱", "Honduras": "🇭🇳",
-
-      // I - İ
-      "Irak": "🇮🇶", "İran": "🇮🇷", "İrlanda": "🇮🇪",
-      "İspanya": "🇪🇸", "İsrail": "🇮🇱", "İsveç": "🇸🇪",
-      "İsviçre": "🇨🇭", "İtalya": "🇮🇹", "İzlanda": "🇮🇸",
-
-      // J
-      "Jamaika": "🇯🇲", "Japonya": "🇯🇵",
-
-      // K
-      "Kamboçya": "🇰🇭", "Kamerun": "🇨🇲", "Kanada": "🇨🇦",
-      "Karadağ": "🇲🇪", "Katar": "🇶🇦", "Kazakistan": "🇰🇿",
-      "Kenya": "🇰🇪", "Kıbrıs Cumhuriyeti": "🇨🇾", "Kırgızistan": "🇰🇬",
-      "Kiribati": "🇰🇮", "Kolombiya": "🇨🇴", "Komorlar": "🇰🇲",
-      "Kongo Cumhuriyeti": "🇨🇬", "Kongo Demokratik Cumhuriyeti": "🇨🇩",
+      "Gabon": "🇬🇦",
+      "Gambiya": "🇬🇲",
+      "Gana": "🇬🇭",
+      "Gine": "🇬🇳",
+      "Gine-Bissau": "🇬🇼",
+      "Grenada": "🇬🇩",
+      "Guatemala": "🇬🇹",
+      "Guyana": "🇬🇾",
+      "Güney Afrika": "🇿🇦",
+      "Güney Kore": "🇰🇷",
+      "Güney Sudan": "🇸🇸",
+      "Gürcistan": "🇬🇪",
+      "Haiti": "🇭🇹",
+      "Hırvatistan": "🇭🇷",
+      "Hindistan": "🇮🇳",
+      "Hollanda": "🇳🇱",
+      "Honduras": "🇭🇳",
+      "Irak": "🇮🇶",
+      "İran": "🇮🇷",
+      "İrlanda": "🇮🇪",
+      "İspanya": "🇪🇸",
+      "İsrail": "🇮🇱",
+      "İsveç": "🇸🇪",
+      "İsviçre": "🇨🇭",
+      "İtalya": "🇮🇹",
+      "İzlanda": "🇮🇸",
+      "Jamaika": "🇯🇲",
+      "Japonya": "🇯🇵",
+      "Kamboçya": "🇰🇭",
+      "Kamerun": "🇨🇲",
+      "Kanada": "🇨🇦",
+      "Karadağ": "🇲🇪",
+      "Katar": "🇶🇦",
+      "Kazakistan": "🇰🇿",
+      "Kenya": "🇰🇪",
+      "Kıbrıs Cumhuriyeti": "🇨🇾",
+      "Kırgızistan": "🇰🇬",
+      "Kiribati": "🇰🇮",
+      "Kolombiya": "🇨🇴",
+      "Komorlar": "🇰🇲",
+      "Kongo Cumhuriyeti": "🇨🇬",
+      "Kongo Demokratik Cumhuriyeti": "🇨🇩",
       "Kosta Rika": "🇨🇷",
       "Kuveyt": "🇰🇼",
-      "Kuzey Kore": "🇰🇵", "Kuzey Makedonya": "🇲🇰", "Küba": "🇨🇺",
-
-      // L
-      "Laos": "🇱🇦", "Lesotho": "🇱🇸", "Letonya": "🇱🇻",
-      "Liberya": "🇱🇷", "Libya": "🇱🇾", "Liechtenstein": "🇱🇮",
-      "Litvanya": "🇱🇹", "Lübnan": "🇱🇧", "Lüksemburg": "🇱🇺",
-
-      // M
-      "Macaristan": "🇭🇺", "Madagaskar": "🇲🇬", "Malavi": "🇲🇼",
-      "Maldivler": "🇲🇻", "Malezya": "🇲🇾", "Mali": "🇲🇱",
-      "Malta": "🇲🇹", "Marshall Adaları": "🇲🇭", "Mauritius": "🇲🇺",
-      "Meksika": "🇲🇽", "Mısır": "🇪🇬", "Mikronezya": "🇫🇲",
-      "Moğolistan": "🇲🇳", "Moldova": "🇲🇩", "Monako": "🇲🇨",
-      "Moritanya": "🇲🇷", "Mozambik": "🇲🇿", "Myanmar": "🇲🇲",
-
-      // N
-      "Namibya": "🇳🇦", "Nauru": "🇳🇷", "Nepal": "🇳🇵",
-      "Nikaragua": "🇳🇮", "Nijer": "🇳🇪", "Nijerya": "🇳🇬",
+      "Kuzey Kore": "🇰🇵",
+      "Kuzey Makedonya": "🇲🇰",
+      "Küba": "🇨🇺",
+      "Laos": "🇱🇦",
+      "Lesotho": "🇱🇸",
+      "Letonya": "🇱🇻",
+      "Liberya": "🇱🇷",
+      "Libya": "🇱🇾",
+      "Liechtenstein": "🇱🇮",
+      "Litvanya": "🇱🇹",
+      "Lübnan": "🇱🇧",
+      "Lüksemburg": "🇱🇺",
+      "Macaristan": "🇭🇺",
+      "Madagaskar": "🇲🇬",
+      "Malavi": "🇲🇼",
+      "Maldivler": "🇲🇻",
+      "Malezya": "🇲🇾",
+      "Mali": "🇲🇱",
+      "Malta": "🇲🇹",
+      "Marshall Adaları": "🇲🇭",
+      "Mauritius": "🇲🇺",
+      "Meksika": "🇲🇽",
+      "Mısır": "🇪🇬",
+      "Mikronezya": "🇫🇲",
+      "Moğolistan": "🇲🇳",
+      "Moldova": "🇲🇩",
+      "Monako": "🇲🇨",
+      "Moritanya": "🇲🇷",
+      "Mozambik": "🇲🇿",
+      "Myanmar": "🇲🇲",
+      "Namibya": "🇳🇦",
+      "Nauru": "🇳🇷",
+      "Nepal": "🇳🇵",
+      "Nikaragua": "🇳🇮",
+      "Nijer": "🇳🇪",
+      "Nijerya": "🇳🇬",
       "Norveç": "🇳🇴",
-
-      // O - Ö
-      "Orta Afrika Cumhuriyeti": "🇨🇫", "Özbekistan": "🇺🇿",
-
-      // P
-      "Pakistan": "🇵🇰", "Palau": "🇵🇼", "Panama": "🇵🇦",
-      "Papua Yeni Gine": "🇵🇬", "Paraguay": "🇵🇾", "Peru": "🇵🇪",
-      "Polonya": "🇵🇱", "Portekiz": "🇵🇹",
-
-      // R
-      "Romanya": "🇷🇴", "Ruanda": "🇷🇼", "Rusya": "🇷🇺",
-
-      // S - Ş
-      "Saint Kitts ve Nevis": "🇰🇳", "Saint Lucia": "🇱🇨",
-      "Saint Vincent ve Grenadinler": "🇻🇨", "Samoa": "🇼🇸",
-      "San Marino": "🇸🇲", "Sao Tome ve Principe": "🇸🇹",
-      "Senegal": "🇸🇳", "Seyşeller": "🇸🇨", "Sırbistan": "🇷🇸",
-      "Sierra Leone": "🇸🇱", "Singapur": "🇸🇬", "Slovakya": "🇸🇰",
-      "Slovenya": "🇸🇮", "Solomon Adaları": "🇸🇧", "Somali": "🇸🇴",
-      "Sri Lanka": "🇱🇰", "Sudan": "🇸🇩", "Surinam": "🇸🇷",
-      "Suriye": "🇸🇾", "Suudi Arabistan": "🇸🇦", "Şili": "🇨🇱",
-
-      // T
-      "Tacikistan": "🇹🇯", "Tanzanya": "🇹🇿", "Tayland": "🇹🇭",
-      "Togo": "🇹🇬", "Tonga": "🇹🇴", "Trinidad ve Tobago": "🇹🇹",
-      "Tunus": "🇹🇳", "Tuvalu": "🇹🇻", "Türkiye": "🇹🇷",
+      "Orta Afrika Cumhuriyeti": "🇨🇫",
+      "Özbekistan": "🇺🇿",
+      "Pakistan": "🇵🇰",
+      "Palau": "🇵🇼",
+      "Panama": "🇵🇦",
+      "Papua Yeni Gine": "🇵🇬",
+      "Paraguay": "🇵🇾",
+      "Peru": "🇵🇪",
+      "Polonya": "🇵🇱",
+      "Portekiz": "🇵🇹",
+      "Romanya": "🇷🇴",
+      "Ruanda": "🇷🇼",
+      "Rusya": "🇷🇺",
+      "Saint Kitts ve Nevis": "🇰🇳",
+      "Saint Lucia": "🇱🇨",
+      "Saint Vincent ve Grenadinler": "🇻🇨",
+      "Samoa": "🇼🇸",
+      "San Marino": "🇸🇲",
+      "Sao Tome ve Principe": "🇸🇹",
+      "Senegal": "🇸🇳",
+      "Seyşeller": "🇸🇨",
+      "Sırbistan": "🇷🇸",
+      "Sierra Leone": "🇸🇱",
+      "Singapur": "🇸🇬",
+      "Slovakya": "🇸🇰",
+      "Slovenya": "🇸🇮",
+      "Solomon Adaları": "🇸🇧",
+      "Somali": "🇸🇴",
+      "Sri Lanka": "🇱🇰",
+      "Sudan": "🇸🇩",
+      "Surinam": "🇸🇷",
+      "Suriye": "🇸🇾",
+      "Suudi Arabistan": "🇸🇦",
+      "Şili": "🇨🇱",
+      "Tacikistan": "🇹🇯",
+      "Tanzanya": "🇹🇿",
+      "Tayland": "🇹🇭",
+      "Togo": "🇹🇬",
+      "Tonga": "🇹🇴",
+      "Trinidad ve Tobago": "🇹🇹",
+      "Tunus": "🇹🇳",
+      "Tuvalu": "🇹🇻",
+      "Türkiye": "🇹🇷",
       "Türkmenistan": "🇹🇲",
-
-      // U - Ü
-      "Uganda": "🇺🇬", "Ukrayna": "🇺🇦", "Umman": "🇴🇲",
-      "Uruguay": "🇺🇾", "Ürdün": "🇯🇴",
-
-      // V
-      "Vanuatu": "🇻🇺", "Vatikan": "🇻🇦", "Venezuela": "🇻🇪",
+      "Uganda": "🇺🇬",
+      "Ukrayna": "🇺🇦",
+      "Umman": "🇴🇲",
+      "Uruguay": "🇺🇾",
+      "Ürdün": "🇯🇴",
+      "Vanuatu": "🇻🇺",
+      "Vatikan": "🇻🇦",
+      "Venezuela": "🇻🇪",
       "Vietnam": "🇻🇳",
-
-      // Y
-      "Yemen": "🇾🇪", "Yeni Zelanda": "🇳🇿", "Yeşil Burun Adaları": "🇨🇻",
+      "Yemen": "🇾🇪",
+      "Yeni Zelanda": "🇳🇿",
+      "Yeşil Burun Adaları": "🇨🇻",
       "Yunanistan": "🇬🇷",
-
-      // Z
-      "Zambiya": "🇿🇲", "Zimbabve": "🇿🇼",
+      "Zambiya": "🇿🇲",
+      "Zimbabve": "🇿🇼",
     };
 
     String cleanCountry = country.trim();
@@ -238,7 +305,6 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
       ),
       body: Column(
         children: [
-          // --- ARAMA ÇUBUĞU (SEARCH BAR) ---
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
@@ -255,14 +321,11 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: EdgeInsets.symmetric(
-                  vertical: 0,
-                ), // Dikey hizalamayı düzeltir
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
               ),
             ),
           ),
 
-          // --- LİSTE VEYA YÜKLENİYOR EKRANI ---
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: Colors.amber))
@@ -289,48 +352,42 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        // 🚨 DÜZELTİLDİ: Kötü duran mavi-gri yerine premium, derin siyah/gri bir tasarım.
                         color: Colors.grey[900],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
-                          side: BorderSide(
-                            color: Colors.white12,
-                            width: 1,
-                          ), // Hafif beyaz bir kenar çizgisi (Ayrıntı ve şıklık için)
+                          side: BorderSide(color: Colors.white12, width: 1),
                         ),
                         elevation: 3,
                         child: ListTile(
-                          // Ülkeye tıklandığında detay sayfasına yönlendirir
                           onTap: () {
+                            // 🚨 TİTREŞİM TETİKLENDİ
+                            Provider.of<SettingsProvider>(
+                              context,
+                              listen: false,
+                            ).triggerButtonVibration();
+
+                            // 🚨 YUMUŞAK GEÇİŞ ENTEGRE EDİLDİ
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => CountryDetailScreen(
-                                  // ignore: dead_null_aware_expression
+                              FadePageRoute(
+                                page: CountryDetailScreen(
                                   countryName: item.countryName ?? 'Bilinmiyor',
-                                  // ignore: dead_null_aware_expression
                                   capitalName: item.capitalName ?? 'Bilinmiyor',
                                   continent: item.continent ?? 'Bilinmiyor',
                                 ),
                               ),
                             );
                           },
-                          // Sağ tarafa küçük bir ok koyarak tıklanabilir hissi verir
                           trailing: Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
                             color: Colors.white54,
                           ),
                           leading: Text(
-                            // ignore: dead_null_aware_expression
                             _getFlagEmoji(item.countryName ?? ''),
-                            style: TextStyle(
-                              fontSize: 35,
-                            ), // Emojinin boyutunu ayarlayabilirsin
+                            style: TextStyle(fontSize: 35),
                           ),
                           title: Text(
-                            // Null güvenliği eklendi
-                            // ignore: dead_null_aware_expression
                             item.countryName ?? 'Bilinmiyor',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -339,8 +396,6 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                             ),
                           ),
                           subtitle: Text(
-                            // Null güvenliği eklendi
-                            // ignore: dead_null_aware_expression
                             "${item.capitalName ?? 'Bilinmiyor'} • ${item.continent ?? 'Bilinmiyor'}",
                             style: TextStyle(color: Colors.amber[200]),
                           ),

@@ -1,4 +1,5 @@
 // lib/screens/register_screen.dart
+import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
@@ -165,10 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Navigator.pushReplacement(
                               // Geri tuşuyla tekrar kayıta dönmemesi için pushReplacement
                               context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    VerifyScreen(email: email),
-                              ),
+                              FadePageRoute(page: VerifyScreen(email: email)),
                             );
                           } else {
                             // Arka yüzden hata mesajı sorunsuz döndüyse (Örn: Bu mail kullanılıyor)

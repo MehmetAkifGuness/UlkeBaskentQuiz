@@ -1,4 +1,5 @@
 // lib/screens/home_screen.dart
+import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -153,8 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.pop(context);
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => GameScreen(
+                              FadePageRoute(
+                                page: GameScreen(
                                   category: category,
                                   mode: selectedMode,
                                   isContinuing: false,
@@ -262,8 +263,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Oyuna kaldığı yerden yönlendir (isContinuing: true)
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => GameScreen(
+                            FadePageRoute(
+                              page: GameScreen(
                                 category: "Devam",
                                 mode: "Devam",
                                 isContinuing: true,
@@ -299,8 +300,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ).resetGame();
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) => GameScreen(
+                                FadePageRoute(
+                                  page: GameScreen(
                                     category: "DailyChallenge",
                                     mode: "MIXED",
                                     isContinuing: false,
@@ -370,8 +371,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ).resetGame();
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => GameScreen(
+                          FadePageRoute(
+                            page: GameScreen(
                               category: "Dünya",
                               mode: "ENDLESS",
                               isContinuing: false,

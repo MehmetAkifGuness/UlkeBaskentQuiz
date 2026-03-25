@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/settings_provider.dart'; // 🚨 Titreşim için eklendi
 import '../services/user.service.dart';
 
 class MistakeScreen extends StatefulWidget {
@@ -33,19 +34,19 @@ class _MistakeScreenState extends State<MistakeScreen> {
   }
 
   void _removeMistake(int questionId) async {
+    // 🚨 Tıklama anında genel titreşimi tetikliyoruz
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+
     final token = Provider.of<AuthProvider>(context, listen: false).token;
     bool success = await _userService.removeMistake(token!, questionId);
     if (success) {
       setState(() {
         _mistakes.removeWhere((item) => item['id'] == questionId);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Harika! Bu ülkeyi öğrendiniz. ✅"),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // 🚨 "Tebrikler bu ülkeyi öğrendiniz" mesajı (SnackBar) buradan tamamen kaldırıldı!
     }
   }
 
@@ -114,7 +115,8 @@ class _MistakeScreenState extends State<MistakeScreen> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: Colors
+                  .black, // Tema ile uyumlu kalması için ayarlayabilirsiniz
             ),
           ),
           SizedBox(height: 10),
