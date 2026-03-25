@@ -1,11 +1,11 @@
 // lib/widgets/answer_button.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
+import '../providers/settings_provider.dart';
 
-// Butonun alabileceği 4 farklı durumu tanımlıyoruz
-enum AnswerState { normal, correct, wrong, disabled }
+// 🚨 YENİ EKLENDİ: 'selected' durumu eklendi
+enum AnswerState { normal, correct, wrong, disabled, selected }
 
 class AnswerButton extends StatelessWidget {
   final String text;
@@ -26,7 +26,7 @@ class AnswerButton extends StatelessWidget {
     Color borderColor = AppColors.borderBlueish;
     Color textColor = AppColors.textDark;
 
-    // Duruma göre renkleri değiştiriyoruz (Senin 5. Kuralın: Feedback Renkleri)
+    // Duruma göre renkleri değiştiriyoruz
     if (state == AnswerState.correct) {
       bgColor = AppColors.successGreen;
       borderColor = AppColors.successGreen;
@@ -40,12 +40,16 @@ class AnswerButton extends StatelessWidget {
       bgColor = AppColors.white.withOpacity(0.7);
       borderColor = AppColors.borderLight;
       textColor = AppColors.textDark.withOpacity(0.5);
+    } else if (state == AnswerState.selected) {
+      // 🚨 YENİ: Tıklanan şık, backend'den cevap beklerken bu rengi alacak
+      bgColor = Colors.amber;
+      borderColor = Colors.amber;
+      textColor = Colors.black; // Sarı üzerinde siyah daha şık durur
     }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
-        // 🚨 YENİ EKLENDİ: Tıklanma anında global titreşimi tetikliyoruz
         onTap: (state == AnswerState.normal)
             ? () {
                 Provider.of<SettingsProvider>(
@@ -55,9 +59,7 @@ class AnswerButton extends StatelessWidget {
                 onPressed();
               }
             : null,
-        borderRadius: BorderRadius.circular(
-          16,
-        ), // 9. Kural: 10-16px Border radius
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
@@ -66,7 +68,6 @@ class AnswerButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor, width: 2),
             boxShadow: [
-              // Sadece normal durumdayken hafif gölge veriyoruz (9. Kural)
               if (state == AnswerState.normal)
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),

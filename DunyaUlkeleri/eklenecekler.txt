@@ -1,3 +1,4 @@
+flutter run --release
 ülkelerin yöresel müziği eklenecek 
 ülkelerin bulunduğu konumun(haritasını) eklenecek
 başarımlar (uygulama bittikten sonra eklenecek)
@@ -7,5 +8,5 @@ sorular bittikten sonraki ekranda ufak değişiklikler yapılacak görünüş ol
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
 rütbeleri backende taşımak 
 ilk tıklamalar düzenlenecek 
-sayfa geçiş optimizasyonları 
+
 

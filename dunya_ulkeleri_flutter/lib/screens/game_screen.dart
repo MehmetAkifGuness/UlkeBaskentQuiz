@@ -75,7 +75,7 @@ class _GameScreenState extends State<GameScreen> {
                   Provider.of<SettingsProvider>(
                     context,
                     listen: false,
-                  ).triggerButtonVibration(); // 🚨 YENİ
+                  ).triggerButtonVibration();
                   Navigator.of(context).pop(false);
                 },
                 child: Text(
@@ -92,7 +92,7 @@ class _GameScreenState extends State<GameScreen> {
                   Provider.of<SettingsProvider>(
                     context,
                     listen: false,
-                  ).triggerButtonVibration(); // 🚨 YENİ
+                  ).triggerButtonVibration();
                   Navigator.of(context).pop(true);
                 },
                 child: Text('Evet, Çık'),
@@ -181,7 +181,7 @@ class _GameScreenState extends State<GameScreen> {
             Provider.of<SettingsProvider>(
               context,
               listen: false,
-            ).triggerButtonVibration(); // 🚨 YENİ
+            ).triggerButtonVibration();
             bool shouldPop = await _onWillPop();
             if (shouldPop && mounted) Navigator.pop(context);
           },
@@ -216,7 +216,6 @@ class _GameScreenState extends State<GameScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -261,7 +260,6 @@ class _GameScreenState extends State<GameScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-
                             if (isEndless)
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -355,7 +353,6 @@ class _GameScreenState extends State<GameScreen> {
                                 ),
                           ],
                         ),
-
                         Expanded(
                           child: Center(
                             child: Container(
@@ -400,7 +397,6 @@ class _GameScreenState extends State<GameScreen> {
                             ),
                           ),
                         ),
-
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: (status.options as List<dynamic>? ?? [])
@@ -408,13 +404,26 @@ class _GameScreenState extends State<GameScreen> {
                                 AnswerState state = AnswerState.normal;
 
                                 if (gameProvider.showResult) {
-                                  if (option == gameProvider.correctAnswer) {
-                                    state = AnswerState.correct;
-                                  } else if (option ==
-                                      gameProvider.selectedAnswer) {
-                                    state = AnswerState.wrong;
-                                  } else {
-                                    state = AnswerState.disabled;
+                                  // 🚨 YENİ MANTIK: Eğer API'den cevap döndüyse (correctAnswer null değilse)
+                                  if (gameProvider.correctAnswer != null) {
+                                    if (option == gameProvider.correctAnswer) {
+                                      state = AnswerState.correct;
+                                    } else if (option ==
+                                        gameProvider.selectedAnswer) {
+                                      state = AnswerState.wrong;
+                                    } else {
+                                      state = AnswerState.disabled;
+                                    }
+                                  }
+                                  // 🚨 YENİ MANTIK: API'den cevap bekleniyorsa (Loading aşaması)
+                                  else {
+                                    if (option == gameProvider.selectedAnswer) {
+                                      state = AnswerState
+                                          .selected; // SARI BEKLEME RENGİ!
+                                    } else {
+                                      state = AnswerState
+                                          .disabled; // Diğerleri soluklaşır
+                                    }
                                   }
                                 }
 
@@ -449,7 +458,6 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ),
                 ),
-
                 if (gameProvider.isLoading && status != null)
                   Center(
                     child: Container(
@@ -527,7 +535,6 @@ class _GameScreenState extends State<GameScreen> {
               child: Icon(mainIcon, size: 110, color: mainColor),
             ),
             const SizedBox(height: 35),
-
             Text(
               titleText,
               textAlign: TextAlign.center,
@@ -539,7 +546,6 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
             const SizedBox(height: 15),
-
             if (message != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -555,7 +561,6 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
             const SizedBox(height: 40),
-
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 20),
               decoration: BoxDecoration(
@@ -599,7 +604,6 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
             const SizedBox(height: 50),
-
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBlue,
@@ -630,7 +634,7 @@ class _GameScreenState extends State<GameScreen> {
                 Provider.of<SettingsProvider>(
                   context,
                   listen: false,
-                ).triggerButtonVibration(); // 🚨 YENİ
+                ).triggerButtonVibration();
                 Provider.of<GameProvider>(context, listen: false).resetGame();
                 Navigator.pop(context);
               },
@@ -642,7 +646,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-// 🏁 --- İKİLİ İLERLEME ÇUBUĞU --- 🏃
 class ScoreProgressWidget extends StatelessWidget {
   final String ghostName;
   final int ghostScore;
@@ -732,9 +735,7 @@ class ScoreProgressWidget extends StatelessWidget {
             ),
           ],
         ),
-
         const SizedBox(height: 12),
-
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
