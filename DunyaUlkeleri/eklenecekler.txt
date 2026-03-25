@@ -7,6 +7,3 @@ sayfa düzenleri iyileştirilecek
 sorular bittikten sonraki ekranda ufak değişiklikler yapılacak görünüş olarak
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
 rütbeleri backende taşımak 
-ilk tıklamalar düzenlenecek 
-
-

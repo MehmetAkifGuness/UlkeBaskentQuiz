@@ -646,6 +646,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
+// 🏁 --- İKİLİ İLERLEME ÇUBUĞU --- 🏃
 class ScoreProgressWidget extends StatelessWidget {
   final String ghostName;
   final int ghostScore;
@@ -670,7 +671,10 @@ class ScoreProgressWidget extends StatelessWidget {
         : 0.0;
     if (questionProgress > 1.0) questionProgress = 1.0;
 
+    // Maksimum alınabilecek teorik skor (Soru başı 2000 puan)
     int maxPossibleScore = totalQuestions * 2000;
+
+    // Senin ve rakibin (hayaletin) bar üzerindeki yüzde hesaplamaları
     double scoreProgress = maxPossibleScore > 0
         ? (currentScore / maxPossibleScore)
         : 0.0;
@@ -684,6 +688,7 @@ class ScoreProgressWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // --- 1. BAR: SORU DURUMU ---
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -735,7 +740,9 @@ class ScoreProgressWidget extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+
+        const SizedBox(height: 16), // Araya biraz daha nefes boşluğu ekledik
+        // --- 2. BAR: SKOR VE HAYALET DURUMU ---
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -757,10 +764,13 @@ class ScoreProgressWidget extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Stack(
           alignment: Alignment.centerLeft,
+          clipBehavior: Clip
+              .none, // 🚨 YENİ: Hedef çizgisinin barın dışına hafif taşabilmesi için
           children: [
+            // 1. Gri Arka Plan Barı
             Container(
               height: 16,
               decoration: BoxDecoration(
@@ -768,6 +778,8 @@ class ScoreProgressWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+
+            // 2. Senin Skorun (Dolan Mavi Bar)
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0.0, end: scoreProgress),
               duration: const Duration(milliseconds: 800),
@@ -797,8 +809,38 @@ class ScoreProgressWidget extends StatelessWidget {
                 );
               },
             ),
+
+            // 3. 🚨 YENİ EKLENDİ: Rakibin (Hayaletin) Skoru İçin Hedef Çizgisi
+            if (ghostProgress > 0.0)
+              FractionallySizedBox(
+                widthFactor: ghostProgress,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    width: 4, // Çizginin kalınlığı
+                    height:
+                        24, // Bardan (16px) biraz daha uzun, belirgin bir hedef çizgisi
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(2),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1,
+                      ), // Şık dursun diye ince beyaz çerçeve
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.amber.withOpacity(0.8),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
+        const SizedBox(height: 8), // Alt boşluk
       ],
     );
   }
