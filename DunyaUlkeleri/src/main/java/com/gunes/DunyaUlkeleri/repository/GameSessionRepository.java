@@ -15,16 +15,18 @@ import java.util.Optional;
 @Repository
 public interface GameSessionRepository extends JpaRepository<GameSession, Long> {
     
-    @Query("SELECT g.user.username, g.currentScore FROM GameSession g WHERE g.category = :category AND g.createdAt >= :startDate ORDER BY g.currentScore DESC")
+    @Query("SELECT g.user.username, MAX(g.currentScore) FROM GameSession g WHERE g.category = :category AND g.createdAt >= :startDate GROUP BY g.user.username ORDER BY MAX(g.currentScore) DESC")
     List<Object[]> findTop10DailyScores(@Param("category") String category, @Param("startDate") LocalDateTime startDate, Pageable pageable);
 
-    @Query("SELECT g.user.username, g.currentScore FROM GameSession g WHERE g.category = :category AND g.gameMode = :mode ORDER BY g.currentScore DESC")
+    @Query("SELECT g.user.username, MAX(g.currentScore) FROM GameSession g WHERE g.category = :category AND g.gameMode = :mode GROUP BY g.user.username ORDER BY MAX(g.currentScore) DESC")
     List<Object[]> findTop10ByCategoryAndMode(@Param("category") String category, @Param("mode") String mode, Pageable pageable);
 
     void deleteByUser(User user);
 
-    // 🚨 YENİ EKLENDİ: Çöpçü için 24 saatten eski ve "Bitmiş" oyunları bulma metodu
     List<GameSession> findByIsFinishedTrueAndUpdateAtBefore(LocalDateTime cutoffTime);
-    // 🚨 YENİ EKLENDİ: Kullanıcının en son oynadığı, bitmemiş oyunu getirir
+    
     Optional<GameSession> findFirstByUserAndIsFinishedFalseOrderByUpdateAtDesc(User user);
+
+    // 🚨 YENİ EKLENDİ: Yeni oyuna başlandığında terk edilen oyunları bulmak için
+    List<GameSession> findByUserAndIsFinishedFalse(User user);
 }

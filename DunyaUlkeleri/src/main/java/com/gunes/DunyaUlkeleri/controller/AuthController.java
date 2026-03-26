@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gunes.DunyaUlkeleri.dto.request.LoginRequest;
@@ -59,5 +60,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody NewPasswordRequest request){
         AuthResponse response = service.resetPassword(request);
         return ResponseEntity.ok(response);
+    }
+    
+    // 🚨 YENİ EKLENDİ: Kodu tekrar gönderme uç noktası
+    @PostMapping("/resend-verification")
+    public ResponseEntity<AuthResponse> resendVerification(@RequestParam String email) {
+        return ResponseEntity.ok(service.resendVerificationCode(email));
     }
 }

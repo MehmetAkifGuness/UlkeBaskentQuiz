@@ -23,4 +23,7 @@ public interface AuthService {
     AuthResponse forgotPassword(ResetPasswordRequest request);
 
     AuthResponse resetPassword(NewPasswordRequest request);
+
+    // 🚨 YENİ EKLENDİ
+    AuthResponse resendVerificationCode(String email);
 }

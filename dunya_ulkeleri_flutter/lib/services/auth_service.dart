@@ -119,4 +119,24 @@ class AuthService {
       throw Exception(response.body);
     }
   }
+
+  // 🚨 YENİ: Kodu tekrar gönderme isteği
+  Future<AuthModel> resendVerification(String email) async {
+    try {
+      final response = await http
+          .post(Uri.parse('$baseUrl/resend-verification?email=$email'))
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(response.body));
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Kod gönderilemedi!');
+      }
+    } catch (e) {
+      throw Exception(
+        "Bağlantı hatası: ${e.toString().replaceAll('Exception:', '')}",
+      );
+    }
+  }
 }

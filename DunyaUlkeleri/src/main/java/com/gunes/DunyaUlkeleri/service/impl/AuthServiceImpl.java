@@ -207,4 +207,24 @@ public class AuthServiceImpl implements AuthService {
         response.setMessage(message);
         return response;
     }
+
+    // 🚨 UX YAMASI: Kodu ulaşmayan veya süresi dolan kullanıcılar için yeni kod üretici
+    @Override
+    public AuthResponse resendVerificationCode(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı!"));
+                
+        if (user.isVerified()) {
+            throw new IllegalArgumentException("Bu hesap zaten doğrulanmış, giriş yapabilirsiniz!");
+        }
+
+        String newCode = generateCode();
+        user.setVerificationCode(newCode);
+        user.setCodeGenerationTime(LocalDateTime.now());
+        user.setFailedAttemptCount(0); // Hatalı deneme hakkını sıfırla
+        userRepository.save(user);
+
+        emailService.sendVerificationCode(user.getEmail(), newCode);
+        return createResponse(null, user.getUsername(), "Yeni doğrulama kodu e-posta adresinize gönderildi!");
+    }
 }

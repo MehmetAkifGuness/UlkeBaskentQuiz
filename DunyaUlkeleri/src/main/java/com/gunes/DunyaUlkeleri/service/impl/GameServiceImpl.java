@@ -40,14 +40,25 @@ public class GameServiceImpl implements GameService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + username));
 
+        // ==============================================================================
+        // 🚨 UX VE MANTIK YAMASI: ZOMBİ OYUNLARI ENGELLEME 
+        // Kullanıcı "Kaldığın Yerden Devam Et" yerine YENİ bir oyuna giriyorsa, 
+        // eski yarım kalmış tüm oyunları "Terk Edildi (Finished = true)" olarak işaretle.
+        // ==============================================================================
+        List<GameSession> abandonedSessions = gameSessionRepository.findByUserAndIsFinishedFalse(user);
+        if (!abandonedSessions.isEmpty()) {
+            for (GameSession abandoned : abandonedSessions) {
+                abandoned.setFinished(true); // Eski oyunu kalıcı olarak iptal et
+            }
+            gameSessionRepository.saveAll(abandonedSessions);
+        }
+
         // 🚨 GÜNÜN GÖREVİ KONTROLÜ VE HİLE KORUMASI
         if ("DailyChallenge".equals(category)) {
             if (user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now())) {
                 throw new RuntimeException("Bugün zaten Günün Görevi'ni başlattın veya tamamladın! Yarın tekrar gel.");
             }
-            // 🚨 KRİTİK HİLE (RAGE QUIT) ÇÖZÜMÜ:
             // Oyuncu oyuna girdiği an bugünün hakkını kullanmış sayıyoruz. 
-            // Kapatıp baştan açarak soruları fulleme hilesi böylece kalıcı olarak engellendi!
             user.setLastDailyDate(LocalDate.now());
             userRepository.save(user);
         }
@@ -82,16 +93,24 @@ public class GameServiceImpl implements GameService {
         }
         
         GameSession session = activeSessionOpt.get();
+        
+        // 🚨 BUG ÇÖZÜMÜ: Eski günden kalan "Günün Görevi"ne ertesi gün devam edilemez!
+        if ("DailyChallenge".equals(session.getCategory())) {
+            if (!session.getCreatedAt().toLocalDate().equals(LocalDate.now())) {
+                session.setFinished(true); 
+                gameSessionRepository.save(session);
+                return null; 
+            }
+        }
+        
         Question question = questionRepository.findById(session.getCurrentQuestionId()).orElse(null);
         
         if (question == null) {
-            // Eğer soru silinmişse veya bulunamazsa oyunu iptal et (hataya düşmemesi için)
             session.setFinished(true);
             gameSessionRepository.save(session);
             return null;
         }
         
-        // Soru tipini tespit et (Başkent mi sorulmuştu, ülke mi?)
         boolean askForCapital = session.getCurrentCorrectAnswer().equals(question.getCapitalName());
         
         List<String> options = new ArrayList<>();
@@ -154,14 +173,14 @@ public class GameServiceImpl implements GameService {
         if (isCorrect) {
             double clientTime = request.getTimeTaken();
             
-            // 🚨 HACKER KORUMASI: Sunucunun kendi kronometresiyle geçen süreyi hesapla (Ağ gecikmesi için 500ms tolerans düş)
+            // 🚨 HACKER KORUMASI: Sunucunun kendi kronometresiyle geçen süreyi hesapla
             long actualElapsedMillis = Duration.between(session.getLastQuestionTime(), LocalDateTime.now()).toMillis();
             double serverTimeInSeconds = Math.max(0.1, (actualElapsedMillis - 500) / 1000.0);
 
-            // 🚨 EĞER İSTEMCİ (FLUTTER) BİZE SUNUCU SÜRESİNDEN ÇOK DAHA KISA (Hileli) BİR SÜRE GÖNDERİRSE, SUNUCU SÜRESİNİ BAZ AL!
+            // 🚨 ZAMAN BÜKME HİLESİ ÖNLEMİ
             double finalTimeInSeconds = clientTime;
             if (serverTimeInSeconds - clientTime > 1.0) {
-                finalTimeInSeconds = serverTimeInSeconds; // Hile tespit edildi, gerçek süre uygulandı!
+                finalTimeInSeconds = serverTimeInSeconds; 
             }
 
             int earnedScore;
@@ -422,6 +441,9 @@ public class GameServiceImpl implements GameService {
         return response;
     }
 
+    // =================================================================
+    // 🚨 İŞTE EFSANE SÖZLÜK METODU BURADA, SAPASAĞLAM DURUYOR! 🚨
+    // =================================================================
     @Override
     public List<DictionaryResponse> getDictionary() {
         List<Question> allQuestions = questionRepository.findAllByOrderByCountryNameAsc();

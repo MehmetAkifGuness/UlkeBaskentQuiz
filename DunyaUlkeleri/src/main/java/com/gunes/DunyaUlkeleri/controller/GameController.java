@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/game")
+// 🚨 DÜZELTİLDİ: Burası "/game" kalmıştı, "/api/game" yapıldı. Artık oyunlar ve sözlük açılacak!
+@RequestMapping("/api/game") 
 @RequiredArgsConstructor
 public class GameController {
 
@@ -41,7 +42,7 @@ public class GameController {
         return ResponseEntity.ok(gameService.getDictionary());
     }
 
-    // 4. 🚨 YENİ EKLENDİ: Yarım kalan oyunu canlandırma kapısı
+    // 4. Yarım kalan oyunu canlandırma kapısı
     @GetMapping("/resume")
     public ResponseEntity<GameStatusResponse> resumeGame(Authentication authentication) {
         GameStatusResponse response = gameService.resumeGame(authentication.getName());

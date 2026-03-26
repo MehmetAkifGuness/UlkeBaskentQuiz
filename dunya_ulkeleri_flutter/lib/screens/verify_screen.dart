@@ -82,15 +82,28 @@ class _VerifyScreenState extends State<VerifyScreen> {
   }
 
   // --- KODU TEKRAR GÖNDERME METODU (YENİ) ---
+  // --- KODU TEKRAR GÖNDERME METODU ---
   void _resendCode() async {
     Provider.of<SettingsProvider>(
       context,
       listen: false,
     ).triggerButtonVibration();
-    _showSnackBar("Kod e-posta adresinize tekrar gönderiliyor...", Colors.blue);
 
-    // TODO: Backend'de kod tekrar gönderme endpoint'i (uç noktası)
-    // varsa buraya entegre edebilirsiniz. Şuanlık sadece SnackBar gösteriyor.
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Backend'deki yeni API'mizi tetikliyoruz
+      final result = await _authService.resendVerification(widget.email);
+      _showSnackBar(result.message ?? "Yeni kod gönderildi.", Colors.green);
+    } catch (e) {
+      _showSnackBar(e.toString(), Colors.red);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   // --- UYARI MESAJI GÖSTERME (SNACKBAR) ---
