@@ -9,6 +9,7 @@ import com.gunes.DunyaUlkeleri.service.AuthService;
 import com.gunes.DunyaUlkeleri.service.EmailService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap; // 🚨 YENİ EKLENDİ
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -218,4 +220,21 @@ public class AuthServiceImpl implements AuthService {
         response.setMessage(message);
         return response;
     }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000)
+    public void cleanupExpiredTokensFromMemory(){
+        LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
+        int removedCount = 0;
+        for(Map.Entry<String , LocalDateTime > entry : codeTimestamps.entrySet()){
+            if(entry.getValue().isBefore(tenMinutesAgo)){
+                codeTimestamps.remove(entry.getKey());
+                bruteForceTracker.remove(entry.getKey());
+                removedCount++;
+            }
+        }
+        if(removedCount > 0){
+            log.info("ram üzerinden {} adet terk edilmiş doğrulama kodu temizlendi" , removedCount);
+        }
+    }
+
 }

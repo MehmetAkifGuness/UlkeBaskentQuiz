@@ -1,10 +1,14 @@
+// lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 🚨 YENİ ŞİFRELİ DEPO PAKETİ EKLENDİ
 import '../models/auth_model.dart';
 import '../services/auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+
+  // 🚨 GÜVENLİK YAMASI: Token'ı çalınmalara karşı AES ile şifreleyen depo
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   String? _token;
   String? _username;
@@ -25,10 +29,9 @@ class AuthProvider with ChangeNotifier {
       _token = authData.token;
       _username = authData.username;
 
-      // Token'ı cihaza kaydet
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', _token!);
-      await prefs.setString('username', _username!);
+      // 🚨 GÜVENLİK YAMASI: Token'ı cihaza ŞİFRELİ olarak kaydet
+      await _secureStorage.write(key: 'token', value: _token!);
+      await _secureStorage.write(key: 'username', value: _username!);
 
       return true;
     } catch (e) {
@@ -52,10 +55,9 @@ class AuthProvider with ChangeNotifier {
         _token = result.token;
         _username = result.username;
 
-        // 🚨 Normal girişte de token'ı cihaza kaydediyoruz
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', _token!);
-        await prefs.setString('username', _username!);
+        // 🚨 GÜVENLİK YAMASI: Normal girişte de token'ı ŞİFRELİ olarak kaydediyoruz
+        await _secureStorage.write(key: 'token', value: _token!);
+        await _secureStorage.write(key: 'username', value: _username!);
       }
 
       _isLoading = false;
@@ -75,10 +77,9 @@ class AuthProvider with ChangeNotifier {
     _token = null;
     _username = null;
 
-    // Cihaz hafızasındaki kayıtlı oturum bilgilerini tamamen temizle
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('username');
+    // 🚨 GÜVENLİK YAMASI: Cihaz hafızasındaki şifreli kayıtları tamamen temizle
+    await _secureStorage.delete(key: 'token');
+    await _secureStorage.delete(key: 'username');
 
     notifyListeners();
   }
@@ -117,17 +118,20 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // 🚨 GÜVENLİK YAMASI: Otomatik giriş işlemini ŞİFRELİ depodan okuyarak yapar
   Future<bool> tryAutoLogin() async {
-    final prefs = await SharedPreferences.getInstance();
+    // Şifreli depodan verileri okumaya çalış
+    String? storedToken = await _secureStorage.read(key: 'token');
+    String? storedUsername = await _secureStorage.read(key: 'username');
 
-    if (!prefs.containsKey('token')) {
-      return false;
+    if (storedToken == null || storedUsername == null) {
+      return false; // Token yoksa false dön (Giriş ekranında kalır)
     }
 
-    _token = prefs.getString('token');
-    _username = prefs.getString('username');
+    _token = storedToken;
+    _username = storedUsername;
 
     notifyListeners();
-    return true;
+    return true; // Token varsa true dön (Ana ekrana geçer)
   }
 }

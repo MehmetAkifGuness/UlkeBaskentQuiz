@@ -6,3 +6,7 @@ sayfa düzenleri iyileştirilecek
 sorular bittikten sonraki ekranda ufak değişiklikler yapılacak görünüş olarak
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
 rütbeleri backende taşımak
+öğrenme kısmına kategori eklenebilir nasıl olur sağ üste filtreleme kısmı olur o filtreleme kısmında avrupa asya vs diye ayarlayabiliriz oradan da daha kolay arama yapabiliriz
+(10 dakikayı geçmiş) sahipsiz kayıtları her saat başı otomatik temizleyen bir "Çöpçü (Garbage Collector)
+safir kullanıcıyı silmeden önce, ona ait olan oyun geçmişini (GameSession) silmeliyiz.
+Giriş yaptıktan sonra alınan JWT Token şu an SharedPreferences ile telefonun hafızasına düz metin (şifresiz) olarak yazılıyor. Bunu flutter_secure_storage (Banka uygulamalarının kullandığı şifreli depo) ile değiştirmemiz gerekiyor.
