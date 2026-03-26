@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,5 +43,15 @@ public class GameController {
     public ResponseEntity<List<DictionaryResponse>> getDictionary() {
         List<DictionaryResponse> dictionary = gameService.getDictionary();
         return ResponseEntity.ok(dictionary);
+    }
+
+    // 🚨 YENİ EKLENDİ: Flutter'ın "Yarım kalan oyunum var mı?" diye soracağı API noktası
+    @GetMapping("/resume")
+    public ResponseEntity<GameStatusResponse> resumeGame(Authentication authentication) {
+        GameStatusResponse response = gameService.resumeGame(authentication.getName());
+        if (response == null) {
+            return ResponseEntity.noContent().build(); // 204 Döndürür (Oyun yok demek)
+        }
+        return ResponseEntity.ok(response);
     }
 }

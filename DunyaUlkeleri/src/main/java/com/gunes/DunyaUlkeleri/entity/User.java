@@ -50,6 +50,13 @@ public class User {
 
     private String resetCode;
 
+    // 🚨 GÜVENLİK YAMASI: RAM yerine DB'de tutulacak
+    private LocalDateTime codeGenerationTime;
+
+    // 🚨 GÜVENLİK YAMASI: Hatalı deneme sayacı
+    @Column(columnDefinition = "integer default 0")
+    private int failedAttemptCount = 0;
+
     @Column(columnDefinition = "integer default 1")
     private Integer avatarId = 1;
 

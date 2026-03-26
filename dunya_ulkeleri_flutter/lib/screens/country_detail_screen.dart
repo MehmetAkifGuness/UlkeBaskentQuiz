@@ -32,6 +32,16 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
     _fetchLiveCountryData();
   }
 
+  // 🚨 YENİ EKLENDİ: RAM TEMİZLEYİCİ (MEMORY LEAK ZIRHI)
+  @override
+  void dispose() {
+    // Sayfa kapatıldığında (pop edildiğinde), Flutter'ın resim önbelleğini RAM'den zorla sileriz.
+    // Bu sayede üst üste açılan bayrak resimleri telefonu ısıtmaz ve RAM'i şişirmez.
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    super.dispose();
+  }
+
   // 🚨 %100 KESİN SONUÇ İÇİN ÜLKE PLAKA (ISO) KODLARI SÖZLÜĞÜ (Hiç dokunulmadı)
   String? _getIsoCode(String country) {
     const Map<String, String> isoMap = {
@@ -235,8 +245,6 @@ class _CountryDetailScreenState extends State<CountryDetailScreen> {
   }
 
   // İnternetten anlık ülke verisi çeken sihirli fonksiyon (Hiç dokunulmadı)
-  // İnternetten anlık ülke verisi çeken sihirli fonksiyon
-  // İnternetten anlık ülke verisi çeken sihirli fonksiyon
   Future<void> _fetchLiveCountryData() async {
     try {
       String? isoCode = _getIsoCode(widget.countryName);

@@ -28,9 +28,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Kullanıcının bugün görevi yapıp yapmadığını kontrol ediyoruz
+  // 🚨 GÜNCELLENDİ: Ana sayfa yüklenirken artık sadece günü değil, "Kaldığın Yerden Devam Et" butonunu da kontrol ediyor!
   Future<void> _checkDailyStatus() async {
     final token = Provider.of<AuthProvider>(context, listen: false).token;
+
     if (token != null) {
+      // 1. Önce Backend'den "Yarım Kalan Oyunum var mı?" diye sor (Senkronize et)
+      await Provider.of<GameProvider>(
+        context,
+        listen: false,
+      ).checkAndLoadActiveGame(token);
+
+      // 2. Sonra günlük görev profil verilerini çek
       UserProfileModel? profile = await _userService.getUserProfile(token);
       if (profile != null && mounted) {
         setState(() {

@@ -15,12 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration; // 🚨 YENİ EKLENDİ
+import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime; // 🚨 YENİ EKLENDİ
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,11 +40,16 @@ public class GameServiceImpl implements GameService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + username));
 
-        // 🚨 GÜNÜN GÖREVİ KONTROLÜ
+        // 🚨 GÜNÜN GÖREVİ KONTROLÜ VE HİLE KORUMASI
         if ("DailyChallenge".equals(category)) {
             if (user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now())) {
-                throw new RuntimeException("Bugün zaten Günün Görevi'ni tamamladın! Yarın tekrar gel.");
+                throw new RuntimeException("Bugün zaten Günün Görevi'ni başlattın veya tamamladın! Yarın tekrar gel.");
             }
+            // 🚨 KRİTİK HİLE (RAGE QUIT) ÇÖZÜMÜ:
+            // Oyuncu oyuna girdiği an bugünün hakkını kullanmış sayıyoruz. 
+            // Kapatıp baştan açarak soruları fulleme hilesi böylece kalıcı olarak engellendi!
+            user.setLastDailyDate(LocalDate.now());
+            userRepository.save(user);
         }
 
         GameSession session = new GameSession();
@@ -51,7 +57,6 @@ public class GameServiceImpl implements GameService {
         session.setCategory(category); 
         session.setGameMode(mode); 
         
-        // 🚨 YENİ EKLENDİ: Başlangıçta canları kesin olarak atıyoruz
         if ("DailyChallenge".equals(category) || "ENDLESS".equals(mode)) {
             session.setRemainingLives(1); 
         } else {
@@ -61,6 +66,58 @@ public class GameServiceImpl implements GameService {
         session = gameSessionRepository.save(session); 
 
         return generateNextQuestion(session);
+    }
+
+    // 🚨 YARIM KALAN OYUNU CANLANDIRMA METODU (RESUME GAME)
+    @Override
+    public GameStatusResponse resumeGame(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+        // Kullanıcının bitmemiş (yarım kalmış) oyununu bul
+        Optional<GameSession> activeSessionOpt = gameSessionRepository.findFirstByUserAndIsFinishedFalseOrderByUpdateAtDesc(user);
+        
+        if (activeSessionOpt.isEmpty()) {
+            return null; // Yarım kalan oyun yok
+        }
+        
+        GameSession session = activeSessionOpt.get();
+        Question question = questionRepository.findById(session.getCurrentQuestionId()).orElse(null);
+        
+        if (question == null) {
+            // Eğer soru silinmişse veya bulunamazsa oyunu iptal et (hataya düşmemesi için)
+            session.setFinished(true);
+            gameSessionRepository.save(session);
+            return null;
+        }
+        
+        // Soru tipini tespit et (Başkent mi sorulmuştu, ülke mi?)
+        boolean askForCapital = session.getCurrentCorrectAnswer().equals(question.getCapitalName());
+        
+        List<String> options = new ArrayList<>();
+        String questionText;
+        
+        if (askForCapital) {
+            options.add(question.getCapitalName());
+            options.addAll(questionRepository.findRandomWrongAnswers(question.getCapitalName()));
+            questionText = question.getCountryName() + " ülkesinin başkenti neresidir?";
+        } else {
+            options.add(question.getCountryName());
+            options.addAll(questionRepository.findRandomWrongCountries(question.getCountryName()));
+            questionText = question.getCapitalName() + " şehri hangi ülkenin başkentidir?";
+        }
+        Collections.shuffle(options);
+        
+        GameStatusResponse response = buildResponse(session, "Oyun Kaldığı Yerden Devam Ediyor...", false);
+        response.setCountryName(question.getCountryName());
+        response.setQuestionText(questionText);
+        response.setOptions(options);
+        
+        if ("DailyChallenge".equals(session.getCategory())) {
+            response.setMessage("Günün Görevi: Soru " + (session.getAskedQuestionIds().size() + 1) + "/10");
+        }
+        
+        return response;
     }
 
     @Override
@@ -79,7 +136,7 @@ public class GameServiceImpl implements GameService {
         // 🚨 GÜVENLİK YAMASI: Anti-Spam / Anti-Bot Kontrolü (0.1 Saniye Sınırı)
         if (session.getLastQuestionTime() != null) {
             long timeElapsedMillis = Duration.between(session.getLastQuestionTime(), LocalDateTime.now()).toMillis();
-            if (timeElapsedMillis < 100) { // 🚨 100 milisaniye (0.1 saniye)
+            if (timeElapsedMillis < 100) { 
                 throw new RuntimeException("Güvenlik İhlali: Çok hızlı cevap gönderildi (Hile şüphesi)!");
             }
         }
@@ -124,7 +181,6 @@ public class GameServiceImpl implements GameService {
                     session.getAskedQuestionIds().add(previousQuestionId);
                 }
             } else if ("ENDLESS".equals(session.getGameMode())) {
-                // 🚨 YENİ EKLENDİ: Sonsuz modda 1 yanlış yapıldığı an can direkt 0 yapılır (Kesin elenme garantisi)
                 session.setRemainingLives(0);
             } else {
                 session.setRemainingLives(session.getRemainingLives() - 1);
@@ -149,16 +205,15 @@ public class GameServiceImpl implements GameService {
         if (gameFinished) {
             session.setFinished(true);
             
-            // 🚨 YENİ VE AKILLI USTALIK PUANI KAYDEDİCİ (MODA GÖRE AYIRIR)
             String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
             String currentMode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
-            String mapKey = currentCategory + "_" + currentMode; // Örn: "Avrupa_COUNTRY_TO_CAPITAL"
+            String mapKey = currentCategory + "_" + currentMode;
 
             int currentScore = session.getCurrentScore();
             int bestScore = user.getCategoryBestScores().getOrDefault(mapKey, 0);
             
             if (currentScore > bestScore) {
-                user.getCategoryBestScores().put(mapKey, currentScore); // Artık puanlar ezilmeyecek!
+                user.getCategoryBestScores().put(mapKey, currentScore); 
             }
 
             if (session.getCurrentScore() > user.getMaxWinStreak()) {
@@ -200,7 +255,6 @@ public class GameServiceImpl implements GameService {
             String category = (session.getCategory() == null || session.getCategory().isEmpty()) ? "Dünya" : session.getCategory();
             question = questionRepository.findRandomQuestionByCategory(category, askedIds).orElse(null);
 
-            // 🚨 YENİ EKLENDİ: Gerçek Sonsuzluk (Eğer sorular tükenirse listeyi sıfırla ve yeniden soru seç)
             if (question == null && "ENDLESS".equals(session.getGameMode())) {
                 session.getAskedQuestionIds().clear();
                 askedIds = Set.of(-1L);
@@ -216,7 +270,6 @@ public class GameServiceImpl implements GameService {
                 session.setCurrentScore(session.getCurrentScore() + 5000);
             }
 
-            // 🚨 KATEGORİ BİTİRİLDİĞİNDE DE MODA GÖRE KAYDEDİYORUZ
             String currentCategory = session.getCategory() == null ? "Dünya" : session.getCategory();
             String currentMode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
             String mapKey = currentCategory + "_" + currentMode;
@@ -279,7 +332,7 @@ public class GameServiceImpl implements GameService {
         session.setCurrentCorrectAnswer(correctAnswer);
         session.setCurrentQuestionId(question.getId());
 
-        // 🚨 GÜVENLİK YAMASI: Yeni sorunun sorulma zamanını kaydediyoruz
+        // 🚨 GÜVENLİK YAMASI: Yeni sorunun sorulma zamanını kaydediyoruz (Hile önlemi)
         session.setLastQuestionTime(LocalDateTime.now());
 
         gameSessionRepository.save(session);

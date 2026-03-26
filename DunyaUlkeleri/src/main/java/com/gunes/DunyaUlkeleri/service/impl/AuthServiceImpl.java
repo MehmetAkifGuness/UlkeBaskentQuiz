@@ -9,32 +9,23 @@ import com.gunes.DunyaUlkeleri.service.AuthService;
 import com.gunes.DunyaUlkeleri.service.EmailService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime; // 🚨 YENİ EKLENDİ
-import java.util.Map; // 🚨 YENİ EKLENDİ
+import java.time.LocalDateTime;
 import java.util.Optional; 
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap; // 🚨 YENİ EKLENDİ
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
-
-    // 🚨 GÜVENLİK YAMASI: RAM üzerinde kodların üretim zamanını tutuyoruz (10 Dk sınır)
-    private final Map<String, LocalDateTime> codeTimestamps = new ConcurrentHashMap<>();
-    // 🚨 GÜVENLİK YAMASI: Yanlış kod deneme sayısını tutuyoruz (Max 5 Hak)
-    private final Map<String, Integer> bruteForceTracker = new ConcurrentHashMap<>();
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -56,12 +47,11 @@ public class AuthServiceImpl implements AuthService {
         String code = generateCode();
         user.setVerificationCode(code);
         
-        // 🚨 ZAMAN KAYDI EKLENİYOR
-        codeTimestamps.put(user.getEmail(), LocalDateTime.now());
-        bruteForceTracker.put(user.getEmail(), 0);
+        // 🚨 GÜVENLİK: Kodu ve saati doğrudan veritabanına yazıyoruz (RAM'e değil)
+        user.setCodeGenerationTime(LocalDateTime.now());
+        user.setFailedAttemptCount(0);
         
         userRepository.save(user);
-
         emailService.sendVerificationCode(user.getEmail(), code);
 
         return createResponse(null, user.getUsername(), "Kayıt Başarılı! Lütfen e-postanızı doğrulayın.");
@@ -106,31 +96,30 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Bu e-posta adresine ait kullanıcı bulunamadı!"));
 
-        // 🚨 GÜVENLİK YAMASI KONTROLLERİ BAŞLIYOR
-        checkBruteForceAndExpiration(request.getEmail());
+        // 🚨 GÜVENLİK: Veritabanı üzerinden süre ve kaba kuvvet kontrolü
+        checkBruteForceAndExpiration(user);
 
         if (request.getCode().equals(user.getVerificationCode())) {
             user.setVerified(true);
+            
+            // Başarılı olunca kodları, saatleri ve hatalı denemeleri temizle
             user.setVerificationCode(null);
+            user.setCodeGenerationTime(null);
+            user.setFailedAttemptCount(0);
+            
             userRepository.save(user);
-            
-            // Başarılı olunca sayaçları temizle
-            codeTimestamps.remove(request.getEmail());
-            bruteForceTracker.remove(request.getEmail());
-            
             return createResponse(null, user.getUsername(), "Hesabınız başarıyla doğrulandı!");
         }
         
-        // Yanlış girildiyse deneme sayısını artır
-        increaseFailedAttempt(request.getEmail());
+        // Yanlış girildiyse deneme sayısını artırıp DB'ye kaydet
+        increaseFailedAttempt(user);
         throw new IllegalArgumentException("Doğrulama kodu geçersiz!");
     }
 
     @Override
     public AuthResponse forgotPassword(ResetPasswordRequest request) {
-        String input = request.getEmail(); // Dışarıdan gelen veri e-posta VEYA kullanıcı adı olabilir
+        String input = request.getEmail(); 
         
-        // Önce e-posta olarak ara, bulamazsan kullanıcı adı olarak ara
         Optional<User> userOpt = userRepository.findByEmail(input);
         if (userOpt.isEmpty()) {
             userOpt = userRepository.findByUsername(input);
@@ -140,12 +129,11 @@ public class AuthServiceImpl implements AuthService {
             String resetCode = generateCode();
             user.setResetCode(resetCode);
             
-            // 🚨 ZAMAN KAYDI EKLENİYOR
-            codeTimestamps.put(user.getEmail(), LocalDateTime.now());
-            bruteForceTracker.put(user.getEmail(), 0);
+            // 🚨 GÜVENLİK: Şifre sıfırlama kodunu ve saati veritabanına kaydet
+            user.setCodeGenerationTime(LocalDateTime.now());
+            user.setFailedAttemptCount(0);
             
             userRepository.save(user);
-            // Kodu her halükarda gerçek kayıtlı e-postaya gönder
             emailService.sendPasswordResetEmail(user.getEmail(), resetCode);
         });
         
@@ -154,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse resetPassword(NewPasswordRequest request) {
-        String input = request.getEmail(); // Bu da e-posta VEYA kullanıcı adı olabilir
+        String input = request.getEmail(); 
         
         Optional<User> userOpt = userRepository.findByEmail(input);
         if (userOpt.isEmpty()) {
@@ -163,50 +151,49 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı veya e-posta/kullanıcı adı hatalı!"));
 
-        // 🚨 GÜVENLİK YAMASI KONTROLLERİ BAŞLIYOR
-        checkBruteForceAndExpiration(user.getEmail());
+        // 🚨 GÜVENLİK: Veritabanı üzerinden süre ve kaba kuvvet kontrolü
+        checkBruteForceAndExpiration(user);
 
-        // Gönderdiğimiz kod ile kullanıcının girdiği kod eşleşiyor mu?
         if (request.getResetCode() != null && request.getResetCode().equals(user.getResetCode())) {
-            // Şifreyi şifreleyerek (BCrypt) kaydet
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-            user.setResetCode(null); // Kodu tek seferlik yapıyoruz, sıfırlıyoruz
+            
+            // Başarılı olunca temizlik
+            user.setResetCode(null); 
+            user.setCodeGenerationTime(null);
+            user.setFailedAttemptCount(0);
+            
             userRepository.save(user);
-            
-            // Başarılı olunca sayaçları temizle
-            codeTimestamps.remove(user.getEmail());
-            bruteForceTracker.remove(user.getEmail());
-            
             return createResponse(null, user.getUsername(), "Şifreniz başarıyla değiştirildi! Yeni şifrenizle giriş yapabilirsiniz.");
         }
         
-        increaseFailedAttempt(user.getEmail());
+        increaseFailedAttempt(user);
         throw new IllegalArgumentException("Doğrulama kodu geçersiz veya süresi dolmuş!");
     }
 
-    // --- 🚨 YENİ GÜVENLİK METODLARI ---
+    // --- 🚨 VERİTABANI ODAKLI GÜVENLİK METODLARI ---
     
-    private void checkBruteForceAndExpiration(String email) {
+    private void checkBruteForceAndExpiration(User user) {
         // 1. ZAMAN AŞIMI KONTROLÜ (10 Dakika)
-        LocalDateTime generatedTime = codeTimestamps.get(email);
-        if (generatedTime != null && generatedTime.plusMinutes(10).isBefore(LocalDateTime.now())) {
-            codeTimestamps.remove(email);
-            bruteForceTracker.remove(email);
+        if (user.getCodeGenerationTime() != null && user.getCodeGenerationTime().plusMinutes(10).isBefore(LocalDateTime.now())) {
+            // Süre dolduysa kodları sıfırla
+            user.setVerificationCode(null);
+            user.setResetCode(null);
+            user.setFailedAttemptCount(0);
+            userRepository.save(user);
             throw new IllegalArgumentException("Doğrulama kodunun süresi dolmuş (10 dakika). Lütfen yeni bir kod isteyin.");
         }
 
         // 2. KABA KUVVET (BRUTE FORCE) KONTROLÜ (Max 5 Hak)
-        int attempts = bruteForceTracker.getOrDefault(email, 0);
-        if (attempts >= 5) {
+        if (user.getFailedAttemptCount() >= 5) {
             throw new IllegalArgumentException("Çok fazla yanlış deneme yaptınız. Güvenliğiniz için lütfen yeni bir kod isteyin.");
         }
     }
 
-    private void increaseFailedAttempt(String email) {
-        int attempts = bruteForceTracker.getOrDefault(email, 0);
-        bruteForceTracker.put(email, attempts + 1);
+    private void increaseFailedAttempt(User user) {
+        user.setFailedAttemptCount(user.getFailedAttemptCount() + 1);
+        userRepository.save(user);
     }
-    // ------------------------------------
+    // ------------------------------------------------
 
     private String generateCode() {
         SecureRandom secureRandom = new SecureRandom();
@@ -220,21 +207,4 @@ public class AuthServiceImpl implements AuthService {
         response.setMessage(message);
         return response;
     }
-
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3600000)
-    public void cleanupExpiredTokensFromMemory(){
-        LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
-        int removedCount = 0;
-        for(Map.Entry<String , LocalDateTime > entry : codeTimestamps.entrySet()){
-            if(entry.getValue().isBefore(tenMinutesAgo)){
-                codeTimestamps.remove(entry.getKey());
-                bruteForceTracker.remove(entry.getKey());
-                removedCount++;
-            }
-        }
-        if(removedCount > 0){
-            log.info("ram üzerinden {} adet terk edilmiş doğrulama kodu temizlendi" , removedCount);
-        }
-    }
-
 }

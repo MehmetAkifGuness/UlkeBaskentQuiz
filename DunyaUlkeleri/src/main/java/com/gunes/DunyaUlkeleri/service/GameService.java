@@ -14,4 +14,7 @@ public interface GameService {
     GameStatusResponse submitAnswer(GameAnswerRequest request, String username);
 
     List<DictionaryResponse> getDictionary();
+
+    // 🚨 YENİ EKLENDİ
+    GameStatusResponse resumeGame(String username);
 }
