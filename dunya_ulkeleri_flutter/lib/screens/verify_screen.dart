@@ -50,25 +50,34 @@ class _VerifyScreenState extends State<VerifyScreen> {
       _isLoading = true;
     });
 
-    final result = await _authService.verify(widget.email, enteredCode);
+    // 🚨 YENİ EKLENDİ: Yanlış kod girildiğinde uygulamanın donmaması için try-catch bloğu eklendi
+    try {
+      final result = await _authService.verify(widget.email, enteredCode);
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
 
-    bool isSuccess =
-        result.message != null &&
-        (result.message!.toLowerCase().contains("başarı") ||
-            result.message!.toLowerCase().contains("success"));
+      bool isSuccess =
+          result.message != null &&
+          (result.message!.toLowerCase().contains("başarı") ||
+              result.message!.toLowerCase().contains("success"));
 
-    _showSnackBar(
-      result.message ?? "İşlem tamamlandı.",
-      isSuccess ? Colors.green : Colors.red,
-    );
+      _showSnackBar(
+        result.message ?? "İşlem tamamlandı.",
+        isSuccess ? Colors.green : Colors.red,
+      );
 
-    // Başarılıysa Giriş Ekranına (Login) yönlendir
-    if (isSuccess) {
-      Navigator.popUntil(context, (route) => route.isFirst);
+      // Başarılıysa Giriş Ekranına (Login) yönlendir
+      if (isSuccess) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    } catch (e) {
+      // 🚨 EĞER KOD YANLIŞSA VEYA BACKEND HATA FIRLATIRSA DONMAYIP BURAYA DÜŞECEK
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar("Girdiğiniz kod hatalı veya süresi dolmuş!", Colors.red);
     }
   }
 
@@ -157,7 +166,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 15, // Rakamların arasını açar
-                  color: Colors.white, // Siyah arka plan üzerine beyaz rakamlar
+                  color:
+                      Colors.black, // 🚨 DÜZELTİLDİ: Beyazdan siyaha çevrildi
                 ),
                 decoration: InputDecoration(
                   labelText: "Doğrulama Kodu",

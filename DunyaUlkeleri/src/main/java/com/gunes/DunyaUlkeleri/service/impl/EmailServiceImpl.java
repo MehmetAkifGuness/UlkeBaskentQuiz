@@ -11,12 +11,12 @@ import jakarta.mail.internet.MimeMessage;
 import com.gunes.DunyaUlkeleri.service.EmailService;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // 🚨 YENİ: Profesyonel loglama için eklendi
+import lombok.extern.slf4j.Slf4j; // 🚨 Profesyonel loglama
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j // 🚨 YENİ: System.out.println yerine log.info kullanmak için eklendi
+@Slf4j // 🚨 System.out.println yerine log.info kullanmak için
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;

@@ -53,6 +53,10 @@ public class GameSession {
     @Column(name = "game_mode")
     private String gameMode;
 
+    // 🚨 GÜVENLİK YAMASI: Hile (Exploit) kontrolü için sorunun sorulduğu anı tutuyoruz
+    @Column(name = "last_question_time")
+    private LocalDateTime lastQuestionTime;
+
     @PrePersist
     protected void onCreate(){
         this.createdAt = LocalDateTime.now();
@@ -60,6 +64,7 @@ public class GameSession {
         this.currentScore = 0;
         this.remainingLives = 3;
         this.isFinished = false;
+        this.lastQuestionTime = LocalDateTime.now(); // İlk soru zamanı
     }
 
     @PreUpdate
@@ -69,6 +74,7 @@ public class GameSession {
 
     @Column(name = "category")
     private String category;
+    
     @ElementCollection
     @CollectionTable(name = "session_asked_questions", joinColumns = @JoinColumn(name = "session_id"))
     @Column(name = "question_id")

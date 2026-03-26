@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration; // 🚨 YENİ EKLENDİ
 import java.time.LocalDate;
+import java.time.LocalDateTime; // 🚨 YENİ EKLENDİ
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -72,6 +74,14 @@ public class GameServiceImpl implements GameService {
 
         if (session.isFinished()) {
             return buildResponse(session, "Bu oyun zaten bitmiş!", true);
+        }
+
+        // 🚨 GÜVENLİK YAMASI: Anti-Spam / Anti-Bot Kontrolü (0.1 Saniye Sınırı)
+        if (session.getLastQuestionTime() != null) {
+            long timeElapsedMillis = Duration.between(session.getLastQuestionTime(), LocalDateTime.now()).toMillis();
+            if (timeElapsedMillis < 100) { // 🚨 100 milisaniye (0.1 saniye)
+                throw new RuntimeException("Güvenlik İhlali: Çok hızlı cevap gönderildi (Hile şüphesi)!");
+            }
         }
 
         String previousCorrectAnswer = session.getCurrentCorrectAnswer();
@@ -268,6 +278,10 @@ public class GameServiceImpl implements GameService {
 
         session.setCurrentCorrectAnswer(correctAnswer);
         session.setCurrentQuestionId(question.getId());
+
+        // 🚨 GÜVENLİK YAMASI: Yeni sorunun sorulma zamanını kaydediyoruz
+        session.setLastQuestionTime(LocalDateTime.now());
+
         gameSessionRepository.save(session);
 
         GameStatusResponse response = buildResponse(session, "Yeni Soru!", false);

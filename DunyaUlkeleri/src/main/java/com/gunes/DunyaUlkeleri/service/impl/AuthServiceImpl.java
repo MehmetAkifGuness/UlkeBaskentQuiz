@@ -13,8 +13,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.Optional; // 🚨 YENİ EKLENDİ
+import java.time.LocalDateTime; // 🚨 YENİ EKLENDİ
+import java.util.Map; // 🚨 YENİ EKLENDİ
+import java.util.Optional; 
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap; // 🚨 YENİ EKLENDİ
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,11 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
+
+    // 🚨 GÜVENLİK YAMASI: RAM üzerinde kodların üretim zamanını tutuyoruz (10 Dk sınır)
+    private final Map<String, LocalDateTime> codeTimestamps = new ConcurrentHashMap<>();
+    // 🚨 GÜVENLİK YAMASI: Yanlış kod deneme sayısını tutuyoruz (Max 5 Hak)
+    private final Map<String, Integer> bruteForceTracker = new ConcurrentHashMap<>();
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -45,6 +53,11 @@ public class AuthServiceImpl implements AuthService {
 
         String code = generateCode();
         user.setVerificationCode(code);
+        
+        // 🚨 ZAMAN KAYDI EKLENİYOR
+        codeTimestamps.put(user.getEmail(), LocalDateTime.now());
+        bruteForceTracker.put(user.getEmail(), 0);
+        
         userRepository.save(user);
 
         emailService.sendVerificationCode(user.getEmail(), code);
@@ -91,13 +104,23 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Bu e-posta adresine ait kullanıcı bulunamadı!"));
 
+        // 🚨 GÜVENLİK YAMASI KONTROLLERİ BAŞLIYOR
+        checkBruteForceAndExpiration(request.getEmail());
+
         if (request.getCode().equals(user.getVerificationCode())) {
             user.setVerified(true);
             user.setVerificationCode(null);
             userRepository.save(user);
+            
+            // Başarılı olunca sayaçları temizle
+            codeTimestamps.remove(request.getEmail());
+            bruteForceTracker.remove(request.getEmail());
+            
             return createResponse(null, user.getUsername(), "Hesabınız başarıyla doğrulandı!");
         }
         
+        // Yanlış girildiyse deneme sayısını artır
+        increaseFailedAttempt(request.getEmail());
         throw new IllegalArgumentException("Doğrulama kodu geçersiz!");
     }
 
@@ -114,6 +137,11 @@ public class AuthServiceImpl implements AuthService {
         userOpt.ifPresent(user -> {
             String resetCode = generateCode();
             user.setResetCode(resetCode);
+            
+            // 🚨 ZAMAN KAYDI EKLENİYOR
+            codeTimestamps.put(user.getEmail(), LocalDateTime.now());
+            bruteForceTracker.put(user.getEmail(), 0);
+            
             userRepository.save(user);
             // Kodu her halükarda gerçek kayıtlı e-postaya gönder
             emailService.sendPasswordResetEmail(user.getEmail(), resetCode);
@@ -133,17 +161,50 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı veya e-posta/kullanıcı adı hatalı!"));
 
+        // 🚨 GÜVENLİK YAMASI KONTROLLERİ BAŞLIYOR
+        checkBruteForceAndExpiration(user.getEmail());
+
         // Gönderdiğimiz kod ile kullanıcının girdiği kod eşleşiyor mu?
         if (request.getResetCode() != null && request.getResetCode().equals(user.getResetCode())) {
             // Şifreyi şifreleyerek (BCrypt) kaydet
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
             user.setResetCode(null); // Kodu tek seferlik yapıyoruz, sıfırlıyoruz
             userRepository.save(user);
+            
+            // Başarılı olunca sayaçları temizle
+            codeTimestamps.remove(user.getEmail());
+            bruteForceTracker.remove(user.getEmail());
+            
             return createResponse(null, user.getUsername(), "Şifreniz başarıyla değiştirildi! Yeni şifrenizle giriş yapabilirsiniz.");
         }
         
+        increaseFailedAttempt(user.getEmail());
         throw new IllegalArgumentException("Doğrulama kodu geçersiz veya süresi dolmuş!");
     }
+
+    // --- 🚨 YENİ GÜVENLİK METODLARI ---
+    
+    private void checkBruteForceAndExpiration(String email) {
+        // 1. ZAMAN AŞIMI KONTROLÜ (10 Dakika)
+        LocalDateTime generatedTime = codeTimestamps.get(email);
+        if (generatedTime != null && generatedTime.plusMinutes(10).isBefore(LocalDateTime.now())) {
+            codeTimestamps.remove(email);
+            bruteForceTracker.remove(email);
+            throw new IllegalArgumentException("Doğrulama kodunun süresi dolmuş (10 dakika). Lütfen yeni bir kod isteyin.");
+        }
+
+        // 2. KABA KUVVET (BRUTE FORCE) KONTROLÜ (Max 5 Hak)
+        int attempts = bruteForceTracker.getOrDefault(email, 0);
+        if (attempts >= 5) {
+            throw new IllegalArgumentException("Çok fazla yanlış deneme yaptınız. Güvenliğiniz için lütfen yeni bir kod isteyin.");
+        }
+    }
+
+    private void increaseFailedAttempt(String email) {
+        int attempts = bruteForceTracker.getOrDefault(email, 0);
+        bruteForceTracker.put(email, attempts + 1);
+    }
+    // ------------------------------------
 
     private String generateCode() {
         SecureRandom secureRandom = new SecureRandom();

@@ -113,8 +113,7 @@ class _GameScreenState extends State<GameScreen> {
 
     bool isDaily = widget.category == "DailyChallenge";
     // ignore: unused_local_variable
-    bool isEndless =
-        widget.mode == "ENDLESS" || (status?.totalQuestions == 195);
+    bool isEndless = widget.mode == "ENDLESS";
 
     return PopScope(
       canPop: false,
