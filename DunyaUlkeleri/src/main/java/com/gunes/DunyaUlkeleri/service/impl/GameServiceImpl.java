@@ -108,6 +108,10 @@ public class GameServiceImpl implements GameService {
         }
         Collections.shuffle(options);
         
+        // 🚨 BUG ÇÖZÜMÜ: Oyuna devam edildiği anı "yeni soru sorulmuş" gibi kaydet ki zaman hesaplaması sapıtmasın!
+        session.setLastQuestionTime(LocalDateTime.now());
+        gameSessionRepository.save(session);
+        
         GameStatusResponse response = buildResponse(session, "Oyun Kaldığı Yerden Devam Ediyor...", false);
         response.setCountryName(question.getCountryName());
         response.setQuestionText(questionText);
@@ -148,20 +152,31 @@ public class GameServiceImpl implements GameService {
         boolean isDaily = "DailyChallenge".equals(session.getCategory());
 
         if (isCorrect) {
-            double timeInSeconds = request.getTimeTaken();
+            double clientTime = request.getTimeTaken();
+            
+            // 🚨 HACKER KORUMASI: Sunucunun kendi kronometresiyle geçen süreyi hesapla (Ağ gecikmesi için 500ms tolerans düş)
+            long actualElapsedMillis = Duration.between(session.getLastQuestionTime(), LocalDateTime.now()).toMillis();
+            double serverTimeInSeconds = Math.max(0.1, (actualElapsedMillis - 500) / 1000.0);
+
+            // 🚨 EĞER İSTEMCİ (FLUTTER) BİZE SUNUCU SÜRESİNDEN ÇOK DAHA KISA (Hileli) BİR SÜRE GÖNDERİRSE, SUNUCU SÜRESİNİ BAZ AL!
+            double finalTimeInSeconds = clientTime;
+            if (serverTimeInSeconds - clientTime > 1.0) {
+                finalTimeInSeconds = serverTimeInSeconds; // Hile tespit edildi, gerçek süre uygulandı!
+            }
+
             int earnedScore;
             
-            if (timeInSeconds > 10.0) {
+            if (finalTimeInSeconds > 10.0) {
                 earnedScore = 100;
             } else {
-                if (timeInSeconds < 0.1) timeInSeconds = 0.1;
-                earnedScore = (int) Math.round((10.0 / timeInSeconds) * 200.0);
+                if (finalTimeInSeconds < 0.1) finalTimeInSeconds = 0.1;
+                earnedScore = (int) Math.round((10.0 / finalTimeInSeconds) * 200.0);
                 if (earnedScore > 2000) {
                     earnedScore = 2000; 
                 }
             }
             
-            System.out.println("Süre: " + timeInSeconds + " sn | Kazanılan Puan: " + earnedScore);
+            System.out.println("Gelen Süre: " + clientTime + " sn | Gerçek Süre: " + serverTimeInSeconds + " sn | Kazanılan Puan: " + earnedScore);
             session.setCurrentScore(session.getCurrentScore() + earnedScore);
             
             if (previousQuestionId != null) {
