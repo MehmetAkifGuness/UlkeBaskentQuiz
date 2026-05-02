@@ -33,6 +33,7 @@ public class UserServiceImpl implements UserService {
             response.setTotalGamesPlayed(user.getTotalGamesPlayed());
             boolean playedToday = user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now());
             response.setHasPlayedDaily(playedToday);
+            response.setDailyStreak(user.getDailyStreak() == null ? 0 : user.getDailyStreak());
             return response;
         }
         

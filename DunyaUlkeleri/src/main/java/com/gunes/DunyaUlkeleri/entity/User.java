@@ -62,6 +62,9 @@ public class User {
 
     private LocalDate lastDailyDate;
 
+    @Column(columnDefinition = "integer default 0")
+    private Integer dailyStreak = 0;
+
     @Column(updatable = false)
     private LocalDateTime creationDate;
 

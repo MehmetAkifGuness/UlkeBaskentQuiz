@@ -22,6 +22,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
 
   List<DictionaryModel> _allData = [];
   List<DictionaryModel> _filteredData = [];
+  List<String> _availableContinents = const ['Hepsi'];
+  String? _selectedContinent;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -38,7 +40,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
         final data = await _gameService.getDictionary(token);
         setState(() {
           _allData = data;
-          _filteredData = data;
+          _availableContinents = _buildContinentOptions(data);
+          _filteredData = _applyFiltersTo(data, query: _searchController.text);
           _isLoading = false;
         });
       }
@@ -63,25 +66,173 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
         .toLowerCase();
   }
 
-  void _filterData(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _filteredData = _allData;
-      });
-    } else {
-      setState(() {
-        _filteredData = _allData.where((item) {
-          final countryLower = (item.countryName ?? '').toLowerCase();
-          final capitalLower = (item.capitalName ?? '').toLowerCase();
-          final continentLower = (item.continent ?? '').toLowerCase();
-          final searchLower = query.toLowerCase();
+  void _onSearchChanged(String query) {
+    setState(() => _filteredData = _applyFiltersTo(_allData, query: query));
+  }
 
-          return countryLower.contains(searchLower) ||
-              capitalLower.contains(searchLower) ||
-              continentLower.contains(searchLower);
-        }).toList();
-      });
+  List<DictionaryModel> _applyFiltersTo(
+    List<DictionaryModel> source, {
+    required String query,
+  }) {
+    final selected = _selectedContinent?.trim();
+    final normalizedQuery = _toTurkishLowerCase(query.trim());
+
+    return source.where((item) {
+      final continent = (item.continent ?? '').trim();
+
+      if (selected != null &&
+          selected.isNotEmpty &&
+          selected != 'Hepsi' &&
+          continent != selected) {
+        return false;
+      }
+
+      if (normalizedQuery.isEmpty) return true;
+
+      final country = _toTurkishLowerCase(item.countryName ?? '');
+      final capital = _toTurkishLowerCase(item.capitalName ?? '');
+      final continentLower = _toTurkishLowerCase(item.continent ?? '');
+
+      return country.contains(normalizedQuery) ||
+          capital.contains(normalizedQuery) ||
+          continentLower.contains(normalizedQuery);
+    }).toList();
+  }
+
+  List<String> _buildContinentOptions(List<DictionaryModel> data) {
+    const order = [
+      'Avrupa',
+      'Asya',
+      'Afrika',
+      'Kuzey Amerika',
+      'Güney Amerika',
+      'Okyanusya',
+    ];
+
+    final set = <String>{};
+    for (final item in data) {
+      final continent = item.continent?.trim();
+      if (continent == null || continent.isEmpty) continue;
+      set.add(continent);
     }
+
+    final list = set.toList();
+    list.sort((a, b) {
+      final ai = order.indexOf(a);
+      final bi = order.indexOf(b);
+      if (ai != -1 || bi != -1) {
+        return (ai == -1 ? 999 : ai).compareTo(bi == -1 ? 999 : bi);
+      }
+      return a.compareTo(b);
+    });
+
+    return ['Hepsi', ...list];
+  }
+
+  void _openContinentFilter() {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final current = _selectedContinent ?? 'Hepsi';
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Kıta Filtresi',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (final continent in _availableContinents)
+                      ChoiceChip(
+                        label: Text(continent),
+                        selected: continent == current,
+                        onSelected: (_) {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+
+                          setState(() {
+                            _selectedContinent = continent == 'Hepsi'
+                                ? null
+                                : continent;
+                            _filteredData = _applyFiltersTo(
+                              _allData,
+                              query: _searchController.text,
+                            );
+                          });
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                  ],
+                ),
+                if (_selectedContinent != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Provider.of<SettingsProvider>(
+                          context,
+                          listen: false,
+                        ).triggerButtonVibration();
+                        setState(() {
+                          _selectedContinent = null;
+                          _filteredData = _applyFiltersTo(
+                            _allData,
+                            query: _searchController.text,
+                          );
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      icon: const Icon(Icons.refresh, color: Colors.amber),
+                      label: const Text(
+                        'Filtreyi Sıfırla',
+                        style: TextStyle(color: Colors.amber),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.amber.withOpacity(0.6)),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _getFlagEmoji(String country) {
@@ -302,6 +453,17 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Filtrele',
+            onPressed: _openContinentFilter,
+            icon: Icon(
+              _selectedContinent == null
+                  ? Icons.filter_list_outlined
+                  : Icons.filter_list,
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -309,10 +471,12 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
-              onChanged: _filterData,
+              onChanged: _onSearchChanged,
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: "Ülke, Başkent veya Kıta Ara...",
+                hintText: _selectedContinent == null
+                    ? "Ülke, Başkent veya Kıta Ara..."
+                    : "Ülke / Başkent Ara (${_selectedContinent!})",
                 hintStyle: TextStyle(color: Colors.grey),
                 prefixIcon: Icon(Icons.search, color: Colors.amber),
                 filled: true,

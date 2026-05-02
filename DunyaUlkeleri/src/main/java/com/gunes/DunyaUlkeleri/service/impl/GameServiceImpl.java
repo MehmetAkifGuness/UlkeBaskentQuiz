@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class GameServiceImpl implements GameService {
+
+    // Sözlük verisi çok sık değişmediği için basit bir TTL cache ile DB yükünü azaltıyoruz.
+    // Ekstra dosya oluşturmadan, sadece servis içinde tutulur.
+    private static final Duration DICTIONARY_CACHE_TTL = Duration.ofMinutes(10);
+    private volatile DictionaryCache dictionaryCache;
+
+    private static final class DictionaryCache {
+        private final Instant createdAt;
+        private final List<DictionaryResponse> data;
+
+        private DictionaryCache(Instant createdAt, List<DictionaryResponse> data) {
+            this.createdAt = createdAt;
+            this.data = data;
+        }
+    }
 
     private final QuestionRepository questionRepository;
     private final UserRepository userRepository;
@@ -55,11 +71,26 @@ public class GameServiceImpl implements GameService {
 
         // 🚨 GÜNÜN GÖREVİ KONTROLÜ VE HİLE KORUMASI
         if ("DailyChallenge".equals(category)) {
-            if (user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now())) {
+            LocalDate today = LocalDate.now();
+            LocalDate lastDaily = user.getLastDailyDate();
+
+            if (lastDaily != null && lastDaily.equals(today)) {
                 throw new RuntimeException("Bugün zaten Günün Görevi'ni başlattın veya tamamladın! Yarın tekrar gel.");
             }
-            // Oyuncu oyuna girdiği an bugünün hakkını kullanmış sayıyoruz. 
-            user.setLastDailyDate(LocalDate.now());
+
+            Integer streak = user.getDailyStreak();
+            int nextStreak;
+            if (lastDaily == null) {
+                nextStreak = 1;
+            } else if (lastDaily.equals(today.minusDays(1))) {
+                nextStreak = (streak == null || streak <= 0) ? 2 : streak + 1;
+            } else {
+                nextStreak = 1;
+            }
+
+            // Oyuncu oyuna girdiği an bugünün hakkını kullanmış sayıyoruz.
+            user.setDailyStreak(nextStreak);
+            user.setLastDailyDate(today);
             userRepository.save(user);
         }
 
@@ -446,11 +477,31 @@ public class GameServiceImpl implements GameService {
     // =================================================================
     @Override
     public List<DictionaryResponse> getDictionary() {
-        List<Question> allQuestions = questionRepository.findAllByOrderByCountryNameAsc();
-        return allQuestions.stream().map(q -> new DictionaryResponse(
-                q.getCountryName(),
-                q.getCapitalName(),
-                q.getContinent()
-        )).collect(Collectors.toList());
+        DictionaryCache cache = dictionaryCache;
+        Instant now = Instant.now();
+        if (cache != null &&
+                Duration.between(cache.createdAt, now).compareTo(DICTIONARY_CACHE_TTL) < 0) {
+            return cache.data;
+        }
+
+        synchronized (this) {
+            cache = dictionaryCache;
+            now = Instant.now();
+            if (cache != null &&
+                    Duration.between(cache.createdAt, now).compareTo(DICTIONARY_CACHE_TTL) < 0) {
+                return cache.data;
+            }
+
+            List<Question> allQuestions = questionRepository.findAllByOrderByCountryNameAsc();
+            List<DictionaryResponse> fresh = allQuestions.stream().map(q -> new DictionaryResponse(
+                    q.getCountryName(),
+                    q.getCapitalName(),
+                    q.getContinent()
+            )).toList();
+
+            List<DictionaryResponse> immutableFresh = List.copyOf(fresh);
+            dictionaryCache = new DictionaryCache(now, immutableFresh);
+            return immutableFresh;
+        }
     }
 }

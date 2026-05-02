@@ -5,6 +5,7 @@ class UserProfileModel {
   final int maxWinStreak;
   final int totalGamesPlayed;
   final bool hasPlayedDaily;
+  final int dailyStreak;
 
   // 🚨 YENİ EKLENEN
   final int avatarId;
@@ -16,6 +17,7 @@ class UserProfileModel {
     required this.maxWinStreak,
     required this.totalGamesPlayed,
     required this.hasPlayedDaily,
+    required this.dailyStreak,
     required this.avatarId, // 🚨 CONSTRUCTOR'A EKLENDİ
   });
 
@@ -27,6 +29,7 @@ class UserProfileModel {
       maxWinStreak: json['maxWinStreak'] ?? 0,
       totalGamesPlayed: json['totalGamesPlayed'] ?? 0,
       hasPlayedDaily: json['hasPlayedDaily'] ?? false,
+      dailyStreak: json['dailyStreak'] ?? 0,
       avatarId: json['avatarId'] ?? 1, // 🚨 EĞER BOŞ GELİRSE 1. AVATARI VER
     );
   }

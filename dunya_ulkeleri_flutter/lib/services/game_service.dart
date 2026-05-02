@@ -53,7 +53,7 @@ class GameService {
               'Authorization': 'Bearer $token',
             },
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
@@ -88,7 +88,7 @@ class GameService {
             Uri.parse('$baseUrl/dictionary'),
             headers: {'Authorization': 'Bearer $token'},
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
@@ -131,7 +131,7 @@ class GameService {
               'timeTaken': timeTaken,
             }),
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
@@ -165,7 +165,7 @@ class GameService {
             Uri.parse('$baseUrl/resume'),
             headers: {'Authorization': 'Bearer $token'},
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 204 || response.statusCode == 404) {
         return null; // Aktif/yarım oyun yok
@@ -177,9 +177,17 @@ class GameService {
       } else {
         return null;
       }
+    } on TimeoutException {
+      // Timeout olursa "oyun yok" gibi davranmayalım; Provider bunu hata olarak ele alabilsin.
+      throw Exception(
+        "Aktif oyun kontrolü zaman aşımına uğradı. API_BASE_URL ve backend'i kontrol et: $baseUrl",
+      );
+    } on SocketException {
+      throw Exception(
+        "Aktif oyun kontrolü başarısız (sunucuya ulaşılamadı). API_BASE_URL ve ağ bağlantını kontrol et: $baseUrl",
+      );
     } catch (e) {
-      print("Aktif oyun kontrol hatası: $e");
-      return null; // Çökmeyi önlemek için null dönüyoruz
+      throw Exception("Aktif oyun kontrol hatası: $e");
     }
   }
 }

@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
 import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
+import '../widgets/geo_bottom_nav.dart';
+import 'dashboard_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
-import 'dictionary_screen.dart';
 import 'leaderboard_screen.dart';
+import 'setup_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,45 +19,42 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  // Alt menüdeki sekmeler (Sıralama ekranı 1. sıraya eklendi)
-  final List<Widget> _screens = [
-    HomeScreen(), // 0. index: Oyuna Başla sayfası
-    LeaderboardScreen(), // 1. index: Sıralama (Liderlik) sayfası - YENİ
-    DictionaryScreen(), // 2. index: Öğrenme(Sözlük) sayfası
-    ProfileScreen(), // 3. index: Profil sayfası
-  ];
+  void _setTabIndex(int index) {
+    if (!mounted) return;
+    setState(() => _currentIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      DashboardScreen(
+        onNavigateTab: _setTabIndex,
+        isActive: _currentIndex == 0,
+      ),
+      const HomeScreen(), // Oyun
+      const LeaderboardScreen(), // Sıralama
+      ProfileScreen(onNavigateTab: _setTabIndex),
+      const SetupScreen(),
+    ];
+
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
+      body: IndexedStack(index: _currentIndex, children: screens),
+      bottomNavigationBar: GeoBottomNav(
         currentIndex: _currentIndex,
-        // DİKKAT: 3'ten fazla ikon kullanıldığında 'fixed' yapmak zorunludur!
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors
-            .amber, // Seçilen sekmenin rengi (Oyunun temasına uygun altın sarısı)
-        unselectedItemColor: Colors.grey, // Seçili olmayanların rengi
-        onTap: (index) {
-          // 🚨 YENİ EKLENDİ: Alt sekmelere tıklandığında titreşim
+        items: const [
+          GeoNavItem(icon: Icons.home_rounded, label: 'Anasayfa'),
+          GeoNavItem(icon: Icons.quiz, label: 'Oyun'),
+          GeoNavItem(icon: Icons.leaderboard_rounded, label: 'Sıralama'),
+          GeoNavItem(icon: Icons.person_rounded, label: 'Profil'),
+          GeoNavItem(icon: Icons.settings_rounded, label: 'Ayarlar'),
+        ],
+        onChanged: (index) {
           Provider.of<SettingsProvider>(
             context,
             listen: false,
           ).triggerButtonVibration();
-
-          setState(() {
-            _currentIndex = index;
-          });
+          _setTabIndex(index);
         },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.play_arrow), label: 'Oyun'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.leaderboard), // YENİ SIRALAMA İKONU
-            label: 'Sıralama',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Öğren'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-        ],
       ),
     );
   }

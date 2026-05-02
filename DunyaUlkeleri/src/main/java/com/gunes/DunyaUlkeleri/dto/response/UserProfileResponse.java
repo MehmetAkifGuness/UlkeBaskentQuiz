@@ -15,4 +15,6 @@ public class UserProfileResponse {
     private Integer avatarId;
 
     private boolean hasPlayedDaily;
+
+    private Integer dailyStreak;
 }

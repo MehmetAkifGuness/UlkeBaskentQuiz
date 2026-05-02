@@ -237,6 +237,18 @@ class GameProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print("Senkronizasyon başarısız: $e");
+      if (navigatorKey.currentContext != null) {
+        ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Sunucuya ulaşılamadı. Lütfen backend'in çalıştığını ve `.env` içindeki API_BASE_URL'i kontrol edin.",
+            ),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 }

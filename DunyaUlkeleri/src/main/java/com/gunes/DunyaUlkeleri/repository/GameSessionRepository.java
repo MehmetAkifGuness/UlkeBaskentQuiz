@@ -29,4 +29,6 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
 
     // 🚨 YENİ EKLENDİ: Yeni oyuna başlandığında terk edilen oyunları bulmak için
     List<GameSession> findByUserAndIsFinishedFalse(User user);
+
+    List<GameSession> findTop10ByUserAndIsFinishedTrueOrderByUpdateAtDesc(User user);
 }

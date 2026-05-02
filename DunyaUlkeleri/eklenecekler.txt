@@ -1,9 +1,30 @@
-flutter run --release
-ülkelerin yöresel müziği eklenecek 
+ülkelerin yöresel müziği eklenecek
+
 ülkelerin bulunduğu konumun(haritasını) eklenecek
+
 başarımlar (uygulama bittikten sonra eklenecek)
-sayfa düzenleri iyileştirilecek
-sorular bittikten sonraki ekranda ufak değişiklikler yapılacak görünüş olarak
+
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
+
 rütbeleri backende taşımak
+
 öğrenme kısmına kategori eklenebilir nasıl olur sağ üste filtreleme kısmı olur o filtreleme kısmında avrupa asya vs diye ayarlayabiliriz oradan da daha kolay arama yapabiliriz
+
+Backend (Spring Boot) Dosyaları:
+
+GameServiceImpl.java (Zaman hilesini ve Yanlış Cevap kısırdöngüsünü çözeceğiz)
+
+AuthServiceImpl.java (E-posta spam/fatura patlatma saldırısını - Cooldown ile çözeceğiz)
+
+UserCleanupScheduler.java (Gece 3'teki aktif misafirleri silme hatasını çözeceğiz)
+
+UserRepository.java (Eski misafirleri bulmak için özel bir sorgu ekleyeceğiz)
+
+Frontend (Flutter) Dosyaları:
+
+5. game_provider.dart (AudioPlayer bellek sızıntısını çözeceğiz)
+
+bil ve fethet mantığında soru bildikçe o ülkeyi fethetme
+
+Lig mantığı (ülke bazlı)
+

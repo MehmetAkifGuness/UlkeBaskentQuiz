@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
+import '../models/recent_session_model.dart';
 
 // 🚨 YENİ İMPORTLAR: Yönlendirme ve yetki temizliği için gerekli
 import 'package:flutter/material.dart';
@@ -75,6 +76,37 @@ class UserService {
     } else {
       throw Exception('Kategori skorları alınamadı!');
     }
+  }
+
+  Future<List<RecentSessionModel>> getRecentSessions(
+    String token, {
+    int limit = 3,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/recent-sessions?limit=$limit'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      return [];
+    }
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonResponse = json.decode(
+        utf8.decode(response.bodyBytes),
+      );
+      return jsonResponse
+          .where((e) => e is Map)
+          .map(
+            (e) => RecentSessionModel.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList();
+    }
+
+    return [];
   }
 
   // 2. Seçilen Kategoriye Göre Liderlik Tablosunu Getir

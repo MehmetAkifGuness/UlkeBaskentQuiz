@@ -221,19 +221,19 @@ class _GameScreenState extends State<GameScreen> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.white,
+                                color: AppColors.surface2.withOpacity(0.65),
                                 borderRadius: BorderRadius.circular(30),
                                 border: Border.all(
-                                  color: AppColors.borderBlueish,
-                                  width: 2,
+                                  color: AppColors.borderLight,
+                                  width: 1.5,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppColors.primaryBlue.withOpacity(
-                                      0.1,
+                                      0.12,
                                     ),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                                    blurRadius: 14,
+                                    offset: const Offset(0, 10),
                                   ),
                                 ],
                               ),
@@ -358,7 +358,7 @@ class _GameScreenState extends State<GameScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: AppColors.white,
+                                color: AppColors.surface2.withOpacity(0.65),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: AppColors.borderLight,
@@ -366,9 +366,11 @@ class _GameScreenState extends State<GameScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
+                                    color: AppColors.primaryBlue.withOpacity(
+                                      0.10,
+                                    ),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 14),
                                   ),
                                 ],
                               ),
@@ -377,7 +379,7 @@ class _GameScreenState extends State<GameScreen> {
                                 children: [
                                   const Icon(
                                     Icons.public,
-                                    color: AppColors.brown,
+                                    color: AppColors.primaryBlue,
                                     size: 44,
                                   ),
                                   const SizedBox(height: 16),
@@ -399,7 +401,13 @@ class _GameScreenState extends State<GameScreen> {
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: (status.options as List<dynamic>? ?? [])
-                              .map<Widget>((option) {
+                              .asMap()
+                              .entries
+                              .map<Widget>((entry) {
+                                final option = entry.value;
+                                final prefix = String.fromCharCode(
+                                  65 + (entry.key % 26),
+                                );
                                 AnswerState state = AnswerState.normal;
 
                                 if (gameProvider.showResult) {
@@ -427,6 +435,7 @@ class _GameScreenState extends State<GameScreen> {
                                 }
 
                                 return AnswerButton(
+                                  prefix: prefix,
                                   text: option.toString(),
                                   state: state,
                                   onPressed: () {
@@ -462,12 +471,13 @@ class _GameScreenState extends State<GameScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: AppColors.surface2.withOpacity(0.75),
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderLight),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
+                            color: AppColors.primaryBlue.withOpacity(0.12),
+                            blurRadius: 16,
                           ),
                         ],
                       ),

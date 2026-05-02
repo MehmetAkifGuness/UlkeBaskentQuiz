@@ -2,56 +2,144 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Ana Renkler (Mavi)
-  static const Color primaryBlue = Color(0xFF3B82F6);
-  static const Color primaryBlueHover = Color(0xFF2563EB);
-  static const Color lightBlueHover = Color(0xFFDBEAFE);
+  // GeoMaster benzeri koyu/fütüristik palet
+  static const Color primaryBlue = Color(0xFF38BDF8); // Neon mavi
+  static const Color primaryBlueHover = Color(0xFF0EA5E9);
+  static const Color lightBlueHover = Color(0xFF7DD3FC);
 
-  // Destekleyici Renkler
-  static const Color brown = Color(0xFF92400E);
-  static const Color yellow = Color(0xFFF59E0B);
+  // Destekleyici renkler
+  static const Color brown = Color(0xFFD97706); // Bronze / turuncu
+  static const Color yellow = Color(0xFFFBBF24); // Altın
 
-  // Nötr ve Arka Plan
+  // Nötr ve arka plan
   static const Color white = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFFF1F5F9);
-  static const Color textDark = Color(0xFF0F172A);
+  static const Color background = Color(0xFF0B1220);
+  static const Color background2 = Color(0xFF030712);
+  static const Color surface = Color(0xFF111B2D);
+  static const Color surface2 = Color(0xFF0F172A);
+  static const Color textDark = Color(
+    0xFFE6F1FF,
+  ); // Ana yazı (koyu temada açık)
+  static const Color textMuted = Color(0xFF94A3B8);
 
-  // Feedback (Geribildirim) Renkleri
-  static const Color successGreen = Color(0xFF22C55E);
-  static const Color errorRed = Color(0xFFEF4444);
+  // Feedback (geribildirim) renkleri
+  static const Color successGreen = Color(0xFF34D399);
+  static const Color errorRed = Color(0xFFF87171);
 
-  // Çizgiler ve Kenarlıklar
-  static const Color borderLight = Color(0xFFE2E8F0);
-  static const Color borderBlueish = Color(0xFFCBD5F5);
+  // Çizgiler ve kenarlıklar
+  static const Color borderLight = Color(0x26FFFFFF); // %15 beyaz
+  static const Color borderBlueish = Color(0x3348D2FF);
+}
+
+class AppGradients {
+  static const LinearGradient background = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppColors.background, AppColors.background2],
+  );
+
+  static const LinearGradient primary = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppColors.lightBlueHover, AppColors.primaryBlueHover],
+  );
 }
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    return ThemeData(
+  static ThemeData get darkTheme {
+    final base = ThemeData.dark(useMaterial3: true);
+    final scheme = base.colorScheme.copyWith(
+      primary: AppColors.primaryBlue,
+      secondary: AppColors.successGreen,
+      surface: AppColors.surface,
+      background: AppColors.background,
+      error: AppColors.errorRed,
+      outline: AppColors.borderLight,
+    );
+
+    return base.copyWith(
+      colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primaryBlue,
-      fontFamily: 'Roboto', // Varsa özel fontunu buraya yazabilirsin
-      // Üst Bar (Navbar) Teması
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white, // Yazı ve ikon rengi
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColors.textDark,
         elevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: AppColors.white),
+        iconTheme: IconThemeData(color: AppColors.textDark),
       ),
-
-      // Standart Buton Teması (Ana Butonlar için)
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryBlue,
-          foregroundColor: AppColors.white,
-          elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surface2,
+        selectedItemColor: AppColors.primaryBlue,
+        unselectedItemColor: AppColors.textMuted,
+        type: BottomNavigationBarType.fixed,
+        showUnselectedLabels: true,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surface2,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: AppColors.borderLight),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.borderLight,
+        thickness: 1,
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: AppColors.surface2,
+        selectedColor: AppColors.primaryBlue.withOpacity(0.20),
+        side: const BorderSide(color: AppColors.borderLight),
+        labelStyle: const TextStyle(
+          color: AppColors.textDark,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: AppColors.textDark,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface2,
+        hintStyle: const TextStyle(color: AppColors.textMuted),
+        labelStyle: const TextStyle(color: AppColors.textMuted),
+        prefixIconColor: AppColors.textMuted,
+        suffixIconColor: AppColors.textMuted,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.borderLight),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppColors.primaryBlue,
+            width: 1.5,
           ),
         ),
       ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: AppColors.primaryBlue),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: AppColors.surface2,
+        contentTextStyle: TextStyle(color: AppColors.textDark),
+      ),
     );
   }
+
+  // Geriye dönük kullanım için (istersen ileride tamamen kaldırabiliriz)
+  static ThemeData get lightTheme => darkTheme;
 }

@@ -36,9 +36,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       // 🚨 YENİ EKLENDİ: Global anahtarı uygulamaya bağladık
       navigatorKey: navigatorKey,
-      title: 'Dünya Ülkeleri Quiz',
+      title: 'Dünya Ülkeleri Bilgi Yarışması',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.dark,
       // 🚨 Akıllı Yönlendirme (Beni Hatırla)
       home: Consumer<AuthProvider>(
         builder: (ctx, auth, _) {

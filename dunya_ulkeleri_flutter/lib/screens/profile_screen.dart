@@ -1,1029 +1,1258 @@
 // lib/screens/profile_screen.dart
-import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../models/user_profile_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
-import '../models/user_profile_model.dart';
-import '../services/user.service.dart'; // Kendi import yoluna dikkat et
-import 'login_screen.dart'; // Çıkış yapınca yönlendirmek için EKLENDİ
-import 'forgot_password_dialog.dart'; // 🚨 Şifre yenileme popup'ı EKLENDİ
-import 'dictionary_screen.dart'; // 🚨 Sözlüğe yönlendirme yapabilmek için eklendi
-import 'mistake_screen.dart'; // 🚨 YENİ: Hata defterine yönlendirme yapabilmek için EKLENDİ
+import '../services/user.service.dart';
+import '../theme/app_theme.dart';
+import '../utils/page_trasitions.dart';
+import '../widgets/app_avatar.dart';
+import '../widgets/geo_background.dart';
+import '../widgets/glass_card.dart';
+import 'dictionary_screen.dart';
+import 'login_screen.dart';
+import 'mistake_screen.dart';
+import 'setup_screen.dart';
 
-// 🚨 YENİLİK: Ekranın anlık güncellenebilmesi için StatefulWidget yapıldı
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final ValueChanged<int>? onNavigateTab;
+
+  const ProfileScreen({super.key, this.onNavigateTab});
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
-  late Future<Map<String, dynamic>> _profileFuture;
+  late Future<_ProfileData?> _profileFuture;
 
   @override
   void initState() {
     super.initState();
     final token = Provider.of<AuthProvider>(context, listen: false).token;
-    _profileFuture = _fetchProfileData(token!);
+    _profileFuture = token == null
+        ? Future.value(null)
+        : _fetchProfileData(token);
   }
 
-  // Hem profil bilgilerini hem de kategori skorlarını aynı anda çekmek için özel bir metod
-  Future<Map<String, dynamic>> _fetchProfileData(String token) async {
+  Future<_ProfileData?> _fetchProfileData(String token) async {
     final profile = await _userService.getUserProfile(token);
+    if (profile == null) return null;
     final scores = await _userService.getMyCategoryScores(token);
-    return {'profile': profile, 'scores': scores};
+    return _ProfileData(profile: profile, scores: scores);
   }
 
-  // --- ÇIKIŞ YAPMA İŞLEMİ ---
-  void _handleLogout(BuildContext context) async {
+  void _refresh() {
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    if (token == null) return;
+    setState(() => _profileFuture = _fetchProfileData(token));
+  }
+
+  void _goToTab(int index) {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+    widget.onNavigateTab?.call(index);
+  }
+
+  void _handleLogout() async {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
     await Provider.of<AuthProvider>(context, listen: false).logout();
-    // Tüm önceki ekranları kapatıp Giriş Ekranına (Login) yönlendirir
     Navigator.of(context).pushAndRemoveUntil(
-      FadePageRoute(page: LoginScreen()),
+      FadePageRoute(page: const LoginScreen()),
       (Route<dynamic> route) => false,
     );
   }
 
-  // --- 🚨 GÜNCELLENDİ: AYARLAR MENÜSÜ CANLANDIRILDI ---
-  void _showSettings(BuildContext context, UserProfileModel profile) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text(
-          "Ayarlar",
-          style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
-        ),
-        // 🚨 YENİLİK: Ayarları anlık dinleyebilmek için Consumer kullandık
-        content: Consumer<SettingsProvider>(
-          builder: (context, settings, child) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 🔊 Ses Ayarı
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    "Ses Efektleri",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  secondary: Icon(
-                    settings.isSoundEnabled
-                        ? Icons.volume_up_rounded
-                        : Icons.volume_off_rounded,
-                    color: settings.isSoundEnabled ? Colors.amber : Colors.grey,
-                  ),
-                  activeColor: Colors.amber,
-                  activeTrackColor: Colors.amber.withOpacity(0.4),
-                  inactiveThumbColor: Colors.grey,
-                  inactiveTrackColor: Colors.grey.shade800,
-                  value: settings.isSoundEnabled,
-                  onChanged: (value) {
-                    Provider.of<SettingsProvider>(
-                      context,
-                      listen: false,
-                    ).triggerButtonVibration();
-                    settings.toggleSound(value);
-                  },
-                ),
-
-                // 📳 Titreşim Ayarı
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    "Titreşim",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  secondary: Icon(
-                    settings.isVibrationEnabled
-                        ? Icons.vibration_rounded
-                        : Icons.smartphone_rounded,
-                    color: settings.isVibrationEnabled
-                        ? Colors.amber
-                        : Colors.grey,
-                  ),
-                  activeColor: Colors.amber,
-                  activeTrackColor: Colors.amber.withOpacity(0.4),
-                  inactiveThumbColor: Colors.grey,
-                  inactiveTrackColor: Colors.grey.shade800,
-                  value: settings.isVibrationEnabled,
-                  onChanged: (value) {
-                    Provider.of<SettingsProvider>(
-                      context,
-                      listen: false,
-                    ).triggerButtonVibration();
-                    settings.toggleVibration(value);
-                  },
-                ),
-
-                SizedBox(height: 20),
-
-                // 🔑 Şifre Değiştirme Butonu
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey.shade800,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: Icon(Icons.lock_reset),
-                  label: Text(
-                    "Şifremi Değiştir",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () {
-                    Provider.of<SettingsProvider>(
-                      context,
-                      listen: false,
-                    ).triggerButtonVibration();
-                    Navigator.pop(context); // Önce Ayarlar menüsünü kapat
-                    showDialog(
-                      context: context,
-                      builder: (context) =>
-                          ForgotPasswordDialog(email: profile.email),
-                    );
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Provider.of<SettingsProvider>(
-                context,
-                listen: false,
-              ).triggerButtonVibration();
-              Navigator.pop(context);
-            },
-            child: Text(
-              "Kapat",
-              style: TextStyle(color: Colors.amber, fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _openDictionary() {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+    Navigator.push(context, FadePageRoute(page: const DictionaryScreen()));
   }
 
-  // --- 🚨 YENİ EKLENDİ: RÜTBE BİLGİ LİSTESİ POPUP'I ---
-  void _showTierInfoDialog(BuildContext context) {
-    // Rütbelerin özellikleri (Senin belirlediğin isimler ve puanlarla)
-    final List<Map<String, dynamic>> tiers = [
-      {
-        "name": "Turist",
-        "score": "0 - 99.999",
-        "color": Colors.green,
-        "icon": Icons.backpack,
-      },
-      {
-        "name": "Gezgin",
-        "score": "100.000 - 249.999",
-        "color": Colors.blue,
-        "icon": Icons.explore,
-      },
-      {
-        "name": "Yol Kaşifi",
-        "score": "250.000 - 499.999",
-        "color": Colors.yellow,
-        "icon": Icons.explore,
-      },
-      {
-        "name": "Dünya Yolcusu",
-        "score": "500.000 - 999.999",
-        "color": Colors.brown,
-        "icon": Icons.explore,
-      },
-      {
-        "name": "Kıta Fatihi",
-        "score": "1.000.000 - 4.999.999",
-        "color": Colors.cyanAccent,
-        "icon": Icons.explore,
-      },
-      {
-        "name": "Harita Ustası",
-        "score": "5.000.000 - 9.999.999",
-        "color": Colors.teal,
-        "icon": Icons.explore,
-      },
-      {
-        "name": "Küresel Zihin",
-        "score": "10.000.000 - 19.999.999",
-        "color": const Color.fromARGB(255, 1, 90, 90),
-        "icon": Icons.map,
-      },
-      {
-        "name": "Evrensel Bilge",
-        "score": "20.000.000+",
-        "color": Colors.amber,
-        "icon": Icons.school,
-      },
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.military_tech, color: Colors.amber, size: 28),
-            SizedBox(width: 10),
-            Text(
-              "Rütbe Sistemi",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400, // Popup yüksekliği
-          child: ListView.builder(
-            itemCount: tiers.length,
-            itemBuilder: (context, index) {
-              final tier = tiers[index];
-              return Card(
-                color: Colors.grey[800],
-                margin: EdgeInsets.symmetric(vertical: 5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: tier['color'].withOpacity(0.2),
-                    child: Icon(tier['icon'], color: tier['color']),
-                  ),
-                  title: Text(
-                    tier['name'],
-                    style: TextStyle(
-                      color: tier['color'],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Text(
-                    "${tier['score']} Puan",
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Provider.of<SettingsProvider>(
-                context,
-                listen: false,
-              ).triggerButtonVibration();
-              Navigator.pop(context);
-            },
-            child: Text(
-              "Anladım",
-              style: TextStyle(
-                color: Colors.amber,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _openMistakes() {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+    Navigator.push(context, FadePageRoute(page: const MistakeScreen()));
   }
 
-  // --- 🚨 YENİLİK: AVATAR SEÇİM MENÜSÜ 🚨 ---
-  void _showAvatarSelection(BuildContext context, String token) {
-    showModalBottomSheet(
+  void _showTierInfoSheet(_TierInfo currentTier) {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+
+    final tiers = _TierInfo.tiers;
+    showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.grey[900],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Column(
-            children: [
-              Text(
-                "Profil Fotoğrafı Seç",
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 15),
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4, // Yanyana 4 resim
-                    crossAxisSpacing: 15,
-                    mainAxisSpacing: 15,
+        final height = MediaQuery.of(context).size.height * 0.72;
+        return SizedBox(
+          height: height,
+          child: GlassCard(
+            padding: EdgeInsets.zero,
+            blurSigma: 22,
+            tint: AppColors.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(99),
+                    color: AppColors.borderLight.withOpacity(0.8),
                   ),
-                  itemCount: 15, // 15 adet avatar resmi olduğunu varsayıyoruz
-                  itemBuilder: (context, index) {
-                    int currentId = index + 1;
-                    return GestureDetector(
-                      onTap: () async {
-                        Provider.of<SettingsProvider>(
-                          context,
-                          listen: false,
-                        ).triggerButtonVibration();
-                        Navigator.pop(context); // Menüyü kapat
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Avatar güncelleniyor..."),
-                            duration: Duration(seconds: 1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 10, 10),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Rütbe Sistemi',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
                           ),
-                        );
-
-                        bool success = await _userService.updateAvatar(
-                          token,
-                          currentId,
-                        );
-
-                        if (success) {
-                          setState(() {
-                            // Ekranı yeni verilerle güncelle
-                            _profileFuture = _fetchProfileData(token);
-                          });
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Hata oluştu! Lütfen tekrar deneyin.",
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.grey[800],
-                        backgroundImage: AssetImage(
-                          'assets/avatars/avatar_$currentId.png',
                         ),
                       ),
-                    );
-                  },
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                        color: AppColors.textMuted,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: tiers.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final tier = tiers[index];
+                      final selected = tier.name == currentTier.name;
+                      final border = selected
+                          ? tier.color.withOpacity(0.55)
+                          : AppColors.borderLight;
+                      return GlassCard(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        tint: AppColors.surface2,
+                        borderRadius: BorderRadius.circular(18),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: border),
+                                color: tier.color.withOpacity(0.14),
+                              ),
+                              child: Icon(tier.icon, color: tier.color),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    tier.name,
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    tier.rangeLabel,
+                                    style: const TextStyle(
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (selected)
+                              const Icon(
+                                Icons.check_circle,
+                                color: AppColors.successGreen,
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  // 🚨 YENİ: Ustalık Yüzdesine Göre Derece ve Renk Döndüren Fonksiyon
-  Map<String, dynamic> _getMasteryLevel(double percentage) {
-    if (percentage == 0) return {"text": "Oynanmadı", "color": Colors.grey};
-    if (percentage >= 0.8) return {"text": "Çok İyi", "color": Colors.green};
-    if (percentage >= 0.6) return {"text": "İyi", "color": Colors.lightGreen};
-    if (percentage >= 0.4) return {"text": "Ortalama", "color": Colors.amber};
-    if (percentage >= 0.2)
-      return {"text": "Çalışılmalı", "color": Colors.orange};
-    return {"text": "Kötü", "color": Colors.red};
-  }
+  void _showAvatarSelection(String token) {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
 
-  // 🚨 YENİ VE AKILLI ANALİZ ALGORİTMASI 🚨
-  String _generateAnalysisText(Map<String, dynamic> scores) {
-    // Soru sayılarını gerçek rakamlarla veriyoruz
-    final categories = [
-      {"name": "Avrupa", "q": 44},
-      {"name": "Asya", "q": 48},
-      {"name": "Afrika", "q": 54},
-      {"name": "Kuzey Amerika", "q": 23},
-      {"name": "Güney Amerika", "q": 12},
-      {"name": "Okyanusya", "q": 14},
-    ];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final height = MediaQuery.of(context).size.height * 0.72;
+        return SizedBox(
+          height: height,
+          child: GlassCard(
+            padding: EdgeInsets.zero,
+            blurSigma: 22,
+            tint: AppColors.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(99),
+                    color: AppColors.borderLight.withOpacity(0.8),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 10, 10),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Profil Fotoğrafı Seç',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                        color: AppColors.textMuted,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    physics: const BouncingScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                    itemCount: 15,
+                    itemBuilder: (context, index) {
+                      final currentId = index + 1;
+                      return GestureDetector(
+                        onTap: () async {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+                          Navigator.of(context).pop();
 
-    List<String> unplayed = [];
-    List<String> weak = [];
-
-    for (var catData in categories) {
-      String cat = catData["name"] as String;
-      int questions = catData["q"] as int;
-
-      int c2c = scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0;
-      int c2cRev = scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0;
-      int mixed = scores["${cat}_MIXED"] ?? 0;
-
-      // 🚨 DÜZELTME: Toplam yerine, kullanıcının o kıtadaki EN YÜKSEK skorunu alıyoruz (Max)
-      int maxScoreMode = [c2c, c2cRev, mixed].reduce((a, b) => a > b ? a : b);
-
-      // Kıtadaki soru sayısına göre alınabilecek tahmini max puan (Soru başı ~2000 puan)
-      int maxPossible = questions * 2000;
-      double percentage = maxPossible > 0 ? (maxScoreMode / maxPossible) : 0;
-
-      if (maxScoreMode == 0) {
-        unplayed.add(cat);
-      } else if (percentage < 0.4) {
-        // %40 altı ise (Kötü veya Çalışılmalı derecesindeyse) buraya girer
-        weak.add(cat);
-      }
-    }
-
-    String message = "";
-
-    // Hiç oyun oynamamışsa
-    if (unplayed.length == 6) {
-      return "Henüz hiçbir kıtada oynamamışsın! Hemen bir oyuna girerek dünyayı keşfetmeye başla.";
-    }
-
-    // Zayıf olduğu kıtalar varsa
-    if (weak.isNotEmpty) {
-      message +=
-          "İstatistiklerine göre ${weak.join(", ")} bölgelerinde biraz zorlanıyorsun. Farklı oyun modlarında (Örn: Başkentten Ülkeye) pratik yaparak ustalık puanını artırabilirsin.\n\n";
-    }
-
-    // Hiç oynamadığı kıtalar varsa
-    if (unplayed.isNotEmpty) {
-      message +=
-          "Ayrıca ${unplayed.join(", ")} kıtalarında henüz hiç oynamamışsın. Şansını oralarda da denemeni kesinlikle tavsiye ederiz!";
-    }
-
-    // Her yerde mükemmelse
-    if (weak.isEmpty && unplayed.isEmpty) {
-      message =
-          "Harika bir iş çıkarıyorsun! Bütün kıtalarda ve tüm modlarda gayet başarılısın, rekorlarını tazelemeye devam et!";
-    }
-
-    return message.trim();
+                          final success = await _userService.updateAvatar(
+                            token,
+                            currentId,
+                          );
+                          if (!success) return;
+                          if (!mounted) return;
+                          _refresh();
+                        },
+                        child: Center(
+                          child: AppAvatar(avatarId: currentId, size: 56),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     return Scaffold(
-      appBar: AppBar(title: Text("Profilim & Analiz"), centerTitle: true),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _profileFuture, // 🚨 YENİLİK: State'deki Future'ı dinliyoruz
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: Colors.amber),
+      backgroundColor: Colors.transparent,
+      body: GeoBackground(
+        child: FutureBuilder<_ProfileData?>(
+          future: _profileFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data == null) {
+              return const Center(
+                child: Text(
+                  'Profil bilgileri alınamadı.',
+                  style: TextStyle(color: AppColors.textMuted),
+                ),
+              );
+            }
+
+            final data = snapshot.data!;
+            final profile = data.profile;
+            final scores = data.scores;
+
+            final totalScore = scores.values.fold<int>(
+              0,
+              (sum, item) => sum + item,
             );
-          } else if (snapshot.hasError ||
-              !snapshot.hasData ||
-              snapshot.data!['profile'] == null) {
-            return Center(child: Text("Profil bilgileri alınamadı."));
-          }
+            final tier = _TierInfo.fromScore(totalScore);
 
-          final profile = snapshot.data!['profile'] as UserProfileModel;
-          final scores =
-              snapshot.data!['scores']
-                  as Map<String, dynamic>; // 🚨 int yerine dynamic
+            final createdAt = DateTime.tryParse(profile.creationDate);
+            final creationDateText = createdAt == null
+                ? '-'
+                : '${createdAt.day.toString().padLeft(2, '0')}.${createdAt.month.toString().padLeft(2, '0')}.${createdAt.year}';
 
-          // Tarihi daha güzel göstermek için parçalayabiliriz
-          final date = DateTime.parse(profile.creationDate);
-          final formattedDate = "${date.day}/${date.month}/${date.year}";
+            final progress = _progressToNextTier(totalScore);
+            final analysisText = _generateAnalysisText(scores);
 
-          // --- 🏆 LİG / RÜTBE HESAPLAMA (Genel Puan) ---
-          int totalScore = scores.values.fold(
-            0,
-            (sum, item) => sum + (item as int),
-          );
-
-          String tierName;
-          Color tierColor;
-          IconData tierIcon;
-
-          if (totalScore < 100000) {
-            tierName = "Turist";
-            tierColor = Colors.green;
-            tierIcon = Icons.backpack;
-          } else if (totalScore < 250000) {
-            tierName = "Gezgin";
-            tierColor = Colors.blue;
-            tierIcon = Icons.explore;
-          } else if (totalScore < 500000) {
-            tierName = "Yol Kaşifi";
-            tierColor = Colors.yellow;
-            tierIcon = Icons.explore;
-          } else if (totalScore < 1000000) {
-            tierName = "Dünya Yolcusu";
-            tierColor = Colors.brown;
-            tierIcon = Icons.explore;
-          } else if (totalScore < 5000000) {
-            tierName = "Kıta Fatihi";
-            tierColor = Colors.cyanAccent;
-            tierIcon = Icons.explore;
-          } else if (totalScore < 10000000) {
-            tierName = "Harita Ustası";
-            tierColor = Colors.teal;
-            tierIcon = Icons.explore;
-          } else if (totalScore < 20000000) {
-            tierName = "Küresel Zihin";
-            tierColor = const Color.fromARGB(255, 1, 90, 90);
-            tierIcon = Icons.map;
-          } else {
-            tierName = "Evrensel Bilge";
-            tierColor = Colors.amber;
-            tierIcon = Icons.school;
-          }
-
-          // 🚨 Dinamik Analiz Metnini Oluşturuyoruz
-          String analysisText = _generateAnalysisText(scores);
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+              physics: const BouncingScrollPhysics(),
               children: [
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      Provider.of<SettingsProvider>(
-                        context,
-                        listen: false,
-                      ).triggerButtonVibration();
-                      _showAvatarSelection(context, authProvider.token!);
-                    },
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          radius: 55,
-                          backgroundColor: tierColor.withOpacity(0.3),
-                          backgroundImage: AssetImage(
-                            'assets/avatars/avatar_${profile.avatarId}.png',
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.amber,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black, width: 2),
-                          ),
-                          child: Icon(
-                            Icons.edit,
-                            size: 20,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  profile.username,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 10),
-
-                // --- 🏆 🚨 YENİ EKLENDİ: RÜTBE ROZETİ VE BİLGİ BUTONU ---
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tierColor.withOpacity(0.2),
-                        border: Border.all(color: tierColor, width: 2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(tierIcon, color: tierColor, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            "$tierName Seviyesi",
-                            style: TextStyle(
-                              color: tierColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(Icons.help_outline, color: Colors.amber),
-                        tooltip: "Rütbeler ve Puanlar",
-                        onPressed: () {
-                          Provider.of<SettingsProvider>(
-                            context,
-                            listen: false,
-                          ).triggerButtonVibration();
-                          _showTierInfoDialog(context);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30),
-
-                Card(
-                  elevation: 5,
-                  color: Colors.red[900]!.withOpacity(0.8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.query_stats,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              "Analiz & Tavsiye",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          analysisText,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 15,
-                            height: 1.4,
-                          ),
-                        ),
-                        SizedBox(height: 15),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.red[900],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                          icon: Icon(Icons.menu_book),
-                          label: Text(
-                            "Sözlüğe Git",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () {
-                            Provider.of<SettingsProvider>(
-                              context,
-                              listen: false,
-                            ).triggerButtonVibration();
-                            Navigator.push(
-                              context,
-                              FadePageRoute(page: DictionaryScreen()),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 15),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[800],
-                    padding: EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    elevation: 5,
-                  ),
-                  icon: Icon(Icons.auto_stories, color: Colors.white),
-                  label: Text(
-                    "Hata Defterimi İncele",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                  onPressed: () {
-                    Provider.of<SettingsProvider>(
-                      context,
-                      listen: false,
-                    ).triggerButtonVibration();
+                _TopRow(
+                  onBack: () {
+                    if (widget.onNavigateTab != null) {
+                      _goToTab(0);
+                      return;
+                    }
+                    Navigator.of(context).maybePop();
+                  },
+                  onSettings: () {
+                    if (widget.onNavigateTab != null) {
+                      _goToTab(4);
+                      return;
+                    }
                     Navigator.push(
                       context,
-                      FadePageRoute(page: MistakeScreen()),
+                      FadePageRoute(page: const SetupScreen()),
                     );
                   },
                 ),
-
-                SizedBox(height: 30),
-
-                // 🚨 YENİ GÜNCELLEME: Kıta Ustalık -> Ustalık Seviyeleri
-                Text(
-                  "Ustalık Seviyeleri",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber,
+                const SizedBox(height: 12),
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      final token = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      ).token;
+                      if (token == null) return;
+                      _showAvatarSelection(token);
+                    },
+                    child: _AvatarRing(
+                      avatarId: profile.avatarId,
+                      ringColor: tier.color,
+                      progress: progress,
+                    ),
                   ),
                 ),
-                Divider(color: Colors.amber),
-
-                // 1. Önce "Günün Görevi" ve "Sonsuz Mod" için özel barları ekliyoruz
-                ...[
-                  {
-                    "title": "Günün Görevi",
-                    "icon": "🔥",
-                    "scoreKey": "DailyChallenge_MIXED",
-                    "max": 20000, // 10 Soru * 2000 Puan
-                  },
-                  {
-                    "title": "Sonsuz Mod",
-                    "icon": "♾️",
-                    "scoreKey": "Dünya_ENDLESS",
-                    // 🚨 Sonsuz modda 20-25 arası ülkeyi arka arkaya bilmek "Ustalık" sayılır.
-                    "max": 40000,
-                  },
-                ].map((specialCat) {
-                  int score = scores[specialCat["scoreKey"]] ?? 0;
-
-                  // 🚨 DÜZELTME: Soru sayısıyla çarpmayı bırakıp doğrudan kendi gerçekçi max hedefini alıyoruz
-                  int maxScore = specialCat["max"] as int;
-                  double percentage = maxScore > 0
-                      ? (score / maxScore).clamp(0.0, 1.0)
-                      : 0;
-
-                  // Derece ve renk ataması
-                  Map<String, dynamic> mastery = _getMasteryLevel(percentage);
-                  if (score == 0)
-                    mastery = {"text": "Oynanmadı", "color": Colors.grey};
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "${specialCat["icon"]} ${specialCat["title"]}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              "$score Puan (${mastery["text"]})",
-                              style: TextStyle(
-                                color: mastery["color"],
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 5),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: LinearProgressIndicator(
-                            value: percentage,
-                            minHeight: 12,
-                            backgroundColor: Colors.grey[800],
-                            color: mastery["color"],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                SizedBox(height: 10),
-
-                // 2. Sonra normal Kıta istatistiklerini çiziyoruz
-                ...[
-                  {"name": "Avrupa", "q": 44},
-                  {"name": "Asya", "q": 48},
-                  {"name": "Afrika", "q": 54},
-                  {"name": "Kuzey Amerika", "q": 23},
-                  {"name": "Güney Amerika", "q": 12},
-                  {"name": "Okyanusya", "q": 14},
-                ].map((catData) {
-                  String cat = catData["name"] as String;
-                  int questions = catData["q"] as int;
-
-                  int c2c = scores["${cat}_COUNTRY_TO_CAPITAL"] ?? 0;
-                  int c2cRev = scores["${cat}_CAPITAL_TO_COUNTRY"] ?? 0;
-                  int mixed = scores["${cat}_MIXED"] ?? 0;
-
-                  // 🚨 DÜZELTME: Toplam yerine EN YÜKSEK (max) skoru alıyoruz
-                  int score = [
-                    c2c,
-                    c2cRev,
-                    mixed,
-                  ].reduce((a, b) => a > b ? a : b);
-
-                  // Kıtaya özel dinamik max skor hesaplaması
-                  int maxScore = questions * 2000;
-                  double percentage = maxScore > 0
-                      ? (score / maxScore).clamp(0.0, 1.0)
-                      : 0;
-
-                  Map<String, dynamic> mastery = _getMasteryLevel(percentage);
-                  if (score == 0)
-                    mastery = {"text": "Oynanmadı", "color": Colors.grey};
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              cat,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              "$score Puan (${mastery["text"]})",
-                              style: TextStyle(
-                                color: mastery["color"],
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 5),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: LinearProgressIndicator(
-                            value: percentage,
-                            minHeight: 12,
-                            backgroundColor: Colors.grey[800],
-                            color: mastery["color"],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                SizedBox(height: 30),
-
-                // --- GENEL İSTATİSTİKLER BÖLÜMÜ ---
+                const SizedBox(height: 12),
                 Text(
-                  "Genel İstatistikler",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber,
+                  profile.username,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26,
                   ),
                 ),
-                Divider(color: Colors.amber),
-                _buildStatCard(
-                  "Kayıt Tarihi",
-                  formattedDate,
-                  Icons.calendar_today,
+                const SizedBox(height: 10),
+                _TierPill(
+                  title: '${tier.name.toUpperCase()} SEVİYESİ',
+                  color: tier.color,
+                  icon: tier.icon,
+                  onInfo: () => _showTierInfoSheet(tier),
                 ),
-                _buildStatCard(
-                  "En Yüksek Skor (Tek Maç)",
-                  profile.maxWinStreak.toString(),
-                  Icons.emoji_events,
+                const SizedBox(height: 14),
+                _AnalysisCard(
+                  text: analysisText,
+                  onDictionary: _openDictionary,
+                  onMistakes: _openMistakes,
                 ),
-                _buildStatCard(
-                  "Oynanan Oyun",
-                  profile.totalGamesPlayed.toString(),
-                  Icons.videogame_asset,
+                const SizedBox(height: 18),
+                _SectionHeader(
+                  title: 'Ustalık Seviyeleri',
+                  trailing: IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.bar_chart),
+                    color: AppColors.textMuted,
+                  ),
                 ),
-                _buildStatCard(
-                  "Toplam Ustalık Puanı",
-                  totalScore.toString(),
-                  Icons.military_tech,
-                ),
-
-                SizedBox(height: 30),
-
-                // --- ⚙️ AYARLAR VE ÇIKIŞ YAP BUTONLARI ---
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          backgroundColor:
-                              Colors.deepPurple[800], // Koyu Mor/Lacivert Renk
-                          foregroundColor: Colors.white,
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        icon: Icon(Icons.settings),
-                        label: Text(
-                          "Ayarlar",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        // 🚨 PROFİLİ PARAMETRE OLARAK VERİYORUZ
-                        onPressed: () {
-                          Provider.of<SettingsProvider>(
-                            context,
-                            listen: false,
-                          ).triggerButtonVibration();
-                          _showSettings(context, profile);
-                        },
-                      ),
+                const SizedBox(height: 10),
+                ..._buildMasteryCards(scores),
+                const SizedBox(height: 18),
+                const _SectionHeader(title: 'Genel İstatistikler'),
+                const SizedBox(height: 10),
+                _StatsGrid(
+                  items: [
+                    _StatItem(
+                      title: 'Kayıt Tarihi',
+                      value: creationDateText,
+                      icon: Icons.calendar_month,
                     ),
-                    SizedBox(width: 15),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 15),
-                          backgroundColor:
-                              Colors.red[800], // Kırmızı Çıkış Butonu
-                          foregroundColor: Colors.white,
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        icon: Icon(Icons.logout),
-                        label: Text(
-                          "Çıkış Yap",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        onPressed: () {
-                          Provider.of<SettingsProvider>(
-                            context,
-                            listen: false,
-                          ).triggerButtonVibration();
-                          _handleLogout(context);
-                        },
-                      ),
+                    _StatItem(
+                      title: 'En Yüksek Skor',
+                      value: _formatNumber(profile.maxWinStreak),
+                      icon: Icons.emoji_events,
+                    ),
+                    _StatItem(
+                      title: 'Oynanan Oyun',
+                      value: _formatNumber(profile.totalGamesPlayed),
+                      icon: Icons.videogame_asset,
+                    ),
+                    _StatItem(
+                      title: 'Toplam Ustalık',
+                      value: _formatCompact(totalScore),
+                      icon: Icons.military_tech,
                     ),
                   ],
                 ),
-                SizedBox(height: 20), // Alt kısımdan biraz boşluk
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _handleLogout,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.errorRed,
+                    side: BorderSide(
+                      color: AppColors.errorRed.withOpacity(0.6),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  icon: const Icon(Icons.logout),
+                  label: const Text(
+                    'Çıkış Yap',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
               ],
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 
-  // İstatistik Kartlarını oluşturan yardımcı widget
-  Widget _buildStatCard(String title, String value, IconData icon) {
-    return Card(
-      color: Colors.grey[900],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: Icon(icon, size: 30, color: Colors.amber),
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 16, color: Colors.white70),
-        ),
-        trailing: Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+  List<Widget> _buildMasteryCards(Map<String, int> scores) {
+    const specialModes = [
+      _SpecialModeInfo(
+        title: 'Günün Görevi',
+        scoreKey: 'DailyChallenge_MIXED',
+        maxScore: 20000,
+      ),
+      _SpecialModeInfo(
+        title: 'Sonsuz Mod',
+        scoreKey: 'Dünya_ENDLESS',
+        maxScore: 40000,
+      ),
+    ];
+
+    const continents = [
+      _ContinentInfo('Avrupa', 44),
+      _ContinentInfo('Asya', 48),
+      _ContinentInfo('Afrika', 54),
+      _ContinentInfo('Kuzey Amerika', 23),
+      _ContinentInfo('Güney Amerika', 12),
+      _ContinentInfo('Okyanusya', 14),
+    ];
+
+    return [
+      for (final item in specialModes)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _MasteryCard.fromSingleScore(
+            title: item.title,
+            scoreKey: item.scoreKey,
+            maxScore: item.maxScore,
+            scores: scores,
           ),
         ),
+      for (final continent in continents)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _MasteryCard.fromScores(continent: continent, scores: scores),
+        ),
+    ];
+  }
+
+  String _generateAnalysisText(Map<String, int> scores) {
+    const categories = [
+      _ContinentInfo('Avrupa', 44),
+      _ContinentInfo('Asya', 48),
+      _ContinentInfo('Afrika', 54),
+      _ContinentInfo('Kuzey Amerika', 23),
+      _ContinentInfo('Güney Amerika', 12),
+      _ContinentInfo('Okyanusya', 14),
+    ];
+
+    final unplayed = <String>[];
+    final weak = <String>[];
+
+    for (final item in categories) {
+      final c2c = scores['${item.name}_COUNTRY_TO_CAPITAL'] ?? 0;
+      final c2cRev = scores['${item.name}_CAPITAL_TO_COUNTRY'] ?? 0;
+      final mixed = scores['${item.name}_MIXED'] ?? 0;
+
+      final maxScoreMode = math.max(c2c, math.max(c2cRev, mixed));
+      final maxPossible = item.questions * 2000;
+      final percentage = maxPossible > 0 ? (maxScoreMode / maxPossible) : 0;
+
+      if (maxScoreMode == 0) {
+        unplayed.add(item.name);
+      } else if (percentage < 0.4) {
+        weak.add(item.name);
+      }
+    }
+
+    if (unplayed.length == categories.length) {
+      return 'Henüz hiçbir kıtada oynamamışsın! Hemen bir oyuna girerek dünyayı keşfetmeye başla.';
+    }
+
+    final buffer = StringBuffer();
+    if (weak.isNotEmpty) {
+      buffer.writeln(
+        'İstatistiklerine göre ${weak.join(', ')} bölgelerinde zorlandığın görünüyor. '
+        'Farklı oyun modlarında pratik yaparak doğruluğunu artırabilirsin.',
+      );
+      buffer.writeln();
+    }
+    if (unplayed.isNotEmpty) {
+      buffer.write(
+        'Ayrıca ${unplayed.join(', ')} bölgelerinde henüz hiç oynamamışsın. '
+        'Şansını oralarda da denemeni öneririm.',
+      );
+    }
+
+    return buffer.toString().trim();
+  }
+
+  double _progressToNextTier(int totalScore) {
+    final tiers = _TierInfo.tiers;
+    for (var i = 0; i < tiers.length; i++) {
+      final current = tiers[i];
+      final next = i + 1 < tiers.length ? tiers[i + 1] : null;
+      if (next == null) return 1.0;
+      if (totalScore < next.minScore) {
+        final span = (next.minScore - current.minScore)
+            .clamp(1, 1 << 30)
+            .toDouble();
+        return ((totalScore - current.minScore) / span).clamp(0.0, 1.0);
+      }
+    }
+    return 1.0;
+  }
+
+  static String _formatNumber(int value) {
+    final s = value.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      final idxFromEnd = s.length - i;
+      buffer.write(s[i]);
+      if (idxFromEnd > 1 && idxFromEnd % 3 == 1) buffer.write('.');
+    }
+    return buffer.toString();
+  }
+
+  static String _formatCompact(int value) {
+    if (value >= 1_000_000) {
+      final v = value / 1_000_000;
+      return '${v.toStringAsFixed(v < 10 ? 1 : 0)}M';
+    }
+    if (value >= 1_000) {
+      final v = value / 1_000;
+      return '${v.toStringAsFixed(v < 10 ? 1 : 0)}K';
+    }
+    return value.toString();
+  }
+}
+
+class _ProfileData {
+  final UserProfileModel profile;
+  final Map<String, int> scores;
+
+  const _ProfileData({required this.profile, required this.scores});
+}
+
+class _TopRow extends StatelessWidget {
+  final VoidCallback? onBack;
+  final VoidCallback? onSettings;
+
+  const _TopRow({this.onBack, this.onSettings});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: [
+          _IconGlassButton(icon: Icons.arrow_back, onTap: onBack),
+          const Spacer(),
+          _IconGlassButton(icon: Icons.settings, onTap: onSettings),
+        ],
       ),
     );
+  }
+}
+
+class _IconGlassButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _IconGlassButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(10),
+      tint: AppColors.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: Icon(icon, color: AppColors.textDark),
+    );
+  }
+}
+
+class _AvatarRing extends StatelessWidget {
+  final int avatarId;
+  final Color ringColor;
+  final double progress;
+
+  const _AvatarRing({
+    required this.avatarId,
+    required this.ringColor,
+    required this.progress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ringSize = 132.0;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          width: ringSize,
+          height: ringSize,
+          child: CircularProgressIndicator(
+            value: progress,
+            strokeWidth: 4,
+            backgroundColor: AppColors.borderLight.withOpacity(0.6),
+            valueColor: AlwaysStoppedAnimation(ringColor),
+          ),
+        ),
+        AppAvatar(avatarId: avatarId, size: 112),
+        Positioned(
+          right: 10,
+          bottom: 10,
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.surface,
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: const Icon(
+              Icons.edit,
+              size: 18,
+              color: AppColors.successGreen,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TierPill extends StatelessWidget {
+  final String title;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onInfo;
+
+  const _TierPill({
+    required this.title,
+    required this.color,
+    required this.icon,
+    required this.onInfo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      tint: AppColors.surface,
+      borderRadius: BorderRadius.circular(999),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          InkWell(
+            onTap: onInfo,
+            borderRadius: BorderRadius.circular(99),
+            child: const Padding(
+              padding: EdgeInsets.all(2),
+              child: Icon(Icons.help_outline, color: AppColors.textMuted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisCard extends StatelessWidget {
+  final String text;
+  final VoidCallback onDictionary;
+  final VoidCallback onMistakes;
+
+  const _AnalysisCard({
+    required this.text,
+    required this.onDictionary,
+    required this.onMistakes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      tint: AppColors.surface,
+      borderRadius: BorderRadius.circular(24),
+      child: Row(
+        children: [
+          Container(
+            width: 5,
+            height: 190,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFFBBF24), Color(0xFF38BDF8)],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      _AnalysisIcon(),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Stratejik Analiz',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: onDictionary,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textDark,
+                            side: const BorderSide(
+                              color: AppColors.borderLight,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            'Sözlüğe Git',
+                            style: TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: onMistakes,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.successGreen,
+                            side: BorderSide(
+                              color: AppColors.successGreen.withOpacity(0.45),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Text(
+                            'Hata Defterimi\nİncele',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisIcon extends StatelessWidget {
+  const _AnalysisIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: AppColors.brown.withOpacity(0.18),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: const Icon(Icons.show_chart, color: Color(0xFFFBBF24)),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+
+  const _SectionHeader({required this.title, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+class _ContinentInfo {
+  final String name;
+  final int questions;
+
+  const _ContinentInfo(this.name, this.questions);
+}
+
+class _SpecialModeInfo {
+  final String title;
+  final String scoreKey;
+  final int maxScore;
+
+  const _SpecialModeInfo({
+    required this.title,
+    required this.scoreKey,
+    required this.maxScore,
+  });
+}
+
+class _MasteryCard extends StatelessWidget {
+  final String title;
+  final int score;
+  final double percentage;
+  final String label;
+  final Color labelColor;
+
+  const _MasteryCard({
+    required this.title,
+    required this.score,
+    required this.percentage,
+    required this.label,
+    required this.labelColor,
+  });
+
+  factory _MasteryCard.fromScores({
+    required _ContinentInfo continent,
+    required Map<String, int> scores,
+  }) {
+    final c2c = scores['${continent.name}_COUNTRY_TO_CAPITAL'] ?? 0;
+    final c2cRev = scores['${continent.name}_CAPITAL_TO_COUNTRY'] ?? 0;
+    final mixed = scores['${continent.name}_MIXED'] ?? 0;
+
+    final best = math.max(c2c, math.max(c2cRev, mixed));
+    final maxScore = continent.questions * 2000;
+    final percentage = maxScore <= 0 ? 0.0 : (best / maxScore).clamp(0.0, 1.0);
+
+    final mastery = _MasteryLabel.fromPercentage(percentage);
+    final label = best == 0 ? 'Oynanmadı' : mastery.text;
+    final labelColor = best == 0 ? Colors.grey : mastery.color;
+
+    return _MasteryCard(
+      title: continent.name,
+      score: best,
+      percentage: percentage,
+      label: label,
+      labelColor: labelColor,
+    );
+  }
+
+  factory _MasteryCard.fromSingleScore({
+    required String title,
+    required String scoreKey,
+    required int maxScore,
+    required Map<String, int> scores,
+  }) {
+    final score = scores[scoreKey] ?? 0;
+    final percentage = maxScore <= 0 ? 0.0 : (score / maxScore).clamp(0.0, 1.0);
+
+    final mastery = _MasteryLabel.fromPercentage(percentage);
+    final label = score == 0 ? 'Oynanmadı' : mastery.text;
+    final labelColor = score == 0 ? Colors.grey : mastery.color;
+
+    return _MasteryCard(
+      title: title,
+      score: score,
+      percentage: percentage,
+      label: label,
+      labelColor: labelColor,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(14),
+      tint: AppColors.surface,
+      borderRadius: BorderRadius.circular(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: labelColor.withOpacity(0.14),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${score.toString()} Puan',
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: percentage,
+              minHeight: 8,
+              backgroundColor: AppColors.borderLight.withOpacity(0.35),
+              valueColor: AlwaysStoppedAnimation(labelColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MasteryLabel {
+  final String text;
+  final Color color;
+
+  const _MasteryLabel(this.text, this.color);
+
+  static _MasteryLabel fromPercentage(double percentage) {
+    if (percentage == 0) return const _MasteryLabel('Oynanmadı', Colors.grey);
+    if (percentage >= 0.8) return const _MasteryLabel('Çok İyi', Colors.green);
+    if (percentage >= 0.6) return const _MasteryLabel('İyi', Colors.lightGreen);
+    if (percentage >= 0.4) return const _MasteryLabel('Ortalama', Colors.amber);
+    if (percentage >= 0.2)
+      return const _MasteryLabel('Geliştir', Colors.orange);
+    return const _MasteryLabel('Kötü', Colors.red);
+  }
+}
+
+class _StatsGrid extends StatelessWidget {
+  final List<_StatItem> items;
+
+  const _StatsGrid({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.25,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) => _StatCard(item: items[index]),
+    );
+  }
+}
+
+class _StatItem {
+  final String title;
+  final String value;
+  final IconData icon;
+
+  const _StatItem({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
+}
+
+class _StatCard extends StatelessWidget {
+  final _StatItem item;
+
+  const _StatCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(14),
+      tint: AppColors.surface,
+      borderRadius: BorderRadius.circular(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(item.icon, color: AppColors.yellow, size: 20),
+          const SizedBox(height: 10),
+          Text(
+            item.title,
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            item.value,
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TierInfo {
+  final String name;
+  final int minScore;
+  final String rangeLabel;
+  final Color color;
+  final IconData icon;
+
+  const _TierInfo({
+    required this.name,
+    required this.minScore,
+    required this.rangeLabel,
+    required this.color,
+    required this.icon,
+  });
+
+  static const tiers = <_TierInfo>[
+    _TierInfo(
+      name: 'Turist',
+      minScore: 0,
+      rangeLabel: '0 - 99.999',
+      color: Colors.green,
+      icon: Icons.flight_takeoff,
+    ),
+    _TierInfo(
+      name: 'Gezgin',
+      minScore: 100000,
+      rangeLabel: '100.000 - 249.999',
+      color: Colors.blue,
+      icon: Icons.explore,
+    ),
+    _TierInfo(
+      name: 'Yol Kaşifi',
+      minScore: 250000,
+      rangeLabel: '250.000 - 499.999',
+      color: Colors.yellow,
+      icon: Icons.explore,
+    ),
+    _TierInfo(
+      name: 'Dünya Yolcusu',
+      minScore: 500000,
+      rangeLabel: '500.000 - 999.999',
+      color: Colors.brown,
+      icon: Icons.public,
+    ),
+    _TierInfo(
+      name: 'Kıta Fatihi',
+      minScore: 1000000,
+      rangeLabel: '1.000.000 - 4.999.999',
+      color: Colors.cyanAccent,
+      icon: Icons.emoji_events,
+    ),
+    _TierInfo(
+      name: 'Harita Ustası',
+      minScore: 5000000,
+      rangeLabel: '5.000.000 - 9.999.999',
+      color: Colors.teal,
+      icon: Icons.map,
+    ),
+    _TierInfo(
+      name: 'Küresel Zihin',
+      minScore: 10000000,
+      rangeLabel: '10.000.000 - 19.999.999',
+      color: Color.fromARGB(255, 1, 90, 90),
+      icon: Icons.psychology,
+    ),
+    _TierInfo(
+      name: 'Evrensel Bilge',
+      minScore: 20000000,
+      rangeLabel: '20.000.000+',
+      color: Colors.amber,
+      icon: Icons.school,
+    ),
+  ];
+
+  static _TierInfo fromScore(int totalScore) {
+    var selected = tiers.first;
+    for (final tier in tiers) {
+      if (totalScore >= tier.minScore) selected = tier;
+    }
+    return selected;
   }
 }

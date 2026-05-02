@@ -1,6 +1,8 @@
 package com.gunes.DunyaUlkeleri.controller;
 
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
+import com.gunes.DunyaUlkeleri.dto.response.RecentSessionResponse;
+import com.gunes.DunyaUlkeleri.entity.GameSession;
 import com.gunes.DunyaUlkeleri.entity.Question;
 import com.gunes.DunyaUlkeleri.entity.User;
 import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
@@ -49,6 +51,35 @@ public class UserController {
         User user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
         return ResponseEntity.ok(user.getCategoryBestScores());
+    }
+
+    @GetMapping("/recent-sessions")
+    public ResponseEntity<List<RecentSessionResponse>> getRecentSessions(
+            Authentication authentication,
+            @RequestParam(defaultValue = "3") int limit) {
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+        int safeLimit = Math.max(1, Math.min(limit, 10));
+        List<GameSession> sessions = gameSessionRepository.findTop10ByUserAndIsFinishedTrueOrderByUpdateAtDesc(user);
+
+        List<RecentSessionResponse> response = sessions.stream()
+                .limit(safeLimit)
+                .map(session -> {
+                    RecentSessionResponse dto = new RecentSessionResponse();
+                    dto.setId(session.getId());
+                    dto.setCategory(session.getCategory() == null ? "Dünya" : session.getCategory());
+                    dto.setGameMode(session.getGameMode() == null ? "MIXED" : session.getGameMode());
+                    dto.setCurrentScore(session.getCurrentScore());
+                    dto.setRemainingLives(session.getRemainingLives());
+                    dto.setFinished(session.isFinished());
+                    dto.setCreatedAt(session.getCreatedAt());
+                    dto.setUpdateAt(session.getUpdateAt());
+                    return dto;
+                })
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 
     // 🚨 YENİ: mode parametresi eklendi
