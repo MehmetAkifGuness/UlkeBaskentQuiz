@@ -1,12 +1,15 @@
 package com.gunes.DunyaUlkeleri.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.exception.ApiErrorResponse;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -22,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -43,7 +47,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"error\": \"true\", \"message\": \"Oturum süreniz dolmuş veya geçersiz bir anahtar.\"}");
+            objectMapper.writeValue(
+                    response.getWriter(),
+                    ApiErrorResponse.of(
+                            HttpStatus.UNAUTHORIZED,
+                            "UNAUTHORIZED",
+                            "Oturum süresi doldu veya geçersiz bir erişim anahtarı gönderildi.",
+                            request.getRequestURI(),
+                            null
+                    )
+            );
             return;
         }
 

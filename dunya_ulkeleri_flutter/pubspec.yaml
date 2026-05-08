@@ -22,6 +22,9 @@ dependencies:
   flutter_dotenv: ^5.1.0
   vibration: ^3.1.8
   flutter_secure_storage: ^10.0.0
+  syncfusion_flutter_maps: ^33.1.49
+  collection: ^1.19.1
+  stomp_dart_client: ^3.0.1
 
 dev_dependencies:
   flutter_test:
@@ -41,4 +44,7 @@ flutter:
   assets:
     - assets/avatars/
     - assets/sounds/
+    - assets/maps/
+    - assets/iso/
+    - assets/dictionary/
     - .env # 🚨 YENİ EKLENDİ: İleride ekleyeceğimiz ses dosyaları için (Örn: correct.mp3, wrong.mp3)

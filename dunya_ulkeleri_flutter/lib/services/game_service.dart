@@ -4,8 +4,10 @@ import 'dart:io'; // 🚨 YENİ: İnternet kopması (SocketException) için ekle
 import 'dart:convert';
 import 'package:dunya_ulkeleri_flutter/models/dictionary_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import '../models/game_status_model.dart';
+import 'api_exception.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +17,28 @@ import '../screens/login_screen.dart';
 
 class GameService {
   final String baseUrl = "${dotenv.env['API_BASE_URL']}/game";
+
+  static List<DictionaryModel>? _cachedLocalDictionary;
+
+  Future<List<DictionaryModel>> _loadDictionaryFromAsset() async {
+    final cached = _cachedLocalDictionary;
+    if (cached != null && cached.isNotEmpty) return cached;
+
+    final raw = await rootBundle.loadString(
+      'assets/dictionary/dictionary_tr.json',
+    );
+
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const <DictionaryModel>[];
+
+    final items = decoded
+        .whereType<Map>()
+        .map((e) => DictionaryModel.fromJson(Map<String, dynamic>.from(e)))
+        .toList(growable: false);
+
+    _cachedLocalDictionary = items;
+    return items;
+  }
 
   void _handleUnauthorized() {
     if (navigatorKey.currentContext != null) {
@@ -57,7 +81,7 @@ class GameService {
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
-        throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
+        throw ApiException.fromResponse(response);
       }
 
       print("--- OYUN BAŞLATMA İSTEĞİ ---");
@@ -66,12 +90,12 @@ class GameService {
       print("Gelen Cevap: '${response.body}'");
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        return GameStatusModel.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception(
-          "Backend hatası: ${response.statusCode} / İçerik: ${response.body}",
+        return GameStatusModel.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)),
         );
       }
+
+      throw ApiException.fromResponse(response);
       // 🚨 YENİ EKLENDİ: İNTERNET KOPMASI VE ZAMAN AŞIMI YAKALAYICILARI
     } on TimeoutException {
       throw Exception("Sunucu yanıt vermedi. İnternetinizi kontrol edin.");
@@ -81,18 +105,23 @@ class GameService {
   }
 
   Future<List<DictionaryModel>> getDictionary(String token) async {
+    final safeToken = token.trim();
+    if (safeToken.isEmpty) {
+      return _loadDictionaryFromAsset();
+    }
+
     try {
       // 🚨 YENİ: .timeout(Duration) eklendi!
       final response = await http
           .get(
             Uri.parse('$baseUrl/dictionary'),
-            headers: {'Authorization': 'Bearer $token'},
+            headers: {'Authorization': 'Bearer $safeToken'},
           )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
-        throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
+        throw ApiException.fromResponse(response);
       }
 
       if (response.statusCode == 200) {
@@ -100,13 +129,27 @@ class GameService {
         return jsonResponse
             .map((item) => DictionaryModel.fromJson(item))
             .toList();
-      } else {
-        throw Exception('Sözlük verisi alınamadı!');
       }
+
+      throw ApiException.fromResponse(response);
     } on TimeoutException {
-      throw Exception("Sunucu yanıt vermedi. İnternetinizi kontrol edin.");
+      // Sunucuya ulaşılamadıysa sözlük için offline (asset) fallback kullan.
+      try {
+        return await _loadDictionaryFromAsset();
+      } catch (_) {
+        throw Exception(
+          "Sunucu yanıt vermedi. API_BASE_URL ve backend'i kontrol edin: $baseUrl",
+        );
+      }
     } on SocketException {
-      throw Exception("İnternet bağlantınız koptu.");
+      // İnternet yoksa sözlük için offline (asset) fallback kullan.
+      try {
+        return await _loadDictionaryFromAsset();
+      } catch (_) {
+        throw Exception(
+          "Sunucuya ulaşılamadı. API_BASE_URL ve ağ bağlantını kontrol et: $baseUrl",
+        );
+      }
     }
   }
 
@@ -135,7 +178,7 @@ class GameService {
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
-        throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
+        throw ApiException.fromResponse(response);
       }
 
       print("--- TAHMİN İSTEĞİ ---");
@@ -144,12 +187,12 @@ class GameService {
       print("Gelen Cevap: ${response.body}");
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        return GameStatusModel.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception(
-          "Tahmin hatası: ${response.statusCode} - ${response.body}",
+        return GameStatusModel.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)),
         );
       }
+
+      throw ApiException.fromResponse(response);
     } on TimeoutException {
       throw Exception("Sunucu yanıt vermedi. İnternetinizi kontrol edin.");
     } on SocketException {
@@ -170,13 +213,17 @@ class GameService {
       if (response.statusCode == 204 || response.statusCode == 404) {
         return null; // Aktif/yarım oyun yok
       } else if (response.statusCode == 200 && response.body.isNotEmpty) {
-        return GameStatusModel.fromJson(jsonDecode(response.body));
+        return GameStatusModel.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)),
+        );
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         _handleUnauthorized();
-        throw Exception("Yetkisiz erişim veya oturum süresi doldu.");
-      } else {
-        return null;
+        throw ApiException.fromResponse(response);
       }
+
+      throw ApiException.fromResponse(response);
+    } on ApiException {
+      rethrow;
     } on TimeoutException {
       // Timeout olursa "oyun yok" gibi davranmayalım; Provider bunu hata olarak ele alabilsin.
       throw Exception(
@@ -187,7 +234,7 @@ class GameService {
         "Aktif oyun kontrolü başarısız (sunucuya ulaşılamadı). API_BASE_URL ve ağ bağlantını kontrol et: $baseUrl",
       );
     } catch (e) {
-      throw Exception("Aktif oyun kontrol hatası: $e");
+      throw Exception("Aktif oyun kontrolü sırasında beklenmeyen bir hata oluştu: $e");
     }
   }
 }

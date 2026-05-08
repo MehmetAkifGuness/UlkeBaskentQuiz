@@ -8,6 +8,7 @@ import '../services/game_service.dart';
 import 'package:audioplayers/audioplayers.dart'; // 🚨 Ses için eklendi
 import 'package:vibration/vibration.dart'; // 🚨 YENİ EKLENDİ (Gerçek titreşim motoru için)
 import '../main.dart'; // 🚨 YENİ: navigatorKey için eklendi
+import '../utils/error_message_utils.dart';
 
 class GameProvider with ChangeNotifier {
   final GameService _gameService = GameService();
@@ -88,11 +89,11 @@ class GameProvider with ChangeNotifier {
       _startStopwatch();
     } catch (e) {
       print("Oyun başlatma hatası: $e");
-      // 🚨 İNTERNET KOPARSA BİLDİRİM GÖSTER
+      final message = errorMessageFrom(e);
       if (navigatorKey.currentContext != null) {
         ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
           SnackBar(
-            content: Text("Oyun başlatılamadı. İnternetinizi kontrol edin."),
+            content: Text(message),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -174,11 +175,12 @@ class GameProvider with ChangeNotifier {
       _selectedAnswer = null;
       _correctAnswer = null;
 
-      // 🚨 ÇÖZÜM 2: Ekranda kırmızı bir hata mesajı göster
+      // 🚨 ÇÖZÜM 2: Ekranda bir hata mesajı göster
       if (navigatorKey.currentContext != null) {
+        final message = errorMessageFrom(e);
         ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-          const SnackBar(
-            content: Text("Bağlantı koptu, lütfen internetinizi kontrol edin."),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 3),

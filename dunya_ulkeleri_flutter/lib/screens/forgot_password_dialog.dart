@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
+import '../utils/error_message_utils.dart';
 
 class ForgotPasswordDialog extends StatefulWidget {
   final String? email;
@@ -34,26 +35,25 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
     if (_emailController.text.isEmpty) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final result = await authProvider.sendPasswordResetEmail(
-      _emailController.text.trim(),
-    );
+    try {
+      final result = await authProvider.sendPasswordResetEmail(
+        _emailController.text.trim(),
+      );
 
-    if (!result.message!.contains("Exception")) {
       setState(() {
         _step = 2;
       });
 
-      String successMessage = widget.email != null
-          ? "Sıfırlama kodu e-postanıza başarıyla gönderildi!"
-          : "Eğer bu bilgilere ait bir hesap varsa, sıfırlama kodu gönderildi.";
+      final successMessage =
+          result.message ?? "Eğer bu bilgilere ait bir hesap varsa, kod gönderildi.";
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Kullanıcı adı veya e-posta bulunamadı!"),
+          content: Text(errorMessageFrom(e)),
           backgroundColor: Colors.red,
         ),
       );
@@ -78,21 +78,25 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final result = await authProvider.resetPassword(
-      _emailController.text.trim(),
-      _codeController.text.trim(),
-      _newPasswordController.text.trim(),
-    );
 
-    if (!result.message!.contains("Exception")) {
+    try {
+      final result = await authProvider.resetPassword(
+        _emailController.text.trim(),
+        _codeController.text.trim(),
+        _newPasswordController.text.trim(),
+      );
+
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message!), backgroundColor: Colors.green),
+        SnackBar(
+          content: Text(result.message ?? "Şifre başarıyla güncellendi."),
+          backgroundColor: Colors.green,
+        ),
       );
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Kod yanlış veya süresi dolmuş!"),
+          content: Text(errorMessageFrom(e)),
           backgroundColor: Colors.red,
         ),
       );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/auth_service.dart';
+import '../utils/error_message_utils.dart';
 import 'verify_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -179,10 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           // 🚨 EĞER BACKEND ÇÖKERSE VEYA 400/500 HATASI FIRLATIRSA UYGULAMA DONMASIN DİYE BURAYA DÜŞER
                           setState(() => _isLoading = false);
 
-                          // Kullanıcıya şık bir şekilde arka plan hatasını bildiriyoruz
-                          _showError(
-                            "Kayıt işlemi başarısız! Girdiğiniz e-posta veya kullanıcı adı zaten sistemde kayıtlı olabilir.",
-                          );
+                          _showError(errorMessageFrom(e));
                         }
                       },
                       child: Text(

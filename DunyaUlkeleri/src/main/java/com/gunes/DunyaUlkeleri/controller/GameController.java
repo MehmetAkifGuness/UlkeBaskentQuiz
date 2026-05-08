@@ -4,6 +4,7 @@ import com.gunes.DunyaUlkeleri.dto.request.GameAnswerRequest;
 import com.gunes.DunyaUlkeleri.dto.response.DictionaryResponse;
 import com.gunes.DunyaUlkeleri.dto.response.GameStatusResponse;
 import com.gunes.DunyaUlkeleri.service.GameService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -31,7 +32,7 @@ public class GameController {
     // 2. Soruya cevap verme (Tahmin yürütme) kapısı
     @PostMapping("/submit")
     public ResponseEntity<GameStatusResponse> submitAnswer(
-            @RequestBody GameAnswerRequest request,
+            @Valid @RequestBody GameAnswerRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(gameService.submitAnswer(request, authentication.getName()));
     }

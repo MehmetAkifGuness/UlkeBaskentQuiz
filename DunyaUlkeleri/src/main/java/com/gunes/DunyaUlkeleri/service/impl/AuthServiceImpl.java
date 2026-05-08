@@ -3,6 +3,7 @@ package com.gunes.DunyaUlkeleri.service.impl;
 import com.gunes.DunyaUlkeleri.dto.request.*;
 import com.gunes.DunyaUlkeleri.dto.response.AuthResponse;
 import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.exception.AppException;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.security.JwtUtil;
 import com.gunes.DunyaUlkeleri.service.AuthService;
@@ -30,10 +31,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Bu kullanıcı adı zaten alınmış!");
+            throw AppException.conflict("USERNAME_TAKEN", "Bu kullanıcı adı zaten kullanılıyor.");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Bu e-posta adresi zaten kullanılıyor!");
+            throw AppException.conflict("EMAIL_TAKEN", "Bu e-posta adresi zaten kullanılıyor.");
         }
 
         User user = new User();
@@ -60,14 +61,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Kullanıcı adı veya şifre yanlış!"));
+                .orElseThrow(() -> AppException.unauthorized("INVALID_CREDENTIALS", "Kullanıcı adı veya şifre hatalı."));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Kullanıcı adı veya şifre yanlış!");
+            throw AppException.unauthorized("INVALID_CREDENTIALS", "Kullanıcı adı veya şifre hatalı.");
         }
 
         if (!user.isVerified() && !user.isGuest()) {
-            throw new IllegalArgumentException("Lütfen önce e-postanızı doğrulayın!");
+            throw AppException.forbidden("EMAIL_NOT_VERIFIED", "Lütfen önce e-postanızı doğrulayın.");
         }
 
         String token = jwtUtil.generateToken(user.getUsername());
@@ -94,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse verifyEmail(VerifyCodeRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Bu e-posta adresine ait kullanıcı bulunamadı!"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Bu e-posta adresine ait kullanıcı bulunamadı."));
 
         // 🚨 GÜVENLİK: Veritabanı üzerinden süre ve kaba kuvvet kontrolü
         checkBruteForceAndExpiration(user);
@@ -113,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
         
         // Yanlış girildiyse deneme sayısını artırıp DB'ye kaydet
         increaseFailedAttempt(user);
-        throw new IllegalArgumentException("Doğrulama kodu geçersiz!");
+        throw AppException.badRequest("INVALID_VERIFICATION_CODE", "Doğrulama kodu geçersiz.");
     }
 
     @Override
@@ -149,7 +150,10 @@ public class AuthServiceImpl implements AuthService {
             userOpt = userRepository.findByUsername(input);
         }
 
-        User user = userOpt.orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı veya e-posta/kullanıcı adı hatalı!"));
+        User user = userOpt.orElseThrow(() -> AppException.notFound(
+                "USER_NOT_FOUND",
+                "Kullanıcı bulunamadı. E-posta veya kullanıcı adını kontrol edin."
+        ));
 
         // 🚨 GÜVENLİK: Veritabanı üzerinden süre ve kaba kuvvet kontrolü
         checkBruteForceAndExpiration(user);
@@ -167,7 +171,7 @@ public class AuthServiceImpl implements AuthService {
         }
         
         increaseFailedAttempt(user);
-        throw new IllegalArgumentException("Doğrulama kodu geçersiz veya süresi dolmuş!");
+        throw AppException.badRequest("INVALID_RESET_CODE", "Doğrulama kodu geçersiz veya süresi dolmuş.");
     }
 
     // --- 🚨 VERİTABANI ODAKLI GÜVENLİK METODLARI ---
@@ -180,12 +184,18 @@ public class AuthServiceImpl implements AuthService {
             user.setResetCode(null);
             user.setFailedAttemptCount(0);
             userRepository.save(user);
-            throw new IllegalArgumentException("Doğrulama kodunun süresi dolmuş (10 dakika). Lütfen yeni bir kod isteyin.");
+            throw AppException.badRequest(
+                    "CODE_EXPIRED",
+                    "Doğrulama kodunun süresi dolmuş (10 dakika). Lütfen yeni bir kod isteyin."
+            );
         }
 
         // 2. KABA KUVVET (BRUTE FORCE) KONTROLÜ (Max 5 Hak)
         if (user.getFailedAttemptCount() >= 5) {
-            throw new IllegalArgumentException("Çok fazla yanlış deneme yaptınız. Güvenliğiniz için lütfen yeni bir kod isteyin.");
+            throw AppException.tooManyRequests(
+                    "TOO_MANY_ATTEMPTS",
+                    "Çok fazla yanlış deneme yapıldı. Güvenliğiniz için lütfen yeni bir kod isteyin."
+            );
         }
     }
 
@@ -212,10 +222,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse resendVerificationCode(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı!"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
                 
         if (user.isVerified()) {
-            throw new IllegalArgumentException("Bu hesap zaten doğrulanmış, giriş yapabilirsiniz!");
+            throw AppException.conflict("ALREADY_VERIFIED", "Bu hesap zaten doğrulanmış. Giriş yapabilirsiniz.");
         }
 
         String newCode = generateCode();

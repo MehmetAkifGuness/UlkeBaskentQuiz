@@ -5,6 +5,7 @@ import com.gunes.DunyaUlkeleri.dto.response.RecentSessionResponse;
 import com.gunes.DunyaUlkeleri.entity.GameSession;
 import com.gunes.DunyaUlkeleri.entity.Question;
 import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.exception.AppException;
 import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.UserService;
@@ -49,7 +50,7 @@ public class UserController {
     @GetMapping("/my-category-scores")
     public ResponseEntity<Map<String, Integer>> getMyCategoryScores(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
         return ResponseEntity.ok(user.getCategoryBestScores());
     }
 
@@ -58,7 +59,7 @@ public class UserController {
             Authentication authentication,
             @RequestParam(defaultValue = "3") int limit) {
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
 
         int safeLimit = Math.max(1, Math.min(limit, 10));
         List<GameSession> sessions = gameSessionRepository.findTop10ByUserAndIsFinishedTrueOrderByUpdateAtDesc(user);
@@ -113,14 +114,14 @@ public class UserController {
     @GetMapping("/mistakes")
     public ResponseEntity<Set<Question>> getUserMistakes(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
         return ResponseEntity.ok(user.getFailedQuestions());
     }
 
     @DeleteMapping("/mistakes/{questionId}")
     public ResponseEntity<String> removeMistake(@PathVariable Long questionId, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
         
         user.getFailedQuestions().removeIf(q -> q.getId().equals(questionId));
         userRepository.save(user); 

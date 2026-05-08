@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 import '../models/recent_session_model.dart';
+import 'api_exception.dart';
 
 // 🚨 YENİ İMPORTLAR: Yönlendirme ve yetki temizliği için gerekli
 import 'package:flutter/material.dart';
@@ -49,7 +50,9 @@ class UserService {
     }
 
     if (response.statusCode == 200) {
-      return UserProfileModel.fromJson(json.decode(response.body));
+      return UserProfileModel.fromJson(
+        json.decode(utf8.decode(response.bodyBytes)),
+      );
     } else {
       return null;
     }
@@ -65,7 +68,7 @@ class UserService {
     // 🚨 YENİ EKLENDİ
     if (response.statusCode == 401 || response.statusCode == 403) {
       _handleUnauthorized();
-      throw Exception("Oturum süresi doldu.");
+      throw ApiException.fromResponse(response);
     }
 
     if (response.statusCode == 200) {
@@ -73,9 +76,9 @@ class UserService {
         utf8.decode(response.bodyBytes),
       );
       return jsonResponse.map((key, value) => MapEntry(key, value as int));
-    } else {
-      throw Exception('Kategori skorları alınamadı!');
     }
+
+    throw ApiException.fromResponse(response);
   }
 
   Future<List<RecentSessionModel>> getRecentSessions(

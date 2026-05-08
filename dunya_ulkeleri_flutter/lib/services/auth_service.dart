@@ -1,39 +1,45 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/auth_model.dart';
+import 'api_exception.dart';
 
 class AuthService {
-  // Eski hali: "http://10.0.2.2:8080/api/game"
   final String baseUrl = "${dotenv.env['API_BASE_URL']}/auth";
 
-  // KAYIT
   Future<AuthModel> register(
     String username,
     String email,
     String password,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': username,
-        'email': email,
-        'password': password,
-      }),
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'username': username,
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
-    // YENİ GÜVENLİK KONTROLÜ
-    if (response.statusCode == 200) {
-      return AuthModel.fromJson(jsonDecode(response.body));
-    } else {
-      // Hata varsa uygulamayı çökertme, Exception fırlat ki ekranda Toast mesajı vs. basabilelim
-      throw Exception(response.body);
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      }
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 
-  // GİRİŞ
-  // GİRİŞ
   Future<AuthModel> login(String username, String password) async {
     try {
       final response = await http
@@ -42,101 +48,125 @@ class AuthService {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'username': username, 'password': password}),
           )
-          .timeout(const Duration(seconds: 10)); // 10 saniye sonra durdur
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
-        return AuthModel.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception(response.body);
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
       }
-    } catch (e) {
-      throw Exception("Bağlantı zaman aşımına uğradı veya sunucu kapalı!");
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 
-  // Misafir Girişi İsteği
   Future<AuthModel> guestLogin() async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/guest'),
-      headers: {'Content-Type': 'application/json'},
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/guest'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 15));
 
-    if (response.statusCode == 200) {
-      return AuthModel.fromJson(json.decode(utf8.decode(response.bodyBytes)));
-    } else {
-      throw Exception('Misafir girişi başarısız oldu!');
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      }
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 
-  // MAİL DOĞRULAMA
   Future<AuthModel> verify(String email, String code) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/verify'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'code': code}),
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/verify'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'code': code}),
+          )
+          .timeout(const Duration(seconds: 15));
 
-    // YENİ GÜVENLİK KONTROLÜ
-    if (response.statusCode == 200) {
-      return AuthModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception(response.body);
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      }
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 
-  // 1. AŞAMA: Şifre sıfırlama kodu gönder
   Future<AuthModel> forgotPassword(String email) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/forgot-password'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email}),
-    );
-    if (response.statusCode == 200) {
-      return AuthModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception(response.body);
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/forgot-password'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      }
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 
-  // 2. AŞAMA: Kodu doğrula ve yeni şifreyi kaydet
   Future<AuthModel> resetPassword(
     String email,
     String code,
     String newPassword,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/reset-password'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'resetCode': code,
-        'newPassword': newPassword,
-      }),
-    );
-    if (response.statusCode == 200) {
-      return AuthModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception(response.body);
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/reset-password'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'resetCode': code,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      }
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 
-  // 🚨 YENİ: Kodu tekrar gönderme isteği
   Future<AuthModel> resendVerification(String email) async {
     try {
       final response = await http
           .post(Uri.parse('$baseUrl/resend-verification?email=$email'))
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
-        return AuthModel.fromJson(jsonDecode(response.body));
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Kod gönderilemedi!');
+        return AuthModel.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
       }
-    } catch (e) {
-      throw Exception(
-        "Bağlantı hatası: ${e.toString().replaceAll('Exception:', '')}",
-      );
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. Lütfen internetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
     }
   }
 }
+

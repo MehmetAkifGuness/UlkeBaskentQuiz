@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 🚨 YENİ ŞİFRELİ DEPO PAKETİ EKLENDİ
 import '../models/auth_model.dart';
 import '../services/auth_service.dart';
+import '../utils/error_message_utils.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -68,7 +69,7 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       print("GİRİŞ HATASI: $e"); // Hatayı terminale yazdır
-      return AuthModel(message: "Sunucuya bağlanılamadı: $e");
+      return AuthModel(message: errorMessageFrom(e));
     }
   }
 
@@ -92,7 +93,7 @@ class AuthProvider with ChangeNotifier {
       return await _authService.forgotPassword(email);
     } catch (e) {
       print("Şifre sıfırlama hatası: $e");
-      return AuthModel(message: "Bağlantı hatası veya geçersiz e-posta: $e");
+      throw Exception(errorMessageFrom(e));
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -111,7 +112,7 @@ class AuthProvider with ChangeNotifier {
       return await _authService.resetPassword(email, code, newPassword);
     } catch (e) {
       print("Şifre yenileme hatası: $e");
-      return AuthModel(message: "Geçersiz kod veya bağlantı hatası: $e");
+      throw Exception(errorMessageFrom(e));
     } finally {
       _isLoading = false;
       notifyListeners();

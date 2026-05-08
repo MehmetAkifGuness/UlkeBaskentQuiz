@@ -1,30 +1,24 @@
-ülkelerin yöresel müziği eklenecek
-
-ülkelerin bulunduğu konumun(haritasını) eklenecek
-
 başarımlar (uygulama bittikten sonra eklenecek)
 
 Her rütbeye özel ikon fikri rank atlama animasyonu fikri
 
 rütbeleri backende taşımak
 
-öğrenme kısmına kategori eklenebilir nasıl olur sağ üste filtreleme kısmı olur o filtreleme kısmında avrupa asya vs diye ayarlayabiliriz oradan da daha kolay arama yapabiliriz
-
-Backend (Spring Boot) Dosyaları:
-
-GameServiceImpl.java (Zaman hilesini ve Yanlış Cevap kısırdöngüsünü çözeceğiz)
-
-AuthServiceImpl.java (E-posta spam/fatura patlatma saldırısını - Cooldown ile çözeceğiz)
-
-UserCleanupScheduler.java (Gece 3'teki aktif misafirleri silme hatasını çözeceğiz)
-
-UserRepository.java (Eski misafirleri bulmak için özel bir sorgu ekleyeceğiz)
-
-Frontend (Flutter) Dosyaları:
-
-5. game_provider.dart (AudioPlayer bellek sızıntısını çözeceğiz)
-
-bil ve fethet mantığında soru bildikçe o ülkeyi fethetme
-
 Lig mantığı (ülke bazlı)
+
+hata defterim kısmı da eski haline getirilcek
+
+dünya haritasında kıta bazlı harita kısmınada harita sayfanın ortasına gelsin ve oradan hareket ederek gezebileyim 
+
+Dünya fethi pratik sayfası içinde kıta bazlı harita filterleme yapalım
+
+online modu için web socket kısmı kontrol edilsin çalışan hale getirilsin 
+
+bu dünya haritası eklentisini aşağıdaki barda oyun ategorisinin yanına ikon buton olarak koyalım ve barın en sağındai ayarlar butonunu kaldıralım çünkü zaten profilde ayrar kısmı var
+
+bu online mod nasıl çalışacak onu da soralım 
+
+harita oyun kısmında 3 hak olsun yine aynı şekilde botlarla filan oynarkende aynı şekilde hem benim hemde karşıdaki kişinin can hakkı 3 olsun kısaca
+
+bazı ülkeler için ülke verileri ile eşleşmedi hatası alıyorum onları da çözmek lazım
 

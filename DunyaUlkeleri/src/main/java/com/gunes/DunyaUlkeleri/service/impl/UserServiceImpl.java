@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
 import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.exception.AppException;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateAvatar(String username, Integer avatarId) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
         
         user.setAvatarId(avatarId);
         userRepository.save(user);

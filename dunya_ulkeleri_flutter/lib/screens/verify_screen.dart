@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/auth_service.dart';
+import '../utils/error_message_utils.dart';
 
 class VerifyScreen extends StatefulWidget {
   final String email;
@@ -77,7 +78,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       setState(() {
         _isLoading = false;
       });
-      _showSnackBar("Girdiğiniz kod hatalı veya süresi dolmuş!", Colors.red);
+      _showSnackBar(errorMessageFrom(e), Colors.red);
     }
   }
 
@@ -98,7 +99,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       final result = await _authService.resendVerification(widget.email);
       _showSnackBar(result.message ?? "Yeni kod gönderildi.", Colors.green);
     } catch (e) {
-      _showSnackBar(e.toString(), Colors.red);
+      _showSnackBar(errorMessageFrom(e), Colors.red);
     } finally {
       setState(() {
         _isLoading = false;

@@ -6,6 +6,7 @@ import com.gunes.DunyaUlkeleri.dto.response.GameStatusResponse;
 import com.gunes.DunyaUlkeleri.entity.GameSession;
 import com.gunes.DunyaUlkeleri.entity.Question;
 import com.gunes.DunyaUlkeleri.entity.User;
+import com.gunes.DunyaUlkeleri.exception.AppException;
 import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
 import com.gunes.DunyaUlkeleri.repository.QuestionRepository;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
@@ -54,7 +55,7 @@ public class GameServiceImpl implements GameService {
     @Override
     public GameStatusResponse startGame(String username, String category, String mode) { 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + username));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı: " + username));
 
         // ==============================================================================
         // 🚨 UX VE MANTIK YAMASI: ZOMBİ OYUNLARI ENGELLEME 
@@ -75,7 +76,10 @@ public class GameServiceImpl implements GameService {
             LocalDate lastDaily = user.getLastDailyDate();
 
             if (lastDaily != null && lastDaily.equals(today)) {
-                throw new RuntimeException("Bugün zaten Günün Görevi'ni başlattın veya tamamladın! Yarın tekrar gel.");
+                throw AppException.conflict(
+                        "DAILY_ALREADY_PLAYED",
+                        "Bugün zaten Günün Görevi'ni başlattın veya tamamladın. Yarın tekrar deneyebilirsin."
+                );
             }
 
             Integer streak = user.getDailyStreak();
@@ -114,7 +118,7 @@ public class GameServiceImpl implements GameService {
     @Override
     public GameStatusResponse resumeGame(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
 
         // Kullanıcının bitmemiş (yarım kalmış) oyununu bul
         Optional<GameSession> activeSessionOpt = gameSessionRepository.findFirstByUserAndIsFinishedFalseOrderByUpdateAtDesc(user);
@@ -177,10 +181,10 @@ public class GameServiceImpl implements GameService {
     @Override
     public GameStatusResponse submitAnswer(GameAnswerRequest request, String username) {
         GameSession session = gameSessionRepository.findById(request.getSessionId())
-                .orElseThrow(() -> new RuntimeException("Oyun oturumu bulunamadı!"));
+                .orElseThrow(() -> AppException.notFound("SESSION_NOT_FOUND", "Oyun oturumu bulunamadı."));
 
         if (!session.getUser().getUsername().equals(username)) {
-            throw new RuntimeException("Güvenlik İhlali: Bu oyun oturumu size ait değil!");
+            throw AppException.forbidden("SESSION_FORBIDDEN", "Bu oyun oturumu size ait değil.");
         }
 
         if (session.isFinished()) {
@@ -191,7 +195,10 @@ public class GameServiceImpl implements GameService {
         if (session.getLastQuestionTime() != null) {
             long timeElapsedMillis = Duration.between(session.getLastQuestionTime(), LocalDateTime.now()).toMillis();
             if (timeElapsedMillis < 100) { 
-                throw new RuntimeException("Güvenlik İhlali: Çok hızlı cevap gönderildi (Hile şüphesi)!");
+                throw AppException.forbidden(
+                        "SUSPICIOUS_ACTIVITY",
+                        "Çok hızlı cevap gönderildi. Lütfen biraz daha yavaş deneyin."
+                );
             }
         }
 

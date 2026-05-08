@@ -1,8 +1,11 @@
 package com.gunes.DunyaUlkeleri.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gunes.DunyaUlkeleri.exception.ApiErrorResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final ObjectMapper objectMapper;
 
     // SİLDİĞİMİZ SINIFIN GÖREVİNİ ARTIK BU METOT YAPIYOR
     @Bean
@@ -31,11 +35,12 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(request -> {
                 var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
                 
-                // YENİ VE GÜVENLİ KISIM: Sadece izin verdiğimiz yerlerden gelen istekler kabul edilecek
-                corsConfiguration.setAllowedOrigins(java.util.List.of(
-                    "http://localhost:3000",
-                    "http://10.254.198.163:8080/api/game", // Web için test adresi
-                    "http://10.0.2.2:8080"   // Android Emülatör adresi
+                // Dev ortamı için esnek ama kontrollü origin izinleri.
+                // Not: Mobil uygulamalarda CORS uygulanmaz; burada özellikle web istemcileri hedeflenir.
+                corsConfiguration.setAllowedOriginPatterns(java.util.List.of(
+                    "http://localhost:*",
+                    "http://127.0.0.1:*",
+                    "http://10.0.2.2:*"
                 ));
                 
                 corsConfiguration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -46,13 +51,38 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setContentType("application/json;charset=UTF-8");
-                    response.setStatus(401);
-                    response.getWriter().write("{\"message\": \"Oturum süresi doldu veya yetkisiz erişim.\"}");
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    objectMapper.writeValue(
+                            response.getWriter(),
+                            ApiErrorResponse.of(
+                                    HttpStatus.UNAUTHORIZED,
+                                    "UNAUTHORIZED",
+                                    "Oturum süresi doldu veya yetkisiz erişim.",
+                                    request.getRequestURI(),
+                                    null
+                            )
+                    );
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    objectMapper.writeValue(
+                            response.getWriter(),
+                            ApiErrorResponse.of(
+                                    HttpStatus.FORBIDDEN,
+                                    "FORBIDDEN",
+                                    "Bu işlem için yetkiniz yok.",
+                                    request.getRequestURI(),
+                                    null
+                            )
+                    );
                 })
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/error").permitAll()
+                // ADIM 5: Conquest multiplayer altyapısı (şimdilik auth zorunlu değil).
+                .requestMatchers("/api/conquest/**", "/ws/conquest/**").permitAll()
                 .requestMatchers("/api/game/**").authenticated()
                 .anyRequest().authenticated()
             )

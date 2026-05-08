@@ -7,6 +7,10 @@ import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart'; // 🚨 TİTREŞİM İÇİN EKLENDİ
 import '../services/game_service.dart';
 import '../models/dictionary_model.dart';
+import '../theme/app_theme.dart';
+import '../utils/error_message_utils.dart';
+import '../widgets/geo_background.dart';
+import '../widgets/glass_card.dart';
 import 'country_detail_screen.dart';
 
 class DictionaryScreen extends StatefulWidget {
@@ -36,18 +40,16 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   Future<void> _fetchDictionaryData() async {
     try {
       final token = Provider.of<AuthProvider>(context, listen: false).token;
-      if (token != null) {
-        final data = await _gameService.getDictionary(token);
-        setState(() {
-          _allData = data;
-          _availableContinents = _buildContinentOptions(data);
-          _filteredData = _applyFiltersTo(data, query: _searchController.text);
-          _isLoading = false;
-        });
-      }
+      final data = await _gameService.getDictionary(token ?? '');
+      setState(() {
+        _allData = data;
+        _availableContinents = _buildContinentOptions(data);
+        _filteredData = _applyFiltersTo(data, query: _searchController.text);
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = "Sözlük verileri yüklenemedi: $e";
+        _errorMessage = errorMessageFrom(e);
         _isLoading = false;
       });
     }
@@ -137,56 +139,101 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.grey[900],
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
         final current = _selectedContinent ?? 'Hepsi';
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Kıta Filtresi',
-                        style: TextStyle(
-                          color: Colors.amber,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: GlassCard(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              blurSigma: 22,
+              tint: AppColors.surface,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(28),
+                topRight: Radius.circular(28),
+                bottomLeft: Radius.circular(22),
+                bottomRight: Radius.circular(22),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.filter_list,
+                        color: AppColors.primaryBlue,
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Kıta Filtresi',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                            letterSpacing: 0.4,
+                          ),
                         ),
                       ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'İstersen sadece seçtiğin kıtayı görüntüleyebilirsin.',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w600,
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close, color: Colors.white70),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    for (final continent in _availableContinents)
-                      ChoiceChip(
-                        label: Text(continent),
-                        selected: continent == current,
-                        onSelected: (_) {
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final continent in _availableContinents)
+                        ChoiceChip(
+                          label: Text(continent),
+                          selected: continent == current,
+                          onSelected: (_) {
+                            Provider.of<SettingsProvider>(
+                              context,
+                              listen: false,
+                            ).triggerButtonVibration();
+
+                            setState(() {
+                              _selectedContinent =
+                                  continent == 'Hepsi' ? null : continent;
+                              _filteredData = _applyFiltersTo(
+                                _allData,
+                                query: _searchController.text,
+                              );
+                            });
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                    ],
+                  ),
+                  if (_selectedContinent != null) ...[
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
                           Provider.of<SettingsProvider>(
                             context,
                             listen: false,
                           ).triggerButtonVibration();
-
                           setState(() {
-                            _selectedContinent = continent == 'Hepsi'
-                                ? null
-                                : continent;
+                            _selectedContinent = null;
                             _filteredData = _applyFiltersTo(
                               _allData,
                               query: _searchController.text,
@@ -194,40 +241,16 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           });
                           Navigator.of(context).pop();
                         },
-                      ),
-                  ],
-                ),
-                if (_selectedContinent != null) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Provider.of<SettingsProvider>(
-                          context,
-                          listen: false,
-                        ).triggerButtonVibration();
-                        setState(() {
-                          _selectedContinent = null;
-                          _filteredData = _applyFiltersTo(
-                            _allData,
-                            query: _searchController.text,
-                          );
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      icon: const Icon(Icons.refresh, color: Colors.amber),
-                      label: const Text(
-                        'Filtreyi Sıfırla',
-                        style: TextStyle(color: Colors.amber),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.amber.withOpacity(0.6)),
+                        icon: const Icon(
+                          Icons.refresh,
+                          color: AppColors.primaryBlue,
+                        ),
+                        label: const Text('Filtreyi Sıfırla'),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -446,129 +469,385 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Öğren & Keşfet",
-          style: TextStyle(fontWeight: FontWeight.bold),
+    final hintText = _selectedContinent == null
+        ? 'Ülke, Başkent veya Kıta ara...'
+        : 'Ülke / Başkent ara (${_selectedContinent!})';
+    final hasQuery = _searchController.text.trim().isNotEmpty;
+
+    Widget scrollable;
+    if (_isLoading) {
+      scrollable = ListView(
+        key: const ValueKey('loading'),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: 'Filtrele',
-            onPressed: _openContinentFilter,
-            icon: Icon(
-              _selectedContinent == null
-                  ? Icons.filter_list_outlined
-                  : Icons.filter_list,
+        children: const [
+          SizedBox(height: 46),
+          Center(
+            child: CircularProgressIndicator(color: AppColors.primaryBlue),
+          ),
+        ],
+      );
+    } else if (_errorMessage != null) {
+      scrollable = ListView(
+        key: const ValueKey('error'),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        children: [
+          GlassCard(
+            tint: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.wifi_off, color: AppColors.errorRed),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Veriler alınamadı',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+                          setState(() {
+                            _errorMessage = null;
+                            _isLoading = true;
+                          });
+                          _fetchDictionaryData();
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Tekrar Dene'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              style: TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: _selectedContinent == null
-                    ? "Ülke, Başkent veya Kıta Ara..."
-                    : "Ülke / Başkent Ara (${_selectedContinent!})",
-                hintStyle: TextStyle(color: Colors.grey),
-                prefixIcon: Icon(Icons.search, color: Colors.amber),
-                filled: true,
-                fillColor: Colors.grey[900],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+      );
+    } else if (_filteredData.isEmpty) {
+      scrollable = ListView(
+        key: const ValueKey('empty'),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        children: const [
+          SizedBox(height: 24),
+          GlassCard(
+            tint: AppColors.surface,
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: Row(
+              children: [
+                Icon(Icons.search_off, color: AppColors.textMuted),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Aradığın kriterde sonuç bulunamadı.',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-                contentPadding: EdgeInsets.symmetric(vertical: 0),
+              ],
+            ),
+          ),
+        ],
+      );
+    } else {
+      scrollable = ListView.separated(
+        key: const ValueKey('list'),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        itemCount: _filteredData.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final item = _filteredData[index];
+          final countryName = item.countryName ?? 'Bilinmiyor';
+          final capitalName = item.capitalName ?? 'Bilinmiyor';
+          final continent = item.continent ?? 'Bilinmiyor';
+
+          return GlassCard(
+            onTap: () {
+              Provider.of<SettingsProvider>(
+                context,
+                listen: false,
+              ).triggerButtonVibration();
+
+              Navigator.push(
+                context,
+                FadePageRoute(
+                  page: CountryDetailScreen(
+                    countryName: countryName,
+                    capitalName: capitalName,
+                    continent: continent,
+                  ),
+                ),
+              );
+            },
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            tint: AppColors.surface,
+            child: Row(
+              children: [
+                Text(
+                  _getFlagEmoji(countryName),
+                  style: const TextStyle(fontSize: 34),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        countryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '$capitalName • $continent',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GeoBackground(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+              child: Row(
+                children: [
+                  GlassCard(
+                    onTap: () => Navigator.of(context).maybePop(),
+                    padding: const EdgeInsets.all(10),
+                    tint: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Öğren & Keşfet',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                  GlassCard(
+                    onTap: _openContinentFilter,
+                    padding: const EdgeInsets.all(10),
+                    tint: AppColors.surface,
+                    borderRadius: BorderRadius.circular(999),
+                    child: Icon(
+                      _selectedContinent == null
+                          ? Icons.filter_list_outlined
+                          : Icons.filter_list,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: Colors.amber))
-                : _errorMessage != null
-                ? Center(
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  )
-                : _filteredData.isEmpty
-                ? Center(
-                    child: Text(
-                      "Aradığınız kriterde sonuç bulunamadı.",
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _filteredData.length,
-                    itemBuilder: (context, index) {
-                      final item = _filteredData[index];
-                      return Card(
-                        margin: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                tint: AppColors.surface,
+                borderRadius: BorderRadius.circular(999),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: AppColors.primaryBlue),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: _onSearchChanged,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w700,
                         ),
-                        color: Colors.grey[900],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          side: BorderSide(color: Colors.white12, width: 1),
+                        decoration: InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          hintText: hintText,
+                          hintStyle: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        elevation: 3,
-                        child: ListTile(
-                          onTap: () {
-                            // 🚨 TİTREŞİM TETİKLENDİ
-                            Provider.of<SettingsProvider>(
-                              context,
-                              listen: false,
-                            ).triggerButtonVibration();
-
-                            // 🚨 YUMUŞAK GEÇİŞ ENTEGRE EDİLDİ
-                            Navigator.push(
-                              context,
-                              FadePageRoute(
-                                page: CountryDetailScreen(
-                                  countryName: item.countryName ?? 'Bilinmiyor',
-                                  capitalName: item.capitalName ?? 'Bilinmiyor',
-                                  continent: item.continent ?? 'Bilinmiyor',
-                                ),
-                              ),
-                            );
-                          },
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.white54,
+                      ),
+                    ),
+                    if (hasQuery)
+                      IconButton(
+                        tooltip: 'Temizle',
+                        onPressed: () {
+                          Provider.of<SettingsProvider>(
+                            context,
+                            listen: false,
+                          ).triggerButtonVibration();
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (_selectedContinent != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Row(
+                  children: [
+                    GlassCard(
+                      onTap: () {
+                        Provider.of<SettingsProvider>(
+                          context,
+                          listen: false,
+                        ).triggerButtonVibration();
+                        setState(() {
+                          _selectedContinent = null;
+                          _filteredData = _applyFiltersTo(
+                            _allData,
+                            query: _searchController.text,
+                          );
+                        });
+                      },
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      tint: AppColors.surface,
+                      borderRadius: BorderRadius.circular(999),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.public,
+                            size: 18,
+                            color: AppColors.primaryBlue,
                           ),
-                          leading: Text(
-                            _getFlagEmoji(item.countryName ?? ''),
-                            style: TextStyle(fontSize: 35),
-                          ),
-                          title: Text(
-                            item.countryName ?? 'Bilinmiyor',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: Colors.white,
+                          const SizedBox(width: 8),
+                          Text(
+                            'Kıta: ${_selectedContinent!}',
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          subtitle: Text(
-                            "${item.capitalName ?? 'Bilinmiyor'} • ${item.continent ?? 'Bilinmiyor'}",
-                            style: TextStyle(color: Colors.amber[200]),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppColors.textMuted,
                           ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${_filteredData.length} sonuç',
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.primaryBlue,
+                backgroundColor: AppColors.surface2,
+                onRefresh: () async {
+                  Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  ).triggerButtonVibration();
+                  setState(() {
+                    _errorMessage = null;
+                    _isLoading = true;
+                  });
+                  await _fetchDictionaryData();
+                },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  child: scrollable,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

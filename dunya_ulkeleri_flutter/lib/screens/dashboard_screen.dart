@@ -7,10 +7,15 @@ import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/user.service.dart';
 import '../theme/app_theme.dart';
+import '../utils/page_trasitions.dart';
 import '../widgets/app_avatar.dart';
 import '../widgets/geo_background.dart';
 import '../widgets/geo_top_bar.dart';
 import '../widgets/glass_card.dart';
+import 'conquest_bot_screen.dart';
+import 'conquest_online_entry_screen.dart';
+import 'conquest_practice_screen.dart';
+import 'world_map_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -57,6 +62,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       listen: false,
     ).triggerButtonVibration();
     widget.onNavigateTab?.call(index);
+  }
+
+  void _openWorldMap() {
+    Provider.of<SettingsProvider>(context, listen: false).triggerButtonVibration();
+    Navigator.push(context, FadePageRoute(page: const WorldMapScreen()));
+  }
+
+  void _openConquestPractice() {
+    Provider.of<SettingsProvider>(context, listen: false).triggerButtonVibration();
+    Navigator.push(context, FadePageRoute(page: const ConquestPracticeScreen()));
+  }
+
+  void _openConquestBot() {
+    Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    ).triggerButtonVibration();
+    Navigator.push(context, FadePageRoute(page: const ConquestBotScreen()));
+  }
+
+  void _openConquestOnline() {
+    Provider.of<SettingsProvider>(context, listen: false).triggerButtonVibration();
+    Navigator.push(
+      context,
+      FadePageRoute(page: const ConquestOnlineEntryScreen()),
+    );
   }
 
   void _refresh() {
@@ -157,6 +188,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+                        _MiniNavCard(
+                          icon: Icons.map_outlined,
+                          title: 'Dünya Haritası',
+                          subtitle: 'Ülkeleri harita üzerinden öğren',
+                          onTap: _openWorldMap,
+                        ),
+                        const SizedBox(height: 12),
+                        _MiniNavCard(
+                          icon: Icons.public_rounded,
+                          title: 'Dünya Fethi Pratik',
+                          subtitle: 'Hedef ülkeyi bul, doğru bil ve haritada fethet.',
+                          onTap: _openConquestPractice,
+                        ),
+                        const SizedBox(height: 12),
+                        _MiniNavCard(
+                          icon: Icons.smart_toy_outlined,
+                          title: 'Botlarla Dünya Fethi',
+                          subtitle:
+                              'Kolay, orta veya zor botlara karşı ülkeleri fethet.',
+                          onTap: _openConquestBot,
+                        ),
+                        const SizedBox(height: 12),
+                        _MiniNavCard(
+                          icon: Icons.wifi_tethering_rounded,
+                          title: 'Online Dünya Fethi',
+                          subtitle:
+                              'Oda kur, arkadaşlarınla ülkeleri fethet.',
+                          onTap: _openConquestOnline,
                         ),
                         const SizedBox(height: 12),
                         _StreakCard(

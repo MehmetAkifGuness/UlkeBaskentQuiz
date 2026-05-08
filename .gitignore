@@ -1,1 +1,27 @@
 .vscode/
+
+# IDE
+**/.idea/
+**/.tmp/
+
+# Env (local-only)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Maven / Spring Boot build outputs & repo icinde olusan cache
+.m2/
+.m2repo/
+_mvn_home/
+_mvn_repo/
+**/target/
+_mvn_*.out
+_mvn_*.err
+
+# Flutter / Dart (build ve local cache)
+**/.dart_tool/
+**/build/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/

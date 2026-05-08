@@ -1,0 +1,977 @@
+[
+    {
+        "countryName":  "Afganistan",
+        "capitalName":  "Kabil",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Almanya",
+        "capitalName":  "Berlin",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Amerika Birleşik Devletleri",
+        "capitalName":  "Washington, D.C.",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Andorra",
+        "capitalName":  "Andorra la Vella",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Angola",
+        "capitalName":  "Luanda",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Antigua ve Barbuda",
+        "capitalName":  "St. John\u0027s",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Arjantin",
+        "capitalName":  "Buenos Aires",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Arnavutluk",
+        "capitalName":  "Tiran",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Avustralya",
+        "capitalName":  "Canberra",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Avusturya",
+        "capitalName":  "Viyana",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Azerbaycan",
+        "capitalName":  "Bakü",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Bahamalar",
+        "capitalName":  "Nassau",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Bahreyn",
+        "capitalName":  "Manama",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Bangladeş",
+        "capitalName":  "Dakka",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Barbados",
+        "capitalName":  "Bridgetown",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Belçika",
+        "capitalName":  "Brüksel",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Belize",
+        "capitalName":  "Belmopan",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Benin",
+        "capitalName":  "Porto-Novo",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Belarus (Beyaz Rusya)",
+        "capitalName":  "Minsk",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Bhutan",
+        "capitalName":  "Thimphu",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Birleşik Arap Emirlikleri",
+        "capitalName":  "Abu Dabi",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Birleşik Krallık",
+        "capitalName":  "Londra",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Bolivya",
+        "capitalName":  "Sucre",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Bosna-Hersek",
+        "capitalName":  "Saraybosna",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Botsvana",
+        "capitalName":  "Gaborone",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Brezilya",
+        "capitalName":  "Brasília",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Brunei",
+        "capitalName":  "Bandar Seri Begawan",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Bulgaristan",
+        "capitalName":  "Sofya",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Burkina Faso",
+        "capitalName":  "Ouagadougou",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Burundi",
+        "capitalName":  "Gitega",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Cezayir",
+        "capitalName":  "Cezayir",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Cibuti",
+        "capitalName":  "Cibuti",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Çad",
+        "capitalName":  "Encemine",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Çekya",
+        "capitalName":  "Prag",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Çin",
+        "capitalName":  "Pekin",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Danimarka",
+        "capitalName":  "Kopenhag",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Doğu Timor",
+        "capitalName":  "Dili",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Dominik Cumhuriyeti",
+        "capitalName":  "Santo Domingo",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Dominika",
+        "capitalName":  "Roseau",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Ekvador",
+        "capitalName":  "Kito",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Ekvator Ginesi",
+        "capitalName":  "Malabo",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "El Salvador",
+        "capitalName":  "San Salvador",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Endonezya",
+        "capitalName":  "Cakarta",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Eritre",
+        "capitalName":  "Asmara",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Ermenistan",
+        "capitalName":  "Erivan",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Estonya",
+        "capitalName":  "Tallinn",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Esvatini",
+        "capitalName":  "Mbabane",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Etiyopya",
+        "capitalName":  "Addis Ababa",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Fas",
+        "capitalName":  "Rabat",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Fiji",
+        "capitalName":  "Suva",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Fildişi Sahili",
+        "capitalName":  "Yamoussoukro",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Filipinler",
+        "capitalName":  "Manila",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Filistin",
+        "capitalName":  "Doğu Kudüs / Ramallah",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Finlandiya",
+        "capitalName":  "Helsinki",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Fransa",
+        "capitalName":  "Paris",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Gabon",
+        "capitalName":  "Libreville",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Gambiya",
+        "capitalName":  "Banjul",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Gana",
+        "capitalName":  "Akra",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Gine",
+        "capitalName":  "Konakri",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Gine-Bissau",
+        "capitalName":  "Bissau",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Grenada",
+        "capitalName":  "St. George\u0027s",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Guatemala",
+        "capitalName":  "Guatemala",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Guyana",
+        "capitalName":  "Georgetown",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Güney Afrika",
+        "capitalName":  "Pretoria",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Güney Kore",
+        "capitalName":  "Seul",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Güney Sudan",
+        "capitalName":  "Juba",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Gürcistan",
+        "capitalName":  "Tiflis",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Haiti",
+        "capitalName":  "Port-au-Prince",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Hırvatistan",
+        "capitalName":  "Zagreb",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Hindistan",
+        "capitalName":  "Yeni Delhi",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Hollanda",
+        "capitalName":  "Amsterdam",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Honduras",
+        "capitalName":  "Tegucigalpa",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Irak",
+        "capitalName":  "Bağdat",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "İran",
+        "capitalName":  "Tahran",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "İrlanda",
+        "capitalName":  "Dublin",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "İspanya",
+        "capitalName":  "Madrid",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "İsrail",
+        "capitalName":  "Kudüs",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "İsveç",
+        "capitalName":  "Stokholm",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "İsviçre",
+        "capitalName":  "Bern",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "İtalya",
+        "capitalName":  "Roma",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "İzlanda",
+        "capitalName":  "Reykjavik",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Jamaika",
+        "capitalName":  "Kingston",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Japonya",
+        "capitalName":  "Tokyo",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kamboçya",
+        "capitalName":  "Phnom Penh",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kamerun",
+        "capitalName":  "Yaoundé",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Kanada",
+        "capitalName":  "Ottawa",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Karadağ",
+        "capitalName":  "Podgorica",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Katar",
+        "capitalName":  "Doha",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kazakistan",
+        "capitalName":  "Astana",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kenya",
+        "capitalName":  "Nairobi",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Kıbrıs Cumhuriyeti",
+        "capitalName":  "Lefkoşa",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Kırgızistan",
+        "capitalName":  "Bişkek",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kiribati",
+        "capitalName":  "Tarawa",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Kolombiya",
+        "capitalName":  "Bogotá",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Komorlar",
+        "capitalName":  "Moroni",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Kongo Cumhuriyeti",
+        "capitalName":  "Brazzaville",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Kongo Demokratik Cumhuriyeti",
+        "capitalName":  "Kinşasa",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Kosta Rika",
+        "capitalName":  "San José",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Kuveyt",
+        "capitalName":  "Kuveyt",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kuzey Kore",
+        "capitalName":  "Pyongyang",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Kuzey Makedonya",
+        "capitalName":  "Üsküp",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Küba",
+        "capitalName":  "Havana",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Laos",
+        "capitalName":  "Vientiane",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Lesotho",
+        "capitalName":  "Maseru",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Letonya",
+        "capitalName":  "Riga",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Liberya",
+        "capitalName":  "Monrovia",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Libya",
+        "capitalName":  "Trablus",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Liechtenstein",
+        "capitalName":  "Vaduz",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Litvanya",
+        "capitalName":  "Vilnius",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Lübnan",
+        "capitalName":  "Beyrut",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Lüksemburg",
+        "capitalName":  "Lüksemburg",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Macaristan",
+        "capitalName":  "Budapeşte",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Madagaskar",
+        "capitalName":  "Antananarivo",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Malavi",
+        "capitalName":  "Lilongwe",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Maldivler",
+        "capitalName":  "Malé",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Malezya",
+        "capitalName":  "Kuala Lumpur",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Mali",
+        "capitalName":  "Bamako",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Malta",
+        "capitalName":  "Valletta",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Marshall Adaları",
+        "capitalName":  "Majuro",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Mauritius",
+        "capitalName":  "Port Louis",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Meksika",
+        "capitalName":  "Meksiko",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Mısır",
+        "capitalName":  "Kahire",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Mikronezya",
+        "capitalName":  "Palikir",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Moğolistan",
+        "capitalName":  "Ulan Batur",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Moldova",
+        "capitalName":  "Kişinev",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Monako",
+        "capitalName":  "Monako",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Moritanya",
+        "capitalName":  "Nuakşot",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Mozambik",
+        "capitalName":  "Maputo",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Myanmar",
+        "capitalName":  "Naypyidaw",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Namibya",
+        "capitalName":  "Windhoek",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Nauru",
+        "capitalName":  "Yaren",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Nepal",
+        "capitalName":  "Katmandu",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Nikaragua",
+        "capitalName":  "Managua",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Nijer",
+        "capitalName":  "Niamey",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Nijerya",
+        "capitalName":  "Abuja",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Norveç",
+        "capitalName":  "Oslo",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Orta Afrika Cumhuriyeti",
+        "capitalName":  "Bangui",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Özbekistan",
+        "capitalName":  "Taşkent",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Pakistan",
+        "capitalName":  "İslamabad",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Palau",
+        "capitalName":  "Ngerulmud",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Panama",
+        "capitalName":  "Panama",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Papua Yeni Gine",
+        "capitalName":  "Port Moresby",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Paraguay",
+        "capitalName":  "Asunción",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Peru",
+        "capitalName":  "Lima",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Polonya",
+        "capitalName":  "Varşova",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Portekiz",
+        "capitalName":  "Lizbon",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Romanya",
+        "capitalName":  "Bükreş",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Ruanda",
+        "capitalName":  "Kigali",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Rusya",
+        "capitalName":  "Moskova",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Saint Kitts ve Nevis",
+        "capitalName":  "Basseterre",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Saint Lucia",
+        "capitalName":  "Castries",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Saint Vincent ve Grenadinler",
+        "capitalName":  "Kingstown",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Samoa",
+        "capitalName":  "Apia",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "San Marino",
+        "capitalName":  "San Marino",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Sao Tome ve Principe",
+        "capitalName":  "São Tomé",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Senegal",
+        "capitalName":  "Dakar",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Seyşeller",
+        "capitalName":  "Victoria",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Sırbistan",
+        "capitalName":  "Belgrad",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Sierra Leone",
+        "capitalName":  "Freetown",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Singapur",
+        "capitalName":  "Singapur",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Slovakya",
+        "capitalName":  "Bratislava",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Slovenya",
+        "capitalName":  "Ljubljana",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Solomon Adaları",
+        "capitalName":  "Honiara",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Somali",
+        "capitalName":  "Mogadişu",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Sri Lanka",
+        "capitalName":  "Sri Jayawardenepura Kotte",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Sudan",
+        "capitalName":  "Hartum",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Surinam",
+        "capitalName":  "Paramaribo",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Suriye",
+        "capitalName":  "Şam",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Suudi Arabistan",
+        "capitalName":  "Riyad",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Şili",
+        "capitalName":  "Santiago",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Tacikistan",
+        "capitalName":  "Duşanbe",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Tanzanya",
+        "capitalName":  "Dodoma",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Tayland",
+        "capitalName":  "Bangkok",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Togo",
+        "capitalName":  "Lomé",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Tonga",
+        "capitalName":  "Nukuʻalofa",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Trinidad ve Tobago",
+        "capitalName":  "Port of Spain",
+        "continent":  "Kuzey Amerika"
+    },
+    {
+        "countryName":  "Tunus",
+        "capitalName":  "Tunus",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Tuvalu",
+        "capitalName":  "Funafuti",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Türkiye",
+        "capitalName":  "Ankara",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Türkmenistan",
+        "capitalName":  "Aşkabat",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Uganda",
+        "capitalName":  "Kampala",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Ukrayna",
+        "capitalName":  "Kiev",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Umman",
+        "capitalName":  "Maskat",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Uruguay",
+        "capitalName":  "Montevideo",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Ürdün",
+        "capitalName":  "Amman",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Vanuatu",
+        "capitalName":  "Port Vila",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Vatikan",
+        "capitalName":  "Vatikan",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Venezuela",
+        "capitalName":  "Karakas",
+        "continent":  "Güney Amerika"
+    },
+    {
+        "countryName":  "Vietnam",
+        "capitalName":  "Hanoi",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Yemen",
+        "capitalName":  "San\u0027a",
+        "continent":  "Asya"
+    },
+    {
+        "countryName":  "Yeni Zelanda",
+        "capitalName":  "Wellington",
+        "continent":  "Okyanusya"
+    },
+    {
+        "countryName":  "Yeşil Burun Adaları",
+        "capitalName":  "Praia",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Yunanistan",
+        "capitalName":  "Atina",
+        "continent":  "Avrupa"
+    },
+    {
+        "countryName":  "Zambiya",
+        "capitalName":  "Lusaka",
+        "continent":  "Afrika"
+    },
+    {
+        "countryName":  "Zimbabve",
+        "capitalName":  "Harare",
+        "continent":  "Afrika"
+    }
+]
