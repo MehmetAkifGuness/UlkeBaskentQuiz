@@ -13,17 +13,43 @@ class CountryMatchService {
   CountryMatchService({required this.availableCountries});
 
   static final Map<String, String> _aliasMap = <String, String>{
-    'turkey': 'türkiye',
-    'turkiye': 'türkiye',
-    'united states of america': 'united states',
-    'usa': 'united states',
-    'russia': 'russia',
-    'czechia': 'czech republic',
-    'south korea': 'south korea',
-    'north korea': 'north korea',
-    'ivory coast': "cote d ivoire",
-    'democratic republic of the congo': 'dr congo',
-    'republic of the congo': 'congo',
+    // TR / EN varyasyonlar
+    'turkey': 'turkiye',
+    'turkiye': 'turkiye',
+
+    // Sık görülen ülke isim varyasyonları (harita adı -> sözlükteki ad)
+    'cyprus': 'kibris cumhuriyeti',
+    'palestine': 'filistin',
+    'east timor': 'dogu timor',
+    'cabo verde': 'yesil burun adalari',
+
+    // EN isimleri Türkçe sözlüğe bağla (ISO yoksa fallback)
+    'united states': 'amerika birlesik devletleri',
+    'united states of america': 'amerika birlesik devletleri',
+    'usa': 'amerika birlesik devletleri',
+    'russia': 'rusya',
+    'russian federation': 'rusya',
+
+    'czechia': 'cekya',
+    'czech republic': 'cekya',
+
+    'south korea': 'guney kore',
+    'korea republic of': 'guney kore',
+    'north korea': 'kuzey kore',
+    'korea democratic people s republic of': 'kuzey kore',
+
+    'ivory coast': 'fildisi sahili',
+    "cote d ivoire": 'fildisi sahili',
+    "cote d’ivoire": 'fildisi sahili',
+
+    'democratic republic of the congo': 'kongo demokratik cumhuriyeti',
+    'dr congo': 'kongo demokratik cumhuriyeti',
+    'republic of the congo': 'kongo cumhuriyeti',
+    'congo': 'kongo cumhuriyeti',
+
+    // -99 ISO ile gelen bazı isimler için (harita parçalı gelebiliyor)
+    'france': 'fransa',
+    'norway': 'norvec',
   };
 
   /// Harita/veri eşleştirmesinde kullanılacak normalize metodu.

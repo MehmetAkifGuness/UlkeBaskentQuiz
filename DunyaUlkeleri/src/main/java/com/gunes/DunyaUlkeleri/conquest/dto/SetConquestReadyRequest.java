@@ -7,15 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConquestPlayerDto {
+public class SetConquestReadyRequest {
+    private String sessionId;
     private String playerId;
-    private String username;
-    private String colorHex;
-    private String type;
-    private int score;
-    private int conqueredCount;
-    private int remainingLives;
-    private boolean connected;
     private boolean ready;
 }
 

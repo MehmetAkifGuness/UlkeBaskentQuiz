@@ -87,4 +87,30 @@ class ConquestApiService {
       throw Exception("İnternet bağlantınız koptu.");
     }
   }
+
+  Future<CreateConquestSessionResponse> quickMatch(
+    CreateConquestSessionRequest request,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/quick-match'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        return CreateConquestSessionResponse.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)),
+        );
+      }
+
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. İnternetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
+    }
+  }
 }

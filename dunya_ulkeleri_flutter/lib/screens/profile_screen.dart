@@ -373,10 +373,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.of(context).maybePop();
                   },
                   onSettings: () {
-                    if (widget.onNavigateTab != null) {
-                      _goToTab(4);
-                      return;
-                    }
+                    Provider.of<SettingsProvider>(
+                      context,
+                      listen: false,
+                    ).triggerButtonVibration();
                     Navigator.push(
                       context,
                       FadePageRoute(page: const SetupScreen()),

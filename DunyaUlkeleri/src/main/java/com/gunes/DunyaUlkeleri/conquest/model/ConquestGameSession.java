@@ -14,6 +14,8 @@ public class ConquestGameSession {
     private String roomCode;
     private ConquestGameStatus status;
     private String selectedContinentFilter;
+    private String hostPlayerId;
+    private boolean quickMatch;
 
     private List<ConquestPlayer> players = new ArrayList<>();
 
@@ -68,7 +70,7 @@ public class ConquestGameSession {
     }
 
     public boolean canStart() {
-        return status == ConquestGameStatus.WAITING && players.size() >= 1;
+        return status == ConquestGameStatus.WAITING && players.size() >= 2;
     }
 
     public boolean isFinished() {

@@ -42,6 +42,12 @@ class IsoCountryService {
     // Congos
     'kongo cumhuriyeti': 'CG',
     'kongo demokratik cumhuriyeti': 'CD',
+    // Palestine
+    'filistin': 'PS',
+    // Bhutan (i18n datasında "Butan" geçiyor)
+    'bhutan': 'BT',
+    // Lesotho (i18n datasında "Lesoto" geçiyor)
+    'lesotho': 'LS',
   };
 
   /// Dosyaları asset'ten okur ve map'leri hazırlar.

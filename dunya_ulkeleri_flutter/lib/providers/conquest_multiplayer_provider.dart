@@ -1,4 +1,6 @@
 // lib/providers/conquest_multiplayer_provider.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/conquest_session_dto.dart';
@@ -26,6 +28,8 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   Color playerColor = Colors.blue;
 
   ConquestSessionState? sessionState;
+
+  bool isQuickMatchMode = false;
 
   // TODO: Oda sahibi / host yetkisi eklenecek.
   // TODO: Oyuncu disconnect/reconnect gelişmiş yönetilecek.
@@ -74,6 +78,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
       playerId = response.playerId;
       playerName = username;
       playerColor = color;
+      isQuickMatchMode = false;
 
       notifyListeners();
       return true;
@@ -107,6 +112,44 @@ class ConquestMultiplayerProvider with ChangeNotifier {
       playerId = response.playerId;
       playerName = username;
       playerColor = color;
+      isQuickMatchMode = false;
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMessage = errorMessageFrom(e);
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> quickMatch({
+    required String username,
+    required Color color,
+    required String continentFilter,
+  }) async {
+    if (isLoading) return false;
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.quickMatch(
+        CreateConquestSessionRequest(
+          username: username,
+          colorHex: colorToHex(color),
+          continentFilter: continentFilter,
+        ),
+      );
+
+      sessionId = response.sessionId;
+      roomCode = response.roomCode;
+      playerId = response.playerId;
+      playerName = username;
+      playerColor = color;
+      isQuickMatchMode = true;
 
       notifyListeners();
       return true;
@@ -135,6 +178,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
       onState: (state) {
         sessionState = state;
         roomCode = state.roomCode ?? roomCode;
+        isQuickMatchMode = state.quickMatch;
         isConnected = true;
         notifyListeners();
       },
@@ -166,6 +210,20 @@ class ConquestMultiplayerProvider with ChangeNotifier {
 
     _wsService.startGame(
       StartConquestGameRequest(sessionId: sessionId!, playerId: playerId!),
+    );
+  }
+
+  void setReady(bool ready) {
+    final sid = sessionId;
+    final pid = playerId;
+    if (sid == null || pid == null) {
+      errorMessage = 'Hazır durumu için sessionId/playerId gerekli.';
+      notifyListeners();
+      return;
+    }
+
+    _wsService.setReady(
+      SetConquestReadyRequest(sessionId: sid, playerId: pid, ready: ready),
     );
   }
 
@@ -249,7 +307,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
         : null;
 
     if (matched == null || matched.isoCode.trim().isEmpty) {
-      errorMessage = 'Ülke eşleştirilemedi.';
+      errorMessage = 'Bu bölge oyun verilerinde yok.';
       notifyListeners();
       return;
     }
@@ -304,6 +362,16 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   }
 
   Future<void> leaveSession() async {
+    final sid = sessionId;
+    final pid = playerId;
+
+    if (sid != null && pid != null && _wsService.isConnected) {
+      _wsService.leaveSession(
+        StartConquestGameRequest(sessionId: sid, playerId: pid),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    }
+
     _wsService.disconnect();
     isConnected = false;
     isLoading = false;
@@ -314,8 +382,16 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     playerName = null;
     sessionState = null;
     errorMessage = null;
+    isQuickMatchMode = false;
 
     notifyListeners();
+  }
+
+  bool get isHost {
+    final hostId = (sessionState?.hostPlayerId ?? '').trim();
+    final pid = (playerId ?? '').trim();
+    if (hostId.isEmpty || pid.isEmpty) return false;
+    return hostId == pid;
   }
 
   void disconnect() {

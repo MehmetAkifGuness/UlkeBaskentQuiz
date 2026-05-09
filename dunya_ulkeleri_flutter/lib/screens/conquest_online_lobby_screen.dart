@@ -80,9 +80,14 @@ class _ConquestOnlineLobbyScreenState extends State<ConquestOnlineLobbyScreen> {
     _triggerHaptic();
     final players = provider.sessionState?.players ?? const <ConquestPlayerState>[];
     if (players.length < 2) {
-      _showSnackOnce(
-        'Test için tek oyuncuyla başlatılabilir. Gerçek oyun için en az 2 oyuncu önerilir.',
-      );
+      _showSnackOnce('Rakip bekleniyor. Oyun başlatmak için en az 2 oyuncu gerekli.');
+      return;
+    }
+
+    final allReady = players.isNotEmpty && players.every((p) => p.ready);
+    if (!allReady) {
+      _showSnackOnce('Oyunu başlatmak için iki oyuncu da hazır olmalı.');
+      return;
     }
     await provider.startOnlineGame();
   }
@@ -109,14 +114,26 @@ class _ConquestOnlineLobbyScreenState extends State<ConquestOnlineLobbyScreen> {
     }
 
     final state = provider.sessionState;
+    final isQuickMatch = state?.quickMatch ?? provider.isQuickMatchMode;
     final roomCode = (provider.roomCode ?? state?.roomCode ?? '').trim();
     final status = (state?.status ?? 'WAITING').toUpperCase();
     final players = state?.players ?? const <ConquestPlayerState>[];
+    final allReady = players.isNotEmpty && players.every((p) => p.ready);
+    final canToggleReady =
+        provider.isConnected && state != null && !isQuickMatch && status == 'WAITING';
+    final myId = (provider.playerId ?? '').trim();
+    final me = myId.isEmpty
+        ? null
+        : players.cast<ConquestPlayerState?>().firstWhere(
+              (p) => (p?.playerId ?? '').trim() == myId,
+              orElse: () => null,
+            );
+    final amIReady = me?.ready ?? false;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Online Lobi'),
+        title: Text(isQuickMatch ? 'Hızlı Oyun Lobisi' : 'Online Lobi'),
         actions: [
           IconButton(
             onPressed: _leave,
@@ -195,6 +212,26 @@ class _ConquestOnlineLobbyScreenState extends State<ConquestOnlineLobbyScreen> {
                       ),
                     ],
                   ),
+                  if (players.length < 2) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          isQuickMatch ? 'Rakip aranıyor...' : 'Rakip bekleniyor...',
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -231,34 +268,51 @@ class _ConquestOnlineLobbyScreenState extends State<ConquestOnlineLobbyScreen> {
                           ),
                       ],
                     ),
+                  if (canToggleReady) ...[
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => provider.setReady(!amIReady),
+                        icon: Icon(
+                          amIReady ? Icons.check_circle : Icons.hourglass_bottom,
+                          size: 18,
+                        ),
+                        label: Text(amIReady ? 'Hazırım' : 'Bekliyorum'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed:
-                    provider.isConnected && state != null ? () => _startGame(provider) : null,
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Oyunu Başlat'),
+            if (!isQuickMatch)
+              SizedBox(
+                width: double.infinity,
+                child: provider.isHost
+                    ? ElevatedButton.icon(
+                        onPressed: provider.isConnected &&
+                                state != null &&
+                                players.length >= 2 &&
+                                allReady
+                            ? () => _startGame(provider)
+                            : null,
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: const Text('Oyunu Başlat'),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.lock_outline),
+                        label: const Text('Oda sahibini bekle'),
+                      ),
               ),
-            ),
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _leave,
                 icon: const Icon(Icons.logout),
-                label: const Text('Ayrıl'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'TODO: Sadece oda sahibi oyunu başlatabilmeli.',
-              style: TextStyle(
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600,
+                label: Text(isQuickMatch ? 'Eşleşmeyi İptal Et' : 'Ayrıl'),
               ),
             ),
           ],
@@ -276,6 +330,7 @@ class _PlayerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = hexToColor(player.colorHex ?? '');
+    final ready = player.ready;
     return Row(
       children: [
         Container(
@@ -302,6 +357,12 @@ class _PlayerRow extends StatelessWidget {
             color: AppColors.textMuted,
             fontWeight: FontWeight.w700,
           ),
+        ),
+        const SizedBox(width: 8),
+        Icon(
+          ready ? Icons.check_circle : Icons.hourglass_bottom,
+          size: 18,
+          color: ready ? Colors.greenAccent : AppColors.textMuted,
         ),
         const SizedBox(width: 8),
         Icon(

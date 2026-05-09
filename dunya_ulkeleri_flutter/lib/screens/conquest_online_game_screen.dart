@@ -252,7 +252,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                         Expanded(
                           child: Text(p.username ?? 'Oyuncu'),
                         ),
-                        Text('Skor: ${p.score}'),
+                        Text('Skor: ${p.score} • Can: ${p.remainingLives}'),
                       ],
                     ),
                   ),
@@ -541,6 +541,12 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                                 return;
                               }
 
+                              final key = shapeKeys[effectiveIndex];
+                              if (key == null) {
+                                _showSnackOnce('Bu bölge maç kapsamında değil.');
+                                return;
+                              }
+
                               final tapped = mapCountries[effectiveIndex];
                               final props = tapped.extra ?? const <String, dynamic>{};
                               await provider.submitOnlineAnswerFromMapProperties(
@@ -579,6 +585,7 @@ class _ScoreChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final String name = (player.username ?? 'Oyuncu').toString();
     final int score = player.score;
+    final int lives = player.remainingLives;
     final String colorHex = (player.colorHex ?? '').toString();
 
     return GlassCard(
@@ -610,6 +617,16 @@ class _ScoreChip extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
+          const SizedBox(width: 10),
+          for (int i = 0; i < 3; i++)
+            Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: Icon(
+                i < lives ? Icons.favorite : Icons.favorite_border,
+                size: 14,
+                color: AppColors.errorRed.withValues(alpha: i < lives ? 0.95 : 0.32),
+              ),
+            ),
         ],
       ),
     );

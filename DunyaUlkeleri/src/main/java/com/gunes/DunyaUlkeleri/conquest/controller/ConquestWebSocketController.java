@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 
 import com.gunes.DunyaUlkeleri.conquest.dto.ConquestErrorDto;
 import com.gunes.DunyaUlkeleri.conquest.dto.ConquestSessionStateDto;
+import com.gunes.DunyaUlkeleri.conquest.dto.SetConquestReadyRequest;
 import com.gunes.DunyaUlkeleri.conquest.dto.StartConquestGameRequest;
 import com.gunes.DunyaUlkeleri.conquest.dto.SubmitConquestAnswerRequest;
 import com.gunes.DunyaUlkeleri.conquest.service.ConquestGameService;
@@ -56,6 +57,30 @@ public class ConquestWebSocketController {
         } catch (Exception e) {
             log.warn("Conquest state request failed: sessionId={}, error={}", sessionId, e.getMessage());
             publishError(sessionId, "STATE_FAILED", e.getMessage());
+        }
+    }
+
+    @MessageMapping("/conquest.ready")
+    public void setReady(SetConquestReadyRequest request) {
+        final String sessionId = request == null ? null : request.getSessionId();
+        try {
+            ConquestSessionStateDto state = conquestGameService.setReady(request);
+            publishState(state);
+        } catch (Exception e) {
+            log.warn("Conquest ready failed: sessionId={}, error={}", sessionId, e.getMessage());
+            publishError(sessionId, "READY_FAILED", e.getMessage());
+        }
+    }
+
+    @MessageMapping("/conquest.leave")
+    public void leave(StartConquestGameRequest request) {
+        final String sessionId = request == null ? null : request.getSessionId();
+        try {
+            ConquestSessionStateDto state = conquestGameService.leaveSession(request);
+            publishState(state);
+        } catch (Exception e) {
+            log.warn("Conquest leave failed: sessionId={}, error={}", sessionId, e.getMessage());
+            publishError(sessionId, "LEAVE_FAILED", e.getMessage());
         }
     }
 

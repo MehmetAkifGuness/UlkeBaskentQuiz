@@ -120,6 +120,34 @@ class _ConquestOnlineEntryScreenState extends State<ConquestOnlineEntryScreen> {
     );
   }
 
+  Future<void> _quickGame() async {
+    _triggerHaptic();
+    final username = _createUsernameController.text.trim();
+    if (username.isEmpty) {
+      _showSnackOnce('Kullanıcı adı boş olamaz.');
+      return;
+    }
+
+    final provider = context.read<ConquestMultiplayerProvider>();
+    final ok = await provider.quickMatch(
+      username: username,
+      color: _selectedCreateColor,
+      continentFilter: _selectedContinent,
+    );
+    if (!ok) {
+      _showSnackOnce(provider.errorMessage ?? 'Hızlı oyun başlatılamadı.');
+      provider.clearError();
+      return;
+    }
+
+    await provider.connectToCurrentSession();
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      FadePageRoute(page: const ConquestOnlineLobbyScreen()),
+    );
+  }
+
   Future<void> _joinRoom() async {
     _triggerHaptic();
     final username = _joinUsernameController.text.trim();
@@ -233,6 +261,47 @@ class _ConquestOnlineEntryScreenState extends State<ConquestOnlineEntryScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
           physics: const BouncingScrollPhysics(),
           children: [
+            GlassCard(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hızlı Oyun',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Sırada bekleyen oyuncularla otomatik 1’e 1 eşleş. Rakip bulununca maç başlar.',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: isBusy ? null : _quickGame,
+                      icon: const Icon(Icons.flash_on_rounded),
+                      label: isBusy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Hızlı Oyun Bul'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             GlassCard(
               padding: const EdgeInsets.all(14),
               child: Column(

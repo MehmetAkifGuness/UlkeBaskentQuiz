@@ -7,7 +7,7 @@ import 'dashboard_screen.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 import 'leaderboard_screen.dart';
-import 'setup_screen.dart';
+import 'world_map_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -32,9 +32,9 @@ class _MainScreenState extends State<MainScreen> {
         isActive: _currentIndex == 0,
       ),
       const HomeScreen(), // Oyun
+      const WorldMapScreen(), // Dünya Haritası
       const LeaderboardScreen(), // Sıralama
       ProfileScreen(onNavigateTab: _setTabIndex),
-      const SetupScreen(),
     ];
 
     return Scaffold(
@@ -44,9 +44,9 @@ class _MainScreenState extends State<MainScreen> {
         items: const [
           GeoNavItem(icon: Icons.home_rounded, label: 'Anasayfa'),
           GeoNavItem(icon: Icons.quiz, label: 'Oyun'),
+          GeoNavItem(icon: Icons.public_rounded, label: 'Harita'),
           GeoNavItem(icon: Icons.leaderboard_rounded, label: 'Sıralama'),
           GeoNavItem(icon: Icons.person_rounded, label: 'Profil'),
-          GeoNavItem(icon: Icons.settings_rounded, label: 'Ayarlar'),
         ],
         onChanged: (index) {
           Provider.of<SettingsProvider>(

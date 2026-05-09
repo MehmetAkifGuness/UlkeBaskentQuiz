@@ -100,6 +100,24 @@ class StartConquestGameRequest {
       };
 }
 
+class SetConquestReadyRequest {
+  final String sessionId;
+  final String playerId;
+  final bool ready;
+
+  SetConquestReadyRequest({
+    required this.sessionId,
+    required this.playerId,
+    required this.ready,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'sessionId': sessionId,
+        'playerId': playerId,
+        'ready': ready,
+      };
+}
+
 class SubmitConquestAnswerRequest {
   final String sessionId;
   final String playerId;
@@ -128,7 +146,9 @@ class ConquestPlayerState {
   final String? type;
   final int score;
   final int conqueredCount;
+  final int remainingLives;
   final bool connected;
+  final bool ready;
 
   ConquestPlayerState({
     required this.playerId,
@@ -137,7 +157,9 @@ class ConquestPlayerState {
     required this.type,
     required this.score,
     required this.conqueredCount,
+    required this.remainingLives,
     required this.connected,
+    required this.ready,
   });
 
   factory ConquestPlayerState.fromJson(Map<String, dynamic> json) {
@@ -148,7 +170,9 @@ class ConquestPlayerState {
       type: json['type']?.toString(),
       score: ((json['score'] ?? 0) as num).toInt(),
       conqueredCount: ((json['conqueredCount'] ?? 0) as num).toInt(),
+      remainingLives: ((json['remainingLives'] ?? 3) as num).toInt(),
       connected: (json['connected'] ?? false) as bool,
+      ready: (json['ready'] ?? false) as bool,
     );
   }
 
@@ -159,7 +183,9 @@ class ConquestPlayerState {
         'type': type,
         'score': score,
         'conqueredCount': conqueredCount,
+        'remainingLives': remainingLives,
         'connected': connected,
+        'ready': ready,
       };
 }
 
@@ -214,6 +240,8 @@ class ConquestSessionState {
   final String? roomCode;
   final String? status;
   final String? selectedContinentFilter;
+  final String? hostPlayerId;
+  final bool quickMatch;
   final List<ConquestPlayerState> players;
   final Map<String, String> conqueredCountryColors;
   final ConquestRoundState? currentRound;
@@ -227,6 +255,8 @@ class ConquestSessionState {
     required this.roomCode,
     required this.status,
     required this.selectedContinentFilter,
+    required this.hostPlayerId,
+    required this.quickMatch,
     required this.players,
     required this.conqueredCountryColors,
     required this.currentRound,
@@ -252,6 +282,8 @@ class ConquestSessionState {
       roomCode: json['roomCode']?.toString(),
       status: json['status']?.toString(),
       selectedContinentFilter: json['selectedContinentFilter']?.toString(),
+      hostPlayerId: json['hostPlayerId']?.toString(),
+      quickMatch: (json['quickMatch'] ?? false) as bool,
       players: playersJson
           .whereType<Map>()
           .map((item) => ConquestPlayerState.fromJson(
@@ -276,6 +308,8 @@ class ConquestSessionState {
         'roomCode': roomCode,
         'status': status,
         'selectedContinentFilter': selectedContinentFilter,
+        'hostPlayerId': hostPlayerId,
+        'quickMatch': quickMatch,
         'players': players.map((e) => e.toJson()).toList(),
         'conqueredCountryColors': conqueredCountryColors,
         'currentRound': currentRound?.toJson(),

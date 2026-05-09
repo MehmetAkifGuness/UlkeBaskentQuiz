@@ -25,6 +25,7 @@ import com.gunes.DunyaUlkeleri.conquest.dto.CreateConquestSessionRequest;
 import com.gunes.DunyaUlkeleri.conquest.dto.CreateConquestSessionResponse;
 import com.gunes.DunyaUlkeleri.conquest.dto.JoinConquestSessionRequest;
 import com.gunes.DunyaUlkeleri.conquest.dto.JoinConquestSessionResponse;
+import com.gunes.DunyaUlkeleri.conquest.dto.SetConquestReadyRequest;
 import com.gunes.DunyaUlkeleri.conquest.dto.StartConquestGameRequest;
 import com.gunes.DunyaUlkeleri.conquest.dto.SubmitConquestAnswerRequest;
 import com.gunes.DunyaUlkeleri.conquest.model.ConquestGameSession;
@@ -38,6 +39,7 @@ import com.gunes.DunyaUlkeleri.exception.AppException;
 public class ConquestGameService {
 
     private static final Logger log = LoggerFactory.getLogger(ConquestGameService.class);
+    private static final int INITIAL_LIVES = 3;
 
     // Şimdilik in-memory.
     // TODO: Session state Redis veya database üzerinde tutulacak.
@@ -46,6 +48,9 @@ public class ConquestGameService {
     // TODO: Skorlar kalıcı olarak kaydedilecek.
     private final Map<String, ConquestGameSession> sessionsById = new ConcurrentHashMap<>();
     private final Map<String, String> roomCodeToSessionId = new ConcurrentHashMap<>();
+
+    private final Object quickMatchLock = new Object();
+    private final Map<String, String> quickMatchWaitingByContinent = new ConcurrentHashMap<>();
 
     private final SecureRandom random = new SecureRandom();
 
@@ -63,6 +68,88 @@ public class ConquestGameService {
     );
 
     public CreateConquestSessionResponse createSession(CreateConquestSessionRequest request) {
+        return createSessionInternal(request, false);
+    }
+
+    public CreateConquestSessionResponse quickMatch(CreateConquestSessionRequest request) {
+        final String continentFilter = normalizeContinentFilter(request == null ? null : request.getContinentFilter());
+        if (continentFilter == null || continentFilter.isBlank()) {
+            throw AppException.badRequest("CONTINENT_REQUIRED", "Kıta filtresi boş olamaz.");
+        }
+
+        synchronized (quickMatchLock) {
+            final String waitingSessionId = quickMatchWaitingByContinent.get(continentFilter);
+            if (waitingSessionId != null) {
+                final ConquestGameSession waiting = sessionsById.get(waitingSessionId);
+                if (waiting == null
+                        || waiting.getStatus() != ConquestGameStatus.WAITING
+                        || !waiting.isQuickMatch()
+                        || waiting.getPlayers() == null
+                        || waiting.getPlayers().size() != 1) {
+                    quickMatchWaitingByContinent.remove(continentFilter, waitingSessionId);
+                } else {
+                    final String username = safeTrim(request == null ? null : request.getUsername());
+                    final String colorHex = safeTrim(request == null ? null : request.getColorHex());
+                    if (username == null || username.isBlank()) {
+                        throw AppException.badRequest("USERNAME_REQUIRED", "Kullanıcı adı boş olamaz.");
+                    }
+                    if (colorHex == null || colorHex.isBlank()) {
+                        throw AppException.badRequest("COLOR_REQUIRED", "Renk bilgisi (colorHex) boş olamaz.");
+                    }
+
+                    final String playerId = UUID.randomUUID().toString();
+                    final ConquestPlayer player = new ConquestPlayer(
+                            playerId,
+                            username,
+                            colorHex,
+                            ConquestPlayerType.HUMAN,
+                            0,
+                            0,
+                            INITIAL_LIVES,
+                            true,
+                            true
+                    );
+
+                    synchronized (waiting) {
+                        if (waiting.getStatus() != ConquestGameStatus.WAITING || waiting.getPlayers().size() >= 2) {
+                            quickMatchWaitingByContinent.remove(continentFilter, waitingSessionId);
+                            throw AppException.conflict("QUICK_MATCH_EXPIRED", "Eşleşme bulunamadı. Lütfen tekrar deneyin.");
+                        }
+
+                        waiting.addPlayer(player);
+                        waiting.setStatus(ConquestGameStatus.STARTED);
+
+                        Optional.ofNullable(waiting.getPlayers())
+                                .orElseGet(List::of)
+                                .stream()
+                                .filter(Objects::nonNull)
+                                .forEach(p -> {
+                                    p.setReady(true);
+                                    p.setRemainingLives(INITIAL_LIVES);
+                                });
+
+                        pickNextTargetCountry(waiting, null);
+                        waiting.touch();
+                    }
+
+                    quickMatchWaitingByContinent.remove(continentFilter, waitingSessionId);
+
+                    log.info("Quick match paired: sessionId={}, roomCode={}, playerId={}", waiting.getSessionId(), waiting.getRoomCode(), playerId);
+                    return new CreateConquestSessionResponse(waiting.getSessionId(), waiting.getRoomCode(), playerId);
+                }
+            }
+
+            final CreateConquestSessionResponse created = createSessionInternal(request, true);
+            quickMatchWaitingByContinent.put(continentFilter, created.getSessionId());
+            log.info("Quick match enqueued: sessionId={}, roomCode={}, playerId={}", created.getSessionId(), created.getRoomCode(), created.getPlayerId());
+            return created;
+        }
+    }
+
+    private CreateConquestSessionResponse createSessionInternal(
+            CreateConquestSessionRequest request,
+            boolean quickMatch
+    ) {
         final String username = safeTrim(request == null ? null : request.getUsername());
         final String colorHex = safeTrim(request == null ? null : request.getColorHex());
         final String continentFilter = normalizeContinentFilter(request == null ? null : request.getContinentFilter());
@@ -72,6 +159,9 @@ public class ConquestGameService {
         }
         if (colorHex == null || colorHex.isBlank()) {
             throw AppException.badRequest("COLOR_REQUIRED", "Renk bilgisi (colorHex) boş olamaz.");
+        }
+        if (continentFilter == null || continentFilter.isBlank()) {
+            throw AppException.badRequest("CONTINENT_REQUIRED", "Kıta filtresi boş olamaz.");
         }
 
         final String sessionId = UUID.randomUUID().toString();
@@ -99,7 +189,9 @@ public class ConquestGameService {
                 ConquestPlayerType.HUMAN,
                 0,
                 0,
-                true
+                INITIAL_LIVES,
+                true,
+                quickMatch
         );
 
         final ConquestGameSession session = new ConquestGameSession();
@@ -107,6 +199,8 @@ public class ConquestGameService {
         session.setRoomCode(roomCode);
         session.setStatus(ConquestGameStatus.WAITING);
         session.setSelectedContinentFilter(continentFilter);
+        session.setHostPlayerId(playerId);
+        session.setQuickMatch(quickMatch);
         session.setCreatedAt(Instant.now());
         session.setUpdatedAt(session.getCreatedAt());
 
@@ -118,7 +212,13 @@ public class ConquestGameService {
         sessionsById.put(sessionId, session);
         roomCodeToSessionId.put(roomCode, sessionId);
 
-        log.info("Conquest session created: sessionId={}, roomCode={}, playerId={}", sessionId, roomCode, playerId);
+        log.info(
+                "Conquest session created: sessionId={}, roomCode={}, playerId={}, quickMatch={}",
+                sessionId,
+                roomCode,
+                playerId,
+                quickMatch
+        );
 
         return new CreateConquestSessionResponse(sessionId, roomCode, playerId);
     }
@@ -148,10 +248,19 @@ public class ConquestGameService {
                 ConquestPlayerType.HUMAN,
                 0,
                 0,
-                true
+                INITIAL_LIVES,
+                true,
+                false
         );
 
         synchronized (session) {
+            if (session.getStatus() == ConquestGameStatus.FINISHED) {
+                throw AppException.conflict("ROOM_FINISHED", "Oda kapandı. Lütfen yeni bir oda oluşturun.");
+            }
+            final int currentSize = Optional.ofNullable(session.getPlayers()).orElseGet(List::of).size();
+            if (currentSize >= 2) {
+                throw AppException.conflict("ROOM_FULL", "Oda dolu.");
+            }
             session.addPlayer(player);
             session.touch();
         }
@@ -164,6 +273,9 @@ public class ConquestGameService {
     public ConquestSessionStateDto startGame(StartConquestGameRequest request) {
         final String sessionId = safeTrim(request == null ? null : request.getSessionId());
         final String playerId = safeTrim(request == null ? null : request.getPlayerId());
+        if (playerId == null || playerId.isBlank()) {
+            throw AppException.badRequest("PLAYER_ID_REQUIRED", "playerId boş olamaz.");
+        }
 
         final ConquestGameSession session = findSessionById(sessionId);
 
@@ -172,21 +284,105 @@ public class ConquestGameService {
                 return toStateDto(session, "Oyun zaten bitti.", null, true);
             }
             if (!session.canStart() && session.getStatus() != ConquestGameStatus.STARTED) {
-                throw AppException.conflict("GAME_NOT_STARTABLE", "Oyun şu anda başlatılamıyor.");
+                throw AppException.conflict("GAME_NOT_STARTABLE", "Rakip bekleniyor. Oyun başlatmak için en az 2 oyuncu gerekli.");
             }
 
             if (playerId != null && session.getPlayer(playerId) == null) {
                 throw AppException.notFound("PLAYER_NOT_FOUND", "Oyuncu bulunamadı.");
             }
 
+            final String hostId = safeTrim(session.getHostPlayerId());
+            if (hostId != null && !hostId.isBlank() && !hostId.equals(playerId)) {
+                throw AppException.forbidden("HOST_ONLY", "Sadece oda sahibi oyunu başlatabilir.");
+            }
+
+            final boolean allReady = Optional.ofNullable(session.getPlayers())
+                    .orElseGet(List::of)
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .allMatch(ConquestPlayer::isReady);
+            if (!session.isQuickMatch() && !allReady) {
+                throw AppException.conflict("PLAYERS_NOT_READY", "Oyunu başlatmak için tüm oyuncular hazır olmalı.");
+            }
+
             if (session.getStatus() != ConquestGameStatus.STARTED) {
                 session.setStatus(ConquestGameStatus.STARTED);
+
+                // Yeni maç başlangıcı: herkes 3 can ile başlar.
+                Optional.ofNullable(session.getPlayers())
+                        .orElseGet(List::of)
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .forEach(p -> p.setRemainingLives(INITIAL_LIVES));
+
                 pickNextTargetCountry(session, null);
                 session.touch();
                 log.info("Game started: sessionId={}, roomCode={}", session.getSessionId(), session.getRoomCode());
             }
 
             return toStateDto(session, "Oyun başladı.", null, session.getCurrentRound() != null && session.getCurrentRound().isLocked());
+        }
+    }
+
+    public ConquestSessionStateDto setReady(SetConquestReadyRequest request) {
+        final String sessionId = safeTrim(request == null ? null : request.getSessionId());
+        final String playerId = safeTrim(request == null ? null : request.getPlayerId());
+        final boolean ready = request != null && request.isReady();
+
+        if (playerId == null || playerId.isBlank()) {
+            throw AppException.badRequest("PLAYER_ID_REQUIRED", "playerId boş olamaz.");
+        }
+
+        final ConquestGameSession session = findSessionById(sessionId);
+        synchronized (session) {
+            final ConquestPlayer player = session.getPlayer(playerId);
+            if (player == null) {
+                throw AppException.notFound("PLAYER_NOT_FOUND", "Oyuncu bulunamadı.");
+            }
+            player.setReady(ready);
+            session.touch();
+            return toStateDto(session, ready ? "Hazırım." : "Bekliyorum.", null, false);
+        }
+    }
+
+    public ConquestSessionStateDto leaveSession(StartConquestGameRequest request) {
+        final String sessionId = safeTrim(request == null ? null : request.getSessionId());
+        final String playerId = safeTrim(request == null ? null : request.getPlayerId());
+        if (playerId == null || playerId.isBlank()) {
+            throw AppException.badRequest("PLAYER_ID_REQUIRED", "playerId boş olamaz.");
+        }
+
+        final ConquestGameSession session = findSessionById(sessionId);
+        synchronized (session) {
+            session.removePlayer(playerId);
+
+            if (session.getPlayers() == null || session.getPlayers().isEmpty()) {
+                sessionsById.remove(session.getSessionId());
+                if (session.getRoomCode() != null) {
+                    roomCodeToSessionId.remove(session.getRoomCode().toUpperCase(Locale.ROOT));
+                }
+                if (session.isQuickMatch()) {
+                    quickMatchWaitingByContinent.remove(
+                            normalizeContinentFilter(session.getSelectedContinentFilter()),
+                            session.getSessionId()
+                    );
+                }
+                log.info("Session removed (empty): sessionId={}, roomCode={}", session.getSessionId(), session.getRoomCode());
+                return null;
+            }
+
+            if (session.getStatus() == ConquestGameStatus.STARTED) {
+                session.setStatus(ConquestGameStatus.FINISHED);
+            }
+
+            Optional.ofNullable(session.getPlayers())
+                    .orElseGet(List::of)
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .forEach(p -> p.setReady(false));
+
+            session.touch();
+            return toStateDto(session, "Oyuncu ayrıldı.", null, false);
         }
     }
 
@@ -198,6 +394,12 @@ public class ConquestGameService {
         final ConquestGameSession session = findSessionById(sessionId);
 
         synchronized (session) {
+            if (session.getStatus() == ConquestGameStatus.FINISHED) {
+                final String winnerId = session.getCurrentRound() == null
+                        ? null
+                        : session.getCurrentRound().getWinnerPlayerId();
+                return toStateDto(session, "Oyun bitti.", winnerId, true);
+            }
             if (session.getStatus() != ConquestGameStatus.STARTED) {
                 return toStateDto(session, "Oyun henüz başlamadı.", null, true);
             }
@@ -216,6 +418,14 @@ public class ConquestGameService {
             final ConquestPlayer player = session.getPlayer(playerId);
             if (player == null) {
                 throw AppException.notFound("PLAYER_NOT_FOUND", "Oyuncu bulunamadı.");
+            }
+
+            if (player.getRemainingLives() <= 0) {
+                if (areAllPlayersOutOfLives(session)) {
+                    pickNextTargetCountry(session, null);
+                    return toStateDto(session, "İki tarafın da canı bitti. Ülke atlandı.", null, false);
+                }
+                return toStateDto(session, "Bu tur için canın bitti.", null, false);
             }
 
             if (selectedIsoCode == null || selectedIsoCode.isBlank()) {
@@ -240,9 +450,22 @@ public class ConquestGameService {
                 return toStateDto(session, "Round kazanıldı.", player.getPlayerId(), false);
             }
 
-            // Yanlış cevap: state bozulmaz.
-            log.info("Wrong answer: sessionId={}, playerId={}, selectedIso={}", session.getSessionId(), playerId, normalizedSelectedIso);
-            return toStateDto(session, "Yanlış cevap.", null, false);
+            // Yanlış cevap: 1 can azalt.
+            player.setRemainingLives(Math.max(0, player.getRemainingLives() - 1));
+            session.touch();
+
+            log.info("Wrong answer: sessionId={}, playerId={}, selectedIso={}, remainingLives={}",
+                    session.getSessionId(),
+                    playerId,
+                    normalizedSelectedIso,
+                    player.getRemainingLives());
+
+            if (areAllPlayersOutOfLives(session)) {
+                pickNextTargetCountry(session, null);
+                return toStateDto(session, "İki tarafın da canı bitti. Ülke atlandı.", null, false);
+            }
+
+            return toStateDto(session, "Yanlış cevap (-1 can).", null, false);
         }
     }
 
@@ -272,7 +495,7 @@ public class ConquestGameService {
         }
         final String sessionId = roomCodeToSessionId.get(normalizedRoomCode.toUpperCase(Locale.ROOT));
         if (sessionId == null) {
-            throw AppException.notFound("ROOM_NOT_FOUND", "Oda bulunamadı: " + normalizedRoomCode);
+            throw AppException.notFound("ROOM_NOT_FOUND", "Oda bulunamadı.");
         }
         return findSessionById(sessionId);
     }
@@ -331,6 +554,16 @@ public class ConquestGameService {
                 .toList();
     }
 
+    private boolean areAllPlayersOutOfLives(ConquestGameSession session) {
+        final List<ConquestPlayer> players = Optional.ofNullable(session.getPlayers())
+                .orElseGet(List::of)
+                .stream()
+                .filter(Objects::nonNull)
+                .toList();
+        if (players.isEmpty()) return false;
+        return players.stream().allMatch(p -> p.getRemainingLives() <= 0);
+    }
+
     private void pickNextTargetCountry(ConquestGameSession session, String lastWinnerPlayerId) {
         final List<String> remaining = session.getPlayableIsoCodes().stream()
                 .filter(Objects::nonNull)
@@ -346,6 +579,12 @@ public class ConquestGameService {
             session.touch();
             return;
         }
+
+        Optional.ofNullable(session.getPlayers())
+                .orElseGet(List::of)
+                .stream()
+                .filter(Objects::nonNull)
+                .forEach(p -> p.setRemainingLives(INITIAL_LIVES));
 
         final String nextIso = remaining.get(random.nextInt(remaining.size()));
         final PlayableCountry meta = FALLBACK_PLAYABLE_COUNTRIES.stream()
@@ -409,7 +648,9 @@ public class ConquestGameService {
                         p.getType() == null ? null : p.getType().name(),
                         p.getScore(),
                         p.getConqueredCount(),
-                        p.isConnected()
+                        p.getRemainingLives(),
+                        p.isConnected(),
+                        p.isReady()
                 ))
                 .toList();
 
@@ -430,6 +671,8 @@ public class ConquestGameService {
                 session.getRoomCode(),
                 session.getStatus() == null ? null : session.getStatus().name(),
                 session.getSelectedContinentFilter(),
+                session.getHostPlayerId(),
+                session.isQuickMatch(),
                 players,
                 session.getConqueredCountryColors(),
                 roundDto,

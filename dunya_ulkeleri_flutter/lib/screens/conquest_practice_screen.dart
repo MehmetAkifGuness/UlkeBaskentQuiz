@@ -332,6 +332,38 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.favorite,
+                          color: AppColors.errorRed,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Can: ${provider.remainingLives}',
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const Spacer(),
+                        for (int i = 0; i < 3; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 2),
+                            child: Icon(
+                              i < provider.remainingLives
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 18,
+                              color: AppColors.errorRed.withValues(
+                                alpha: i < provider.remainingLives ? 0.95 : 0.32,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -606,6 +638,12 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
 
                                 if (effectiveIndex < 0 ||
                                     effectiveIndex >= mapCountries.length) {
+                                  return;
+                                }
+
+                                final key = shapeKeys[effectiveIndex];
+                                if (key == null) {
+                                  _showSnackOnce('Bu bölge oyun kapsamında değil.');
                                   return;
                                 }
 

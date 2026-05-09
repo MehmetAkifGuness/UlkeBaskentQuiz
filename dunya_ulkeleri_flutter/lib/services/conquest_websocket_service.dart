@@ -132,5 +132,19 @@ class ConquestWebSocketService {
     );
   }
 
+  void setReady(SetConquestReadyRequest request) {
+    _client?.send(
+      destination: '/app/conquest.ready',
+      body: jsonEncode(request.toJson()),
+    );
+  }
+
+  void leaveSession(StartConquestGameRequest request) {
+    _client?.send(
+      destination: '/app/conquest.leave',
+      body: jsonEncode(request.toJson()),
+    );
+  }
+
   String? get connectedSessionId => _connectedSessionId;
 }

@@ -5,32 +5,42 @@
 enum BotDifficulty {
   easy(
     displayName: 'Kolay Bot',
-    minAnswerDelayMs: 4000,
-    maxAnswerDelayMs: 5500,
-    correctAnswerChance: 0.55,
+    minAnswerDelayMs: 4200,
+    maxAnswerDelayMs: 6200,
+    minRetryDelayMs: 5200,
+    maxRetryDelayMs: 8200,
+    correctAnswerChance: 0.30,
   ),
   medium(
     displayName: 'Orta Bot',
-    minAnswerDelayMs: 2500,
-    maxAnswerDelayMs: 4000,
-    correctAnswerChance: 0.75,
+    minAnswerDelayMs: 2400,
+    maxAnswerDelayMs: 3900,
+    minRetryDelayMs: 2700,
+    maxRetryDelayMs: 4300,
+    correctAnswerChance: 0.55,
   ),
   hard(
     displayName: 'Zor Bot',
     minAnswerDelayMs: 1000,
-    maxAnswerDelayMs: 2200,
-    correctAnswerChance: 0.90,
+    maxAnswerDelayMs: 2100,
+    minRetryDelayMs: 900,
+    maxRetryDelayMs: 1700,
+    correctAnswerChance: 0.75,
   );
 
   final String displayName;
   final int minAnswerDelayMs;
   final int maxAnswerDelayMs;
+  final int minRetryDelayMs;
+  final int maxRetryDelayMs;
   final double correctAnswerChance;
 
   const BotDifficulty({
     required this.displayName,
     required this.minAnswerDelayMs,
     required this.maxAnswerDelayMs,
+    required this.minRetryDelayMs,
+    required this.maxRetryDelayMs,
     required this.correctAnswerChance,
   });
 }

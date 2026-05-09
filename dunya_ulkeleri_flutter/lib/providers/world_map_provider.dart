@@ -143,7 +143,7 @@ class WorldMapProvider with ChangeNotifier {
     if (matched == null) {
       // UI'da uzun JSON göstermiyoruz; debug amaçlı gerektiğinde burada kullanılabilir.
       // debugPrint('Map properties (unmatched): $properties');
-      errorMessage = 'Bu ülke uygulama verileriyle eşleştirilemedi.';
+      errorMessage = 'Bu bölge sözlük verilerinde bulunamadı.';
       selectedCountry = null;
       notifyListeners();
       return;

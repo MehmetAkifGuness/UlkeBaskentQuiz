@@ -510,6 +510,7 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                               score: human?.score ?? provider.correctCount,
                               color: human?.color ?? _selectedPlayerColor,
                               conquered: human?.conqueredCount ?? 0,
+                              lives: human?.remainingLives ?? 3,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -519,6 +520,7 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                               score: bot?.score ?? 0,
                               color: bot?.color ?? _selectedBotColor,
                               conquered: bot?.conqueredCount ?? 0,
+                              lives: bot?.remainingLives ?? 3,
                             ),
                           ),
                         ],
@@ -710,6 +712,12 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                                   return;
                                 }
 
+                                final key = shapeKeys[effectiveIndex];
+                                if (key == null) {
+                                  _showSnackOnce('Bu bölge maç kapsamında değil.');
+                                  return;
+                                }
+
                                 final mapCountry = mapCountries[effectiveIndex];
                                 await provider.handleHumanCountryTap(
                                   mapCountry.extra ?? const <String, dynamic>{},
@@ -771,12 +779,14 @@ class _ScorePill extends StatelessWidget {
   final String title;
   final int score;
   final int conquered;
+  final int lives;
   final Color color;
 
   const _ScorePill({
     required this.title,
     required this.score,
     required this.conquered,
+    required this.lives,
     required this.color,
   });
 
@@ -812,6 +822,36 @@ class _ScorePill extends StatelessWidget {
               color: AppColors.textMuted,
               fontWeight: FontWeight.w700,
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(
+                Icons.favorite,
+                size: 16,
+                color: AppColors.errorRed,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Can: $lives',
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              for (int i = 0; i < 3; i++)
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(
+                    i < lives ? Icons.favorite : Icons.favorite_border,
+                    size: 16,
+                    color: AppColors.errorRed.withValues(
+                      alpha: i < lives ? 0.95 : 0.32,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

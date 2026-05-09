@@ -71,6 +71,7 @@ class ConquestProvider with ChangeNotifier {
   int correctCount = 0;
   int wrongCount = 0;
   int streak = 0;
+  int remainingLives = ConquestPlayer.initialLives;
 
   String selectedContinentFilter = 'ALL';
 
@@ -83,6 +84,7 @@ class ConquestProvider with ChangeNotifier {
   final Random _random = Random();
   final GameService _gameService = GameService();
   bool _disposed = false;
+  int _activeRoundToken = 0;
 
   // Tüm ülkeler (kıta filtresi değişince tekrar filtrelemek için).
   List<MapCountryModel> _allCountries = <MapCountryModel>[];
@@ -189,6 +191,7 @@ class ConquestProvider with ChangeNotifier {
     correctCount = 0;
     wrongCount = 0;
     streak = 0;
+    remainingLives = ConquestPlayer.initialLives;
     wrongFlashIsoCode = null;
     isWaitingForAnswer = false;
     roundWinner = null;
@@ -198,8 +201,10 @@ class ConquestProvider with ChangeNotifier {
     // VS Bot maçında oyuncu skorlarını da sıfırla (konfigürasyon kalsın).
     humanPlayer?.score = 0;
     humanPlayer?.conqueredCount = 0;
+    humanPlayer?.remainingLives = ConquestPlayer.initialLives;
     botPlayer?.score = 0;
     botPlayer?.conqueredCount = 0;
+    botPlayer?.remainingLives = ConquestPlayer.initialLives;
 
     // Oyun aktifse yeni hedef seç.
     if (isGameActive) {
@@ -285,30 +290,52 @@ class ConquestProvider with ChangeNotifier {
     botTimer = null;
   }
 
-  void scheduleBotAnswer() {
+  bool _areBothVsBotPlayersOutOfLives() {
+    final humanLives = humanPlayer?.remainingLives ?? 0;
+    final botLives = botPlayer?.remainingLives ?? 0;
+    return humanLives <= 0 && botLives <= 0;
+  }
+
+  void _skipVsBotTargetBecauseNoLives() {
+    final skipped = targetCountry;
+    cancelBotTimer();
+    isWaitingForAnswer = false;
+    roundWinner = null;
+
+    lastRoundMessage = skipped == null
+        ? 'İki tarafın da canı bitti. Ülke atlandı.'
+        : 'İki tarafın da canı bitti. ${skipped.name} atlandı.';
+
+    pickNextTargetCountry();
+  }
+
+  void scheduleBotAnswer({required int roundToken, required bool isRetry}) {
     if (!isGameActive || !isVsBotMode) return;
+    if (roundToken != _activeRoundToken) return;
 
     cancelBotTimer();
 
     final diff = botPlayer?.difficulty ?? selectedBotDifficulty;
-    final minMs = diff.minAnswerDelayMs;
-    final maxMs = diff.maxAnswerDelayMs;
+    final minMs = isRetry ? diff.minRetryDelayMs : diff.minAnswerDelayMs;
+    final maxMs = isRetry ? diff.maxRetryDelayMs : diff.maxAnswerDelayMs;
     final span = (maxMs - minMs).clamp(0, 9999999);
     final delayMs = minMs + (span == 0 ? 0 : _random.nextInt(span + 1));
 
     botTimer = Timer(
       Duration(milliseconds: delayMs),
-      () => handleBotAnswer(),
+      () => handleBotAnswer(roundToken: roundToken),
     );
   }
 
-  void handleBotAnswer() {
+  void handleBotAnswer({required int roundToken}) {
     if (!isGameActive || !isVsBotMode) return;
+    if (roundToken != _activeRoundToken) return;
     if (!isWaitingForAnswer) return;
 
     final bot = botPlayer;
     final target = targetCountry;
     if (bot == null || target == null) return;
+    if (bot.remainingLives <= 0) return;
 
     // Bot cevap verdi (timer tek seferlik).
     cancelBotTimer();
@@ -317,8 +344,22 @@ class ConquestProvider with ChangeNotifier {
     final willBeCorrect = _random.nextDouble() <= diff.correctAnswerChance;
 
     if (!willBeCorrect) {
-      // Basit kural: bot aynı round'da tekrar denemez.
-      lastRoundMessage = 'Bot yanlış cevap verdi, şansın devam ediyor.';
+      bot.remainingLives = max(0, bot.remainingLives - 1);
+      lastRoundMessage = bot.remainingLives <= 0
+          ? 'Bot bu tur için canlarını tüketti.'
+          : 'Bot yanlış cevap verdi (-1 can). Şansın devam ediyor.';
+
+      if (_areBothVsBotPlayersOutOfLives()) {
+        _skipVsBotTargetBecauseNoLives();
+        notifyListeners();
+        return;
+      }
+
+      // Bot, canı bitene kadar bu round'da denemeye devam edebilir.
+      if (bot.remainingLives > 0) {
+        scheduleBotAnswer(roundToken: roundToken, isRetry: true);
+      }
+
       notifyListeners();
       return;
     }
@@ -343,6 +384,7 @@ class ConquestProvider with ChangeNotifier {
     final target = targetCountry;
     final human = humanPlayer;
     if (target == null || human == null) return;
+    if (human.remainingLives <= 0) return;
 
     if (!isWaitingForAnswer) return;
 
@@ -357,7 +399,7 @@ class ConquestProvider with ChangeNotifier {
       if (tapped == null) {
         wrongCount += 1;
         streak = 0;
-        errorMessage = 'Bu ülke uygulama verileriyle eşleştirilemedi.';
+        errorMessage = 'Bu bölge oyun verilerinde yok.';
         lastRoundMessage = errorMessage;
         return;
       }
@@ -405,6 +447,19 @@ class ConquestProvider with ChangeNotifier {
         streak = 0;
         errorMessage = 'Yanlış ülke, tekrar dene.';
         lastRoundMessage = errorMessage;
+
+        human.remainingLives = max(0, human.remainingLives - 1);
+        if (human.remainingLives <= 0) {
+          lastRoundMessage = (botPlayer?.remainingLives ?? 0) <= 0
+              ? 'İki tarafın da canı bitti.'
+              : 'Bu tur için canların bitti. Bot denemeye devam ediyor.';
+
+          if (_areBothVsBotPlayersOutOfLives()) {
+            _skipVsBotTargetBecauseNoLives();
+          }
+
+          return;
+        }
 
         wrongFlashIsoCode = tapped.isoCode;
         _clearWrongFlashLater();
@@ -457,12 +512,18 @@ class ConquestProvider with ChangeNotifier {
 
     // Aynı ülke tekrar hedef olmasın: fethedilenleri zaten dışarıda tutuyoruz.
     targetCountry = remaining[_random.nextInt(remaining.length)];
+    _activeRoundToken += 1;
+
+    // Her yeni hedef ülke/soru başladığında canları yenile.
+    remainingLives = ConquestPlayer.initialLives;
+    humanPlayer?.remainingLives = ConquestPlayer.initialLives;
+    botPlayer?.remainingLives = ConquestPlayer.initialLives;
 
     // ADIM 4: VS Bot modunda yeni round açılınca bot cevabını planla.
     if (isVsBotMode) {
       isWaitingForAnswer = true;
       roundWinner = null;
-      scheduleBotAnswer();
+      scheduleBotAnswer(roundToken: _activeRoundToken, isRetry: false);
     } else {
       isWaitingForAnswer = false;
     }
@@ -470,6 +531,7 @@ class ConquestProvider with ChangeNotifier {
 
   Future<void> handleCountryTap(Map<String, dynamic> mapProperties) async {
     if (!isGameActive || isRoundLocked) return;
+    if (remainingLives <= 0) return;
 
     final target = targetCountry;
     if (target == null) return;
@@ -487,7 +549,7 @@ class ConquestProvider with ChangeNotifier {
       if (tapped == null) {
         wrongCount += 1;
         streak = 0;
-        errorMessage = 'Bu ülke uygulama verileriyle eşleştirilemedi.';
+        errorMessage = 'Bu bölge oyun verilerinde yok.';
         return;
       }
 
@@ -522,6 +584,13 @@ class ConquestProvider with ChangeNotifier {
         wrongCount += 1;
         streak = 0;
         errorMessage = 'Yanlış ülke, tekrar dene.';
+
+        remainingLives = max(0, remainingLives - 1);
+        if (remainingLives <= 0) {
+          errorMessage = 'Canların bitti. Bu tur atlandı: ${target.name}';
+          pickNextTargetCountry();
+          return;
+        }
 
         // Kısa süreli görsel uyarı (UI isterse kullanır).
         wrongFlashIsoCode = tapped.isoCode;

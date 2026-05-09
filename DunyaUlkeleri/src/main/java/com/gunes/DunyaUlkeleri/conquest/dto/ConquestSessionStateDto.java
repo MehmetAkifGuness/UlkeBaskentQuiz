@@ -15,6 +15,8 @@ public class ConquestSessionStateDto {
     private String roomCode;
     private String status;
     private String selectedContinentFilter;
+    private String hostPlayerId;
+    private boolean quickMatch;
 
     private List<ConquestPlayerDto> players;
     private Map<String, String> conqueredCountryColors;

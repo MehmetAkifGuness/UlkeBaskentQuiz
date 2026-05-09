@@ -6,6 +6,8 @@ import 'bot_difficulty.dart';
 ///
 /// Not: İleride multiplayer için de kullanılacak.
 class ConquestPlayer {
+  static const int initialLives = 3;
+
   final String id;
   final String name;
   final Color color;
@@ -14,6 +16,7 @@ class ConquestPlayer {
 
   int score;
   int conqueredCount;
+  int remainingLives;
 
   ConquestPlayer._({
     required this.id,
@@ -23,6 +26,7 @@ class ConquestPlayer {
     required this.difficulty,
     required this.score,
     required this.conqueredCount,
+    required this.remainingLives,
   });
 
   factory ConquestPlayer.human({
@@ -38,6 +42,7 @@ class ConquestPlayer {
       difficulty: null,
       score: 0,
       conqueredCount: 0,
+      remainingLives: initialLives,
     );
   }
 
@@ -55,6 +60,7 @@ class ConquestPlayer {
       difficulty: difficulty,
       score: 0,
       conqueredCount: 0,
+      remainingLives: initialLives,
     );
   }
 }

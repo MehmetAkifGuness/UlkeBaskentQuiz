@@ -304,8 +304,8 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
-                        errorMessage ??
-                            'Bu ülke uygulama verileriyle eşleştirilemedi.',
+                            errorMessage ??
+                                'Bu bölge sözlük verilerinde bulunamadı.',
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,

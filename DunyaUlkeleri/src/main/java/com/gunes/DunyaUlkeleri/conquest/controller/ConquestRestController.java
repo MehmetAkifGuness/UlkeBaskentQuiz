@@ -1,6 +1,7 @@
 package com.gunes.DunyaUlkeleri.conquest.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,13 +24,16 @@ import lombok.RequiredArgsConstructor;
 public class ConquestRestController {
 
     private final ConquestGameService conquestGameService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // Oda oluşturma
     @PostMapping("/sessions")
     public ResponseEntity<CreateConquestSessionResponse> createSession(
             @RequestBody CreateConquestSessionRequest request
     ) {
-        return ResponseEntity.ok(conquestGameService.createSession(request));
+        final CreateConquestSessionResponse response = conquestGameService.createSession(request);
+        publishState(response.getSessionId());
+        return ResponseEntity.ok(response);
     }
 
     // Odaya katılma
@@ -38,13 +42,31 @@ public class ConquestRestController {
             @PathVariable String roomCode,
             @RequestBody JoinConquestSessionRequest request
     ) {
-        return ResponseEntity.ok(conquestGameService.joinSession(roomCode, request));
+        final JoinConquestSessionResponse response = conquestGameService.joinSession(roomCode, request);
+        publishState(response.getSessionId());
+        return ResponseEntity.ok(response);
+    }
+
+    // Hızlı oyun (matchmaking)
+    @PostMapping("/quick-match")
+    public ResponseEntity<CreateConquestSessionResponse> quickMatch(
+            @RequestBody CreateConquestSessionRequest request
+    ) {
+        final CreateConquestSessionResponse response = conquestGameService.quickMatch(request);
+        publishState(response.getSessionId());
+        return ResponseEntity.ok(response);
     }
 
     // Mevcut state
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<ConquestSessionStateDto> getSessionState(@PathVariable String sessionId) {
         return ResponseEntity.ok(conquestGameService.getSessionState(sessionId));
+    }
+
+    private void publishState(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) return;
+        final ConquestSessionStateDto state = conquestGameService.getSessionState(sessionId);
+        messagingTemplate.convertAndSend("/topic/conquest/" + sessionId, state);
     }
 }
 

@@ -18,5 +18,7 @@ public class ConquestPlayer {
 
     private int score;
     private int conqueredCount;
+    private int remainingLives;
     private boolean connected;
+    private boolean ready;
 }
