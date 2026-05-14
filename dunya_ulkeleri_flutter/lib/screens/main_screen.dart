@@ -18,24 +18,45 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  final Set<int> _loadedTabs = <int>{0};
 
   void _setTabIndex(int index) {
     if (!mounted) return;
-    setState(() => _currentIndex = index);
+    setState(() {
+      _currentIndex = index;
+      _loadedTabs.add(index);
+    });
+  }
+
+  Widget _buildScreen(int index) {
+    switch (index) {
+      case 0:
+        return DashboardScreen(
+          onNavigateTab: _setTabIndex,
+          isActive: _currentIndex == 0,
+        );
+      case 1:
+        return const HomeScreen(); // Oyun
+      case 2:
+        return const WorldMapScreen(); // Dünya Haritası
+      case 3:
+        return const LeaderboardScreen(); // Sıralama
+      case 4:
+        return ProfileScreen(onNavigateTab: _setTabIndex);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      DashboardScreen(
-        onNavigateTab: _setTabIndex,
-        isActive: _currentIndex == 0,
-      ),
-      const HomeScreen(), // Oyun
-      const WorldMapScreen(), // Dünya Haritası
-      const LeaderboardScreen(), // Sıralama
-      ProfileScreen(onNavigateTab: _setTabIndex),
-    ];
+    final screens = List<Widget>.generate(
+      5,
+      (index) => _loadedTabs.contains(index)
+          ? _buildScreen(index)
+          : const SizedBox.shrink(),
+      growable: false,
+    );
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: screens),

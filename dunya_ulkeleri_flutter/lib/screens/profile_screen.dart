@@ -434,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                ..._buildMasteryCards(scores),
+                _MasteryGrid(items: _buildMasteryCards(scores)),
                 const SizedBox(height: 18),
                 const _SectionHeader(title: 'Genel İstatistikler'),
                 const SizedBox(height: 10),
@@ -444,21 +444,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Kayıt Tarihi',
                       value: creationDateText,
                       icon: Icons.calendar_month,
+                      iconColor: AppColors.successGreen,
                     ),
                     _StatItem(
                       title: 'En Yüksek Skor',
                       value: _formatNumber(profile.maxWinStreak),
                       icon: Icons.emoji_events,
+                      iconColor: AppColors.brown,
                     ),
                     _StatItem(
                       title: 'Oynanan Oyun',
                       value: _formatNumber(profile.totalGamesPlayed),
-                      icon: Icons.videogame_asset,
+                      icon: Icons.extension_rounded,
+                      iconColor: AppColors.errorRed,
                     ),
                     _StatItem(
                       title: 'Toplam Ustalık',
                       value: _formatCompact(totalScore),
                       icon: Icons.military_tech,
+                      iconColor: AppColors.successGreen,
                     ),
                   ],
                 ),
@@ -514,20 +518,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return [
       for (final item in specialModes)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _MasteryCard.fromSingleScore(
-            title: item.title,
-            scoreKey: item.scoreKey,
-            maxScore: item.maxScore,
-            scores: scores,
-          ),
+        _MasteryCard.fromSingleScore(
+          title: item.title,
+          scoreKey: item.scoreKey,
+          maxScore: item.maxScore,
+          scores: scores,
         ),
       for (final continent in continents)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _MasteryCard.fromScores(continent: continent, scores: scores),
-        ),
+        _MasteryCard.fromScores(continent: continent, scores: scores),
     ];
   }
 
@@ -954,6 +952,28 @@ class _SpecialModeInfo {
   });
 }
 
+class _MasteryGrid extends StatelessWidget {
+  final List<Widget> items;
+
+  const _MasteryGrid({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index],
+    );
+  }
+}
+
 class _MasteryCard extends StatelessWidget {
   final String title;
   final int score;
@@ -983,7 +1003,7 @@ class _MasteryCard extends StatelessWidget {
 
     final mastery = _MasteryLabel.fromPercentage(percentage);
     final label = best == 0 ? 'Oynanmadı' : mastery.text;
-    final labelColor = best == 0 ? Colors.grey : mastery.color;
+    final labelColor = best == 0 ? AppColors.textMuted : mastery.color;
 
     return _MasteryCard(
       title: continent.name,
@@ -1005,7 +1025,7 @@ class _MasteryCard extends StatelessWidget {
 
     final mastery = _MasteryLabel.fromPercentage(percentage);
     final label = score == 0 ? 'Oynanmadı' : mastery.text;
-    final labelColor = score == 0 ? Colors.grey : mastery.color;
+    final labelColor = score == 0 ? AppColors.textMuted : mastery.color;
 
     return _MasteryCard(
       title: title,
@@ -1019,63 +1039,94 @@ class _MasteryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       tint: AppColors.surface,
       borderRadius: BorderRadius.circular(22),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: labelColor.withOpacity(0.14),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: labelColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           Text(
-            '${score.toString()} Puan',
+            title.toUpperCase(),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${_ProfileScreenState._formatNumber(score)} Puan',
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.textDark,
               fontWeight: FontWeight.w900,
-              fontSize: 20,
+              fontSize: 12,
             ),
           ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: labelColor.withOpacity(0.14),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: labelColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const Spacer(),
+          _MasteryRing(
+            percentage: percentage,
+            color: labelColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MasteryRing extends StatelessWidget {
+  final double percentage;
+  final Color color;
+
+  const _MasteryRing({required this.percentage, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final percentText = '${(percentage * 100).round()}%';
+
+    return SizedBox(
+      width: 92,
+      height: 92,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 92,
+            height: 92,
+            child: CircularProgressIndicator(
               value: percentage,
-              minHeight: 8,
-              backgroundColor: AppColors.borderLight.withOpacity(0.35),
-              valueColor: AlwaysStoppedAnimation(labelColor),
+              strokeWidth: 9,
+              backgroundColor: AppColors.borderLight.withOpacity(0.22),
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+          Text(
+            percentText,
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
             ),
           ),
         ],
@@ -1091,13 +1142,22 @@ class _MasteryLabel {
   const _MasteryLabel(this.text, this.color);
 
   static _MasteryLabel fromPercentage(double percentage) {
-    if (percentage == 0) return const _MasteryLabel('Oynanmadı', Colors.grey);
-    if (percentage >= 0.8) return const _MasteryLabel('Çok İyi', Colors.green);
-    if (percentage >= 0.6) return const _MasteryLabel('İyi', Colors.lightGreen);
-    if (percentage >= 0.4) return const _MasteryLabel('Ortalama', Colors.amber);
-    if (percentage >= 0.2)
-      return const _MasteryLabel('Geliştir', Colors.orange);
-    return const _MasteryLabel('Kötü', Colors.red);
+    if (percentage == 0) {
+      return const _MasteryLabel('Oynanmadı', AppColors.textMuted);
+    }
+    if (percentage >= 0.8) {
+      return const _MasteryLabel('Çok İyi', AppColors.successGreen);
+    }
+    if (percentage >= 0.6) {
+      return const _MasteryLabel('İyi', AppColors.successGreen);
+    }
+    if (percentage >= 0.4) {
+      return const _MasteryLabel('Ortalama', AppColors.brown);
+    }
+    if (percentage >= 0.2) {
+      return const _MasteryLabel('Geliştir', AppColors.yellow);
+    }
+    return const _MasteryLabel('Kötü', AppColors.errorRed);
   }
 }
 
@@ -1115,7 +1175,7 @@ class _StatsGrid extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1.25,
+        childAspectRatio: 1.05,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) => _StatCard(item: items[index]),
@@ -1127,11 +1187,13 @@ class _StatItem {
   final String title;
   final String value;
   final IconData icon;
+  final Color iconColor;
 
   const _StatItem({
     required this.title,
     required this.value,
     required this.icon,
+    required this.iconColor,
   });
 }
 
@@ -1143,29 +1205,34 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       tint: AppColors.surface,
       borderRadius: BorderRadius.circular(22),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(item.icon, color: AppColors.yellow, size: 20),
-          const SizedBox(height: 10),
           Text(
-            item.title,
+            item.title.toUpperCase(),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: AppColors.textMuted,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: 1.2,
             ),
           ),
           const Spacer(),
+          Icon(item.icon, color: item.iconColor, size: 26),
+          const Spacer(),
           Text(
             item.value,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.textDark,
               fontWeight: FontWeight.w900,
-              fontSize: 18,
+              fontSize: 16,
             ),
           ),
         ],
