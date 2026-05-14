@@ -94,9 +94,12 @@ public class UserController {
         if ("DailyChallenge".equals(category)) {
             LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); 
             topUsers = gameSessionRepository.findTop10DailyScores(category, startOfDay, PageRequest.of(0, 10));
+        } else if ("ENDLESS".equalsIgnoreCase(mode)) {
+            // Sonsuz mod ayrı bir leaderboard olarak tutuluyor (kategori aynı olsa bile karışmamalı).
+            topUsers = gameSessionRepository.findTop10ByCategoryAndMode(category, "ENDLESS", PageRequest.of(0, 10));
         } else {
-            // 🚨 SİHİRLİ DEĞİŞİM: Artık User tablosundan değil, GameSession'dan mod seçimine göre çekiyoruz
-            topUsers = gameSessionRepository.findTop10ByCategoryAndMode(category, mode, PageRequest.of(0, 10));
+            // Mod seçimi kaldırıldı: Kategori (kıta) bazında tüm quiz modlarındaki en iyi skor.
+            topUsers = gameSessionRepository.findTop10ByCategoryOverall(category, PageRequest.of(0, 10));
         }
         
         List<Map<String, Object>> leaderboard = new ArrayList<>();

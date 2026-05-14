@@ -44,7 +44,7 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
     enableDoubleTapZooming: true,
     enableMouseWheelZooming: true,
     minZoomLevel: 1,
-    maxZoomLevel: 15,
+    maxZoomLevel: 150,
   );
 
   late Future<_ConquestMapLoadResult> _loadFuture = _loadGeoJson();
@@ -81,10 +81,7 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(message),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
         );
     });
   }
@@ -130,11 +127,7 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
 
       keptFeatures.add(feature);
       mapCountries.add(
-        MapCountryModel(
-          isoCode: isoCode,
-          name: name,
-          extra: props,
-        ),
+        MapCountryModel(isoCode: isoCode, name: name, extra: props),
       );
     }
 
@@ -221,8 +214,8 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                 },
               ),
             ),
-         ],
-       ),
+        ],
+      ),
     );
   }
 
@@ -358,7 +351,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                                   : Icons.favorite_border,
                               size: 18,
                               color: AppColors.errorRed.withValues(
-                                alpha: i < provider.remainingLives ? 0.95 : 0.32,
+                                alpha: i < provider.remainingLives
+                                    ? 0.95
+                                    : 0.32,
                               ),
                             ),
                           ),
@@ -404,8 +399,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                                   },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.textDark,
-                              side:
-                                  const BorderSide(color: AppColors.borderLight),
+                              side: const BorderSide(
+                                color: AppColors.borderLight,
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -424,8 +420,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                                   onPressed: () => provider.stopGame(),
                                   child: const Text(
                                     'Bitir',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w900),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 )
                               : ElevatedButton(
@@ -434,8 +431,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                                       : () => provider.startGame(),
                                   child: const Text(
                                     'Başla',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w900),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ),
                         ),
@@ -452,7 +450,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryBlue),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBlue,
+                      ),
                     );
                   }
 
@@ -467,7 +467,8 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                       message: isMissingAsset
                           ? 'Harita verisi bulunamadı. Lütfen assets/maps/world_map_simplified.json dosyasını ekleyin.'
                           : 'Dünya haritası verisi okunamadı. Dosya formatını kontrol edin.',
-                      onRetry: () => setState(() => _loadFuture = _loadGeoJson()),
+                      onRetry: () =>
+                          setState(() => _loadFuture = _loadGeoJson()),
                     );
                   }
 
@@ -477,15 +478,16 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                       title: 'Harita verisi hazır değil',
                       message:
                           'Şu an assets/maps/world_map_simplified.json içinde ülke geometrisi bulunmuyor.',
-                      onRetry: () => setState(() => _loadFuture = _loadGeoJson()),
+                      onRetry: () =>
+                          setState(() => _loadFuture = _loadGeoJson()),
                     );
                   }
 
                   var mapCountries = result.mapCountries;
                   var mapBytes = result.bytes;
 
-                  final selectedFilter =
-                      provider.selectedContinentFilter.trim();
+                  final selectedFilter = provider.selectedContinentFilter
+                      .trim();
                   final hasContinent = provider.playableCountries.any(
                     (c) => (c.continent ?? '').trim().isNotEmpty,
                   );
@@ -506,8 +508,7 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
 
                       for (var i = 0; i < result.mapCountries.length; i++) {
                         final shape = result.mapCountries[i];
-                        final props =
-                            shape.extra ?? const <String, dynamic>{};
+                        final props = shape.extra ?? const <String, dynamic>{};
 
                         final matched = matcher.matchFromMapProperties(props);
                         if (matched == null) continue;
@@ -570,10 +571,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                     _shapePlayableSignature = signature;
                   }
 
-                  final shapeKeys = _shapePlayableKeys ?? List<String?>.filled(
-                    mapCountries.length,
-                    null,
-                  );
+                  final shapeKeys =
+                      _shapePlayableKeys ??
+                      List<String?>.filled(mapCountries.length, null);
 
                   final targetKey = provider.isGameActive
                       ? provider.targetCountry?.isoCode
@@ -588,7 +588,8 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                       final key = shapeKeys[index];
 
                       if (key != null) {
-                        final conqueredColor = provider.conqueredCountryColors[key];
+                        final conqueredColor =
+                            provider.conqueredCountryColors[key];
                         if (conqueredColor != null) {
                           return conqueredColor.withOpacity(0.85);
                         }
@@ -630,8 +631,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
                                 // Syncfusion seçim davranışı: Seçili shape'e tekrar dokunulursa
                                 // callback -1 dönebilir. Pratik modda aynı ülkeye tekrar dokunmayı
                                 // engellememek için son tıklanan index'i fallback olarak kullanıyoruz.
-                                final effectiveIndex =
-                                    index >= 0 ? index : _lastTappedShapeIndex;
+                                final effectiveIndex = index >= 0
+                                    ? index
+                                    : _lastTappedShapeIndex;
                                 if (effectiveIndex == null) return;
 
                                 _lastTappedShapeIndex = effectiveIndex;
@@ -643,7 +645,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
 
                                 final key = shapeKeys[effectiveIndex];
                                 if (key == null) {
-                                  _showSnackOnce('Bu bölge oyun kapsamında değil.');
+                                  _showSnackOnce(
+                                    'Bu bölge oyun kapsamında değil.',
+                                  );
                                   return;
                                 }
 
@@ -676,12 +680,14 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
     }
 
     final matcher = CountryMatchService(availableCountries: playableCountries);
-    return mapCountries.map((shape) {
-      final props = shape.extra;
-      if (props == null) return null;
-      final matched = matcher.matchFromMapProperties(props);
-      return matched?.isoCode;
-    }).toList(growable: false);
+    return mapCountries
+        .map((shape) {
+          final props = shape.extra;
+          if (props == null) return null;
+          final matched = matcher.matchFromMapProperties(props);
+          return matched?.isoCode;
+        })
+        .toList(growable: false);
   }
 }
 

@@ -7,12 +7,13 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 
 import '../models/map_country_model.dart';
+import '../providers/settings_provider.dart';
 import '../providers/world_map_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/page_trasitions.dart';
 import '../widgets/geo_background.dart';
 import '../widgets/glass_card.dart';
-import 'country_detail_screen.dart';
+import 'dictionary_screen.dart';
 import '../services/country_match_service.dart'; // Kendi dosya yoluna göre düzenle
 
 class WorldMapScreen extends StatefulWidget {
@@ -27,31 +28,17 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
   // Not: Bu dosya Natural Earth / GeoJSON world countries datasından eklenecek.
   static const String _assetPath = 'assets/maps/world_map_simplified.json';
 
-  static const List<String> _continentFilters = <String>[
-    'ALL',
-    'Europe',
-    'Asia',
-    'Africa',
-    'North America',
-    'South America',
-    'Oceania',
-  ];
-
   late final MapZoomPanBehavior _zoomPanBehavior = MapZoomPanBehavior(
     enableDoubleTapZooming: true,
     enableMouseWheelZooming: true,
     minZoomLevel: 1,
-    maxZoomLevel: 15,
+    maxZoomLevel: 200,
   );
 
   late Future<_WorldMapLoadResult> _loadFuture = _loadGeoJson();
   String? _lastSnackMessage;
-
-  // Kıta filtresi seçildiğinde dünya yerine sadece o kıtanın GeoJSON'ını üretip
-  // MapShapeSource'a veriyoruz. Böylece çizilecek shape sayısı azalır ve kasma düşer.
-  String? _continentCacheSignature;
-  Uint8List? _continentCacheBytes;
-  List<MapCountryModel>? _continentCacheCountries;
+  int _selectedIndex = -1;
+  int? _lastTappedShapeIndex;
 
   @override
   void initState() {
@@ -60,7 +47,9 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
     // Ülke verilerini backend'den (dictionary endpoint) çek.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<WorldMapProvider>().loadAvailableCountries();
+      final provider = context.read<WorldMapProvider>();
+      provider.setContinentFilter('ALL');
+      provider.loadAvailableCountries();
     });
   }
 
@@ -245,12 +234,10 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
       context: rootContext,
       backgroundColor: Colors.transparent,
       isScrollControlled: false,
+      useRootNavigator: true,
       builder: (sheetContext) {
         final effectiveName = matchedCountry?.name ?? mapCountry.name;
-        final effectiveIso = matchedCountry?.isoCode ?? mapCountry.isoCode;
-        final effectiveContinent = (matchedCountry?.continent ?? '').trim();
-        final effectiveCapital = (matchedCountry?.capital ?? '').trim();
-        final hasMatch = matchedCountry != null;
+        final detailQuery = effectiveName.trim();
 
         return SafeArea(
           top: false,
@@ -270,42 +257,11 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                       fontSize: 18,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'ISO: $effectiveIso',
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (effectiveContinent.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Kıta: $effectiveContinent',
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  if (effectiveCapital.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Başkent: $effectiveCapital',
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  if (!hasMatch)
+                  if (errorMessage != null && errorMessage.trim().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
-                            errorMessage ??
-                                'Bu bölge sözlük verilerinde bulunamadı.',
+                        errorMessage,
                         style: const TextStyle(
                           color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
@@ -338,34 +294,21 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: hasMatch
-                              ? () {
-                                  // Sheet'i kapatıp detay ekranına geç.
+                          onPressed: detailQuery.isEmpty
+                              ? null
+                              : () {
                                   Navigator.of(sheetContext).pop();
-
-                                  try {
-                                    Navigator.push(
-                                      rootContext,
-                                      FadePageRoute(
-                                        page: CountryDetailScreen(
-                                          countryName: matchedCountry!.name,
-                                          capitalName:
-                                              matchedCountry!.capital ?? '—',
-                                          continent:
-                                              matchedCountry!.continent ?? '—',
-                                        ),
+                                  Navigator.push(
+                                    rootContext,
+                                    FadePageRoute(
+                                      page: DictionaryScreen(
+                                        initialQuery: detailQuery,
                                       ),
-                                    );
-                                  } catch (_) {
-                                    // Constructor uyumsuzluğu vs. olursa ekranı bozmayalım.
-                                    _showSnackOnce(
-                                      'Ülke detay bağlantısı sonraki adımda bağlanacak.',
-                                    );
-                                  }
-                                }
-                              : null,
+                                    ),
+                                  );
+                                },
                           child: const Text(
-                            'Detaya Git',
+                            'Detay',
                             style: TextStyle(fontWeight: FontWeight.w900),
                           ),
                         ),
@@ -378,28 +321,6 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _continentFilterBar(BuildContext context) {
-    final provider = context.watch<WorldMapProvider>();
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          for (final filter in _continentFilters)
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: ChoiceChip(
-                label: Text(filter),
-                selected: provider.selectedContinentFilter == filter,
-                onSelected: (_) => provider.setContinentFilter(filter),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -420,8 +341,6 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
         safeArea: false,
         child: Column(
           children: [
-            const SizedBox(height: 10),
-            _continentFilterBar(context),
             const SizedBox(height: 10),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -474,80 +393,8 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                     );
                   }
 
-                  final selectedFilter = provider.selectedContinentFilter
-                      .trim();
-                  final hasContinent = provider.availableCountries.any(
-                    (c) => (c.continent ?? '').trim().isNotEmpty,
-                  );
-
-                  var countries = result.countries;
-                  var bytes = result.bytes;
-
-                  if (selectedFilter != 'ALL' && hasContinent) {
-                    final signature =
-                        '${selectedFilter}_${provider.availableCountries.length}_${result.countries.length}';
-
-                    if (_continentCacheSignature != signature) {
-                      final matcher = CountryMatchService(
-                        availableCountries: provider.availableCountries,
-                      );
-
-                      final filteredFeatures = <Map<String, dynamic>>[];
-                      final filteredCountries = <MapCountryModel>[];
-
-                      for (var i = 0; i < result.countries.length; i++) {
-                        final mapCountry = result.countries[i];
-                        final props =
-                            mapCountry.extra ?? const <String, dynamic>{};
-
-                        final matched = matcher.matchFromMapProperties(props);
-                        final continent = (matched?.continent ?? '').trim();
-                        if (continent != selectedFilter) continue;
-
-                        filteredCountries.add(mapCountry);
-                        filteredFeatures.add(result.features[i]);
-                      }
-
-                      if (filteredFeatures.isNotEmpty) {
-                        final geojson = <String, dynamic>{
-                          'type': 'FeatureCollection',
-                          'features': filteredFeatures,
-                        };
-                        final jsonStr = jsonEncode(geojson);
-                        _continentCacheBytes = Uint8List.fromList(
-                          utf8.encode(jsonStr),
-                        );
-                        _continentCacheCountries = filteredCountries;
-                      } else {
-                        _continentCacheBytes = null;
-                        _continentCacheCountries = null;
-                      }
-
-                      _continentCacheSignature = signature;
-                    }
-
-                    final cachedBytes = _continentCacheBytes;
-                    final cachedCountries = _continentCacheCountries;
-                    if (cachedBytes != null &&
-                        cachedCountries != null &&
-                        cachedCountries.isNotEmpty) {
-                      bytes = cachedBytes;
-                      countries = cachedCountries;
-                    } else {
-                      return _MapErrorCard(
-                        title: 'Kıta haritası oluşturulamadı',
-                        message:
-                            'Seçili kıta için harita eşleştirmesi yapılamadı.\n'
-                            'Not: Bu özellik için ülke verilerinde ISO/kıta bilgisi uyumlu olmalı.',
-                        onRetry: () =>
-                            setState(() => _loadFuture = _loadGeoJson()),
-                      );
-                    }
-                  }
-                  final selected = provider.selectedIsoCode;
-                  final selectedIndex = (selected == null)
-                      ? -1
-                      : countries.indexWhere((e) => e.isoCode == selected);
+                  final countries = result.countries;
+                  final bytes = result.bytes;
 
                   // Harita renkleri / seçimleri Provider state'i ile güncelleneceği için
                   // key ile yeniden çizimi garanti altına alıyoruz.
@@ -584,55 +431,65 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                               zoomPanBehavior: _zoomPanBehavior,
                               strokeColor: AppColors.borderLight,
                               strokeWidth: 0.6,
-                              selectedIndex: selectedIndex,
+                              selectedIndex: _selectedIndex,
                               selectionSettings: MapSelectionSettings(
                                 color: AppColors.primaryBlue.withOpacity(0.25),
                                 strokeColor: AppColors.primaryBlue,
                                 strokeWidth: 1.4,
                               ),
                               onSelectionChanged: (int index) async {
-                                final previousIndex = selectedIndex;
-
-                                // Syncfusion selection davranışı: Aynı shape'e tekrar dokunulursa
-                                // bazı sürümlerde `index == previousIndex`, bazılarında `-1` gelebiliyor.
-                                // UX için: her dokunuşta (mümkünse) sheet açalım.
-                                final effectiveIndex =
-                                    index >= 0 ? index : previousIndex;
+                                // Syncfusion selection davranışı: Seçili shape'e tekrar dokunulursa
+                                // callback -1 dönebilir. UX için son tıklanan index'i fallback olarak kullanıyoruz.
+                                final effectiveIndex = index >= 0
+                                    ? index
+                                    : _lastTappedShapeIndex;
+                                if (effectiveIndex == null) return;
+                                _lastTappedShapeIndex = effectiveIndex;
 
                                 if (effectiveIndex < 0 ||
                                     effectiveIndex >= countries.length) {
                                   provider.clearSelection();
+                                  if (!mounted) return;
+                                  setState(() => _selectedIndex = -1);
                                   return;
                                 }
+
+                                context
+                                    .read<SettingsProvider>()
+                                    .triggerButtonVibration();
 
                                 final mapCountry = countries[effectiveIndex];
                                 final props =
                                     mapCountry.extra ??
                                     const <String, dynamic>{};
 
-                                await provider.selectCountryFromMapProperties(
-                                  props,
-                                );
+                                if (!mounted) return;
+                                setState(() => _selectedIndex = effectiveIndex);
+
+                                try {
+                                  await provider.selectCountryFromMapProperties(
+                                    props,
+                                  );
+                                } catch (e) {
+                                  _showSnackOnce(e.toString());
+                                }
 
                                 if (!context.mounted) return;
 
                                 final matched = provider.selectedCountry;
-                                final err = provider.errorMessage;
-
-                                // Her dokunuşta kullanıcıya geri bildirim verelim:
-                                // - Eşleşme varsa ülke bilgileri
-                                // - Eşleşme yoksa / veri hazır değilse hata mesajı
-                                final errText = (err ?? '').trim();
-                                if (matched == null && errText.isEmpty) return;
+                                final errText = (provider.errorMessage ?? '')
+                                    .trim();
 
                                 await _openSelectedCountrySheet(
                                   rootContext: context,
                                   mapCountry: mapCountry,
                                   matchedCountry: matched,
-                                  errorMessage: errText.isEmpty ? null : errText,
+                                  errorMessage: errText.isEmpty
+                                      ? null
+                                      : errText,
                                 );
-                                },
-                              ),
+                              },
+                            ),
                           ],
                         ),
                       ),

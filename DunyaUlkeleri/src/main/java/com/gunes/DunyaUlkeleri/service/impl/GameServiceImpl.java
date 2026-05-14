@@ -223,15 +223,14 @@ public class GameServiceImpl implements GameService {
 
             int earnedScore;
             
-            if (finalTimeInSeconds > 10.0) {
-                earnedScore = 100;
-            } else {
-                if (finalTimeInSeconds < 0.1) finalTimeInSeconds = 0.1;
-                earnedScore = (int) Math.round((10.0 / finalTimeInSeconds) * 200.0);
-                if (earnedScore > 2000) {
-                    earnedScore = 2000; 
-                }
-            }
+            // Yeni denge:
+            // - zaman < 1 sn  => 2000
+            // - zaman > 10 sn => 200
+            // - aksi halde 2000 / zaman (200..2000 aralığında)
+            if (finalTimeInSeconds < 0.1) finalTimeInSeconds = 0.1;
+            earnedScore = (int) Math.round(2000.0 / finalTimeInSeconds);
+            if (earnedScore > 2000) earnedScore = 2000;
+            if (earnedScore < 200) earnedScore = 200;
             
             System.out.println("Gelen Süre: " + clientTime + " sn | Gerçek Süre: " + serverTimeInSeconds + " sn | Kazanılan Puan: " + earnedScore);
             session.setCurrentScore(session.getCurrentScore() + earnedScore);

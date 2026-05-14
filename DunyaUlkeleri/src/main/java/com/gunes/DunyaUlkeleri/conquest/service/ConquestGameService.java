@@ -56,15 +56,15 @@ public class ConquestGameService {
 
     private static final List<PlayableCountry> FALLBACK_PLAYABLE_COUNTRIES = List.of(
             new PlayableCountry("TR", "Türkiye", "Europe"),
-            new PlayableCountry("DE", "Germany", "Europe"),
-            new PlayableCountry("FR", "France", "Europe"),
-            new PlayableCountry("US", "United States", "North America"),
-            new PlayableCountry("BR", "Brazil", "South America"),
-            new PlayableCountry("JP", "Japan", "Asia"),
-            new PlayableCountry("CN", "China", "Asia"),
-            new PlayableCountry("EG", "Egypt", "Africa"),
-            new PlayableCountry("ZA", "South Africa", "Africa"),
-            new PlayableCountry("AU", "Australia", "Oceania")
+            new PlayableCountry("DE", "Almanya", "Europe"),
+            new PlayableCountry("FR", "Fransa", "Europe"),
+            new PlayableCountry("US", "Amerika Birleşik Devletleri", "North America"),
+            new PlayableCountry("BR", "Brezilya", "South America"),
+            new PlayableCountry("JP", "Japonya", "Asia"),
+            new PlayableCountry("CN", "Çin", "Asia"),
+            new PlayableCountry("EG", "Mısır", "Africa"),
+            new PlayableCountry("ZA", "Güney Afrika", "Africa"),
+            new PlayableCountry("AU", "Avustralya", "Oceania")
     );
 
     public CreateConquestSessionResponse createSession(CreateConquestSessionRequest request) {

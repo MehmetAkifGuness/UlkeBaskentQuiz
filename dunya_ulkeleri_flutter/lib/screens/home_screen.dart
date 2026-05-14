@@ -180,6 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final username = authProvider.username ?? 'Kaşif';
     final hasActiveGame =
         gameProvider.status != null && gameProvider.status?.finished == false;
+    final bottomPad = MediaQuery.of(context).padding.bottom + 120.0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -189,16 +190,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: CircularProgressIndicator(color: AppColors.primaryBlue),
               )
             : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                padding: EdgeInsets.fromLTRB(16, 20, 16, bottomPad),
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  Text(
-                    'Hoş Geldin, $username!',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textDark,
-                      height: 1.1,
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                        height: 1.1,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Hoş Geldin, '),
+                        TextSpan(
+                          text: '$username!',
+                          style: const TextStyle(color: AppColors.primaryBlue),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -355,40 +364,44 @@ class _DailyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       tint: AppColors.surface,
       borderRadius: BorderRadius.circular(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderLight),
-                color: AppColors.surface2.withOpacity(0.35),
+          Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.borderLight),
+                  color: AppColors.actionBlue.withOpacity(0.18),
+                ),
+                child: Icon(
+                  completed ? Icons.check_circle : Icons.emoji_events_rounded,
+                  color: completed
+                      ? AppColors.successGreen
+                      : AppColors.primaryBlue,
+                  size: 28,
+                ),
               ),
-              child: Icon(
-                completed ? Icons.check_circle : Icons.calendar_month,
-                color: completed
-                    ? AppColors.successGreen
-                    : AppColors.primaryBlue,
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Günün Görevi',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 14),
-          const Text(
-            'Günün Görevi',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             completed
                 ? 'Bugünkü görevi tamamladın.\nYarın tekrar gel.'
@@ -406,13 +419,20 @@ class _DailyCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onStart,
               style: ElevatedButton.styleFrom(
-                backgroundColor: completed
-                    ? AppColors.borderLight
-                    : const Color(0xFF7C3AED),
+                backgroundColor:
+                    completed ? AppColors.borderLight : AppColors.actionBlue,
+                disabledBackgroundColor: AppColors.borderLight,
                 foregroundColor: AppColors.textDark,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                disabledForegroundColor: AppColors.textMuted,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
               ),
-              icon: const Icon(Icons.rocket_launch, size: 18),
+              icon: Icon(
+                completed ? Icons.check_rounded : Icons.send_rounded,
+                size: 18,
+              ),
               label: Text(
                 completed ? 'Tamamlandı' : 'Görevi Başlat',
                 style: const TextStyle(fontWeight: FontWeight.w900),
@@ -432,6 +452,7 @@ class _EndlessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const accent = AppColors.primaryBlue;
     return GlassCard(
       onTap: onStart,
       padding: const EdgeInsets.all(16),
@@ -449,14 +470,14 @@ class _EndlessCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.errorRed.withOpacity(0.25),
+                  accent.withOpacity(0.22),
                   AppColors.surface2.withOpacity(0.35),
                 ],
               ),
             ),
             child: const Icon(
               Icons.all_inclusive,
-              color: AppColors.errorRed,
+              color: accent,
               size: 28,
             ),
           ),
@@ -490,12 +511,12 @@ class _EndlessCard extends StatelessWidget {
           const Text(
             'Meydan Oku',
             style: TextStyle(
-              color: AppColors.errorRed,
+              color: accent,
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(width: 6),
-          const Icon(Icons.bolt, color: AppColors.errorRed, size: 18),
+          const Icon(Icons.bolt, color: accent, size: 18),
         ],
       ),
     );
@@ -511,24 +532,60 @@ class _FreeModeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       onTap: onPressed,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.all(16),
       tint: AppColors.surface,
       borderRadius: BorderRadius.circular(24),
       child: Row(
-        children: const [
-          Icon(Icons.public, color: AppColors.primaryBlue),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Serbest Modda Oyna',
-              style: TextStyle(
-                color: AppColors.textDark,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.borderLight),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primaryBlue.withOpacity(0.16),
+                  AppColors.surface2.withOpacity(0.35),
+                ],
               ),
             ),
+            child: const Icon(
+              Icons.public_rounded,
+              color: AppColors.primaryBlue,
+              size: 26,
+            ),
           ),
-          Icon(Icons.chevron_right, color: AppColors.textMuted),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Serbest Mod',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Kendi hızında ilerle, istediğin kategoride pratik yap!',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMuted,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right, color: AppColors.textMuted),
         ],
       ),
     );

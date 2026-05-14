@@ -1,24 +1,9 @@
-başarımlar (uygulama bittikten sonra eklenecek)
+﻿oyun kısmında serbest mod daha iyi gözükse günün görevi veyahut sonsuz mod gibi gözüse aslında çok daha güzel olur ve oyun  sayfasında buton renklerini filan halletmemiz gerekecek o yüzden sayfayı yeniden tasarlattıralım
 
-Her rütbeye özel ikon fikri rank atlama animasyonu fikri
+puanlama sistemi bir daha gözden geçirilecek ve sıralama sayfasında ise ülke->başkent başkent->ülke karışık gibi butonlar kaldırılacak ve sadece o kıtanın rekorları tutulacak 
 
-rütbeleri backende taşımak
+ustalık seviyelerinin olduğu barlar yapı olarak vve renk olarak daha profesyonel hale getirilecek 
 
-Lig mantığı (ülke bazlı)
+profil ekleme kısmında kullanıcıların kendi galerilerinden profil fotoğrafı ve isim koymaları sağlanacak ve uygunsuz foto koymamaları için yapay zeka destekli kontrol sağlanacak
 
-hata defterim kısmı da eski haline getirilcek
-
-dünya haritasında kıta bazlı harita kısmınada harita sayfanın ortasına gelsin ve oradan hareket ederek gezebileyim 
-
-Dünya fethi pratik sayfası içinde kıta bazlı harita filterleme yapalım
-
-online modu için web socket kısmı kontrol edilsin çalışan hale getirilsin 
-
-bu dünya haritası eklentisini aşağıdaki barda oyun ategorisinin yanına ikon buton olarak koyalım ve barın en sağındai ayarlar butonunu kaldıralım çünkü zaten profilde ayrar kısmı var
-
-bu online mod nasıl çalışacak onu da soralım 
-
-harita oyun kısmında 3 hak olsun yine aynı şekilde botlarla filan oynarkende aynı şekilde hem benim hemde karşıdaki kişinin can hakkı 3 olsun kısaca
-
-bazı ülkeler için ülke verileri ile eşleşmedi hatası alıyorum onları da çözmek lazım
-
+country_too_capital kaldırılacak 

@@ -21,6 +21,19 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
     @Query("SELECT g.user.username, MAX(g.currentScore) FROM GameSession g WHERE g.category = :category AND g.gameMode = :mode GROUP BY g.user.username ORDER BY MAX(g.currentScore) DESC")
     List<Object[]> findTop10ByCategoryAndMode(@Param("category") String category, @Param("mode") String mode, Pageable pageable);
 
+    // Mod seçimi kaldırıldı: Ülke->Başkent / Başkent->Ülke / Karışık modlarının tamamında
+    // kullanıcıların kategori (kıta) bazında en iyi skorunu döndür.
+    // Not: ENDLESS gibi özel modlar bu sorguya dahil edilmez.
+    @Query(
+            "SELECT g.user.username, MAX(g.currentScore) " +
+            "FROM GameSession g " +
+            "WHERE g.category = :category " +
+            "AND (g.gameMode IN ('COUNTRY_TO_CAPITAL', 'CAPITAL_TO_COUNTRY', 'MIXED')) " +
+            "GROUP BY g.user.username " +
+            "ORDER BY MAX(g.currentScore) DESC"
+    )
+    List<Object[]> findTop10ByCategoryOverall(@Param("category") String category, Pageable pageable);
+
     void deleteByUser(User user);
 
     List<GameSession> findByIsFinishedTrueAndUpdateAtBefore(LocalDateTime cutoffTime);

@@ -6,6 +6,7 @@ class AppColors {
   static const Color primaryBlue = Color(0xFF38BDF8); // Neon mavi
   static const Color primaryBlueHover = Color(0xFF0EA5E9);
   static const Color lightBlueHover = Color(0xFF7DD3FC);
+  static const Color actionBlue = Color(0xFF1E40AF); // Koyu mavi aksiyon
 
   // Destekleyici renkler
   static const Color brown = Color(0xFFD97706); // Bronze / turuncu

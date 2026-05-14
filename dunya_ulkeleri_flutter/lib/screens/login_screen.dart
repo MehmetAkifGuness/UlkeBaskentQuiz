@@ -3,7 +3,7 @@ import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
+import '../providers/settings_provider.dart';
 import 'register_screen.dart';
 import 'forgot_password_dialog.dart';
 import 'main_screen.dart';
@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // --- 🚨 ŞİFREMİ UNUTTUM BUTONU ---
+            // --- ŞİFREMİ UNUTTUM BUTONU ---
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Provider.of<SettingsProvider>(
                     context,
                     listen: false,
-                  ).triggerButtonVibration(); // 🚨 YENİ
+                  ).triggerButtonVibration();
                   showDialog(
                     context: context,
                     builder: (context) => ForgotPasswordDialog(),
@@ -87,11 +87,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           Provider.of<SettingsProvider>(
                             context,
                             listen: false,
-                          ).triggerButtonVibration(); // 🚨 YENİ
+                          ).triggerButtonVibration();
+
                           final result = await authProvider.login(
                             _usernameController.text,
                             _passwordController.text,
                           );
+
+                          // 🚨 DÜZELTME BURADA: Asenkron işlem sonrası context kontrolü
+                          if (!mounted) return;
 
                           if (authProvider.token != null) {
                             Navigator.pushReplacement(
@@ -115,14 +119,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       SizedBox(height: 15),
+
                       // --- MİSAFİR GİRİŞİ BUTONU ---
                       OutlinedButton(
                         onPressed: () async {
                           Provider.of<SettingsProvider>(
                             context,
                             listen: false,
-                          ).triggerButtonVibration(); // 🚨 YENİ
+                          ).triggerButtonVibration();
+
                           bool success = await authProvider.loginAsGuest();
+
+                          // 🚨 DÜZELTME BURADA: Asenkron işlem sonrası context kontrolü
+                          if (!mounted) return;
+
                           if (success) {
                             Navigator.pushReplacement(
                               context,
@@ -146,7 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(fontSize: 18),
                         ),
                       ),
-                      // ------------------------------------------
                     ],
                   ),
             SizedBox(height: 20),
@@ -155,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Provider.of<SettingsProvider>(
                   context,
                   listen: false,
-                ).triggerButtonVibration(); // 🚨 YENİ
+                ).triggerButtonVibration();
                 Navigator.push(context, FadePageRoute(page: RegisterScreen()));
               },
               child: Text("Hesabın yok mu? Kayıt Ol"),

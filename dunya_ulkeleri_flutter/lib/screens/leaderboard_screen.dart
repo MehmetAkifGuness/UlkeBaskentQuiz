@@ -34,7 +34,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   ];
 
   String _selectedCategory = "🔥 Günün Görevi";
-  String _selectedMode = "COUNTRY_TO_CAPITAL";
 
   List<Map<String, dynamic>> _leaderboardData = [];
   bool _isLoading = true;
@@ -51,7 +50,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       final token = Provider.of<AuthProvider>(context, listen: false).token;
       if (token != null) {
         String apiCategory = _selectedCategory;
-        String apiMode = _selectedMode;
+        String apiMode = 'MIXED';
 
         if (_selectedCategory == "🔥 Günün Görevi") {
           apiCategory = "DailyChallenge";
@@ -80,10 +79,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     if (category == "♾️ Sonsuz Mod") return AppColors.brown;
     return AppColors.primaryBlue;
   }
-
-  bool get _modeLocked =>
-      _selectedCategory == "🔥 Günün Görevi" ||
-      _selectedCategory == "♾️ Sonsuz Mod";
 
   @override
   Widget build(BuildContext context) {
@@ -116,20 +111,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   children: [
                     _buildCategoryPicker(),
                     const SizedBox(height: 10),
-                    if (!_modeLocked) _buildModePicker(),
-                    if (_modeLocked)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          _selectedCategory == "🔥 Günün Görevi"
-                              ? 'Günün görevi karışık modda oynanır.'
-                              : 'Sonsuz modda sorular bitmez.',
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                     const SizedBox(height: 14),
                     if (_isLoading)
                       const Center(
@@ -145,7 +126,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     else ...[
                       _PodiumCard(
                         category: _selectedCategory,
-                        mode: _modeLocked ? null : _selectedMode,
+                        mode: null,
                         users: _leaderboardData,
                       ),
                       const SizedBox(height: 14),
@@ -198,85 +179,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             },
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildModePicker() {
-    return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        alignment: WrapAlignment.center,
-        children: [
-          _ModeChip(
-            label: "Ülke → Başkent",
-            selected: _selectedMode == "COUNTRY_TO_CAPITAL",
-            onTap: () {
-              Provider.of<SettingsProvider>(
-                context,
-                listen: false,
-              ).triggerButtonVibration();
-              setState(() => _selectedMode = "COUNTRY_TO_CAPITAL");
-              _fetchLeaderboard();
-            },
-          ),
-          _ModeChip(
-            label: "Başkent → Ülke",
-            selected: _selectedMode == "CAPITAL_TO_COUNTRY",
-            onTap: () {
-              Provider.of<SettingsProvider>(
-                context,
-                listen: false,
-              ).triggerButtonVibration();
-              setState(() => _selectedMode = "CAPITAL_TO_COUNTRY");
-              _fetchLeaderboard();
-            },
-          ),
-          _ModeChip(
-            label: "🔀 Karışık",
-            selected: _selectedMode == "MIXED",
-            onTap: () {
-              Provider.of<SettingsProvider>(
-                context,
-                listen: false,
-              ).triggerButtonVibration();
-              setState(() => _selectedMode = "MIXED");
-              _fetchLeaderboard();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ModeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      selected: selected,
-      label: Text(label),
-      onSelected: (_) => onTap(),
-      selectedColor: AppColors.primaryBlue.withOpacity(0.22),
-      backgroundColor: AppColors.surface2.withOpacity(0.55),
-      side: BorderSide(
-        color: selected ? AppColors.primaryBlue : AppColors.borderLight,
-      ),
-      labelStyle: TextStyle(
-        color: selected ? AppColors.textDark : AppColors.textMuted,
-        fontWeight: FontWeight.w800,
       ),
     );
   }

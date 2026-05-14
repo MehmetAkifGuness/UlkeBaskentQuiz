@@ -12,6 +12,8 @@ class ConquestWebSocketService {
   StompUnsubscribe? _errorUnsubscribe;
 
   String? _connectedSessionId;
+  int _generation = 0;
+  bool _isManualDisconnect = false;
 
   bool get isConnected => _client?.connected ?? false;
 
@@ -30,8 +32,13 @@ class ConquestWebSocketService {
     required String sessionId,
     required void Function(ConquestSessionState state) onState,
     required void Function(String message) onError,
+    void Function()? onConnected,
   }) {
     disconnect();
+
+    _generation += 1;
+    final int generation = _generation;
+    _isManualDisconnect = false;
 
     _connectedSessionId = sessionId;
     final wsUrl = _resolveWsUrl();
@@ -43,10 +50,12 @@ class ConquestWebSocketService {
         heartbeatIncoming: const Duration(seconds: 5),
         heartbeatOutgoing: const Duration(seconds: 5),
         onConnect: (frame) {
+          if (generation != _generation) return;
           // State topic
           _stateUnsubscribe = _client?.subscribe(
             destination: '/topic/conquest/$sessionId',
             callback: (frame) {
+              if (generation != _generation) return;
               try {
                 if (frame.body == null) return;
                 final decoded = jsonDecode(frame.body!);
@@ -67,6 +76,7 @@ class ConquestWebSocketService {
           _errorUnsubscribe = _client?.subscribe(
             destination: '/topic/conquest/$sessionId/errors',
             callback: (frame) {
+              if (generation != _generation) return;
               if (frame.body == null) return;
               try {
                 final decoded = jsonDecode(frame.body!);
@@ -81,14 +91,27 @@ class ConquestWebSocketService {
               onError(frame.body!);
             },
           );
+
+          try {
+            if (generation != _generation) return;
+            onConnected?.call();
+          } catch (e) {
+            onError("Bağlantı callback hatası: $e");
+          }
         },
         onWebSocketError: (dynamic error) {
+          if (generation != _generation) return;
+          if (_isManualDisconnect) return;
           onError(error.toString());
         },
         onWebSocketDone: () {
+          if (generation != _generation) return;
+          if (_isManualDisconnect) return;
           onError("WebSocket bağlantısı kapandı.");
         },
         onStompError: (frame) {
+          if (generation != _generation) return;
+          if (_isManualDisconnect) return;
           onError(frame.body ?? 'STOMP error');
         },
         onDisconnect: (frame) {
@@ -101,6 +124,8 @@ class ConquestWebSocketService {
   }
 
   void disconnect() {
+    _generation += 1;
+    _isManualDisconnect = true;
     _stateUnsubscribe?.call(unsubscribeHeaders: {});
     _errorUnsubscribe?.call(unsubscribeHeaders: {});
     _stateUnsubscribe = null;

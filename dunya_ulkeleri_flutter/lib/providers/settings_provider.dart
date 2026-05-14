@@ -1,5 +1,6 @@
 // lib/providers/settings_provider.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart'; // 🚨 YENİ EKLENDİ: Global titreşim motoru
 
@@ -40,12 +41,21 @@ class SettingsProvider with ChangeNotifier {
 
   // 🚨 YENİ EKLENDİ: Uygulama genelindeki herhangi bir butonda çağrılabilecek "tık" hissi
   Future<void> triggerButtonVibration() async {
-    if (_isVibrationEnabled) {
-      bool? hasVibrator = await Vibration.hasVibrator();
+    if (!_isVibrationEnabled) return;
+
+    try {
+      final bool? hasVibrator = await Vibration.hasVibrator();
       if (hasVibrator == true) {
         // 40 milisaniyelik zarif ve klavye tuşuna basmış gibi hissettiren kısa titreşim
         Vibration.vibrate(duration: 40);
+        return;
       }
-    }
+    } catch (_) {}
+
+    // Bazı cihaz/simülatörlerde Vibration.hasVibrator false dönebilir.
+    // UI geri bildirimi için haptic fallback deneyelim.
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
   }
 }

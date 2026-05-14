@@ -8,6 +8,7 @@ import 'package:syncfusion_flutter_maps/maps.dart';
 import '../models/conquest_session_dto.dart';
 import '../models/map_country_model.dart';
 import '../providers/conquest_multiplayer_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/country_match_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/color_hex_utils.dart';
@@ -32,7 +33,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
     enableDoubleTapZooming: true,
     enableMouseWheelZooming: true,
     minZoomLevel: 1,
-    maxZoomLevel: 15,
+    maxZoomLevel: 150,
   );
 
   late Future<_OnlineMapLoadResult> _loadFuture = _loadGeoJson();
@@ -67,10 +68,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(message),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
         );
     });
   }
@@ -115,11 +113,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
       final isoCode = (iso == null || iso.isEmpty) ? name : iso;
 
       mapCountries.add(
-        MapCountryModel(
-          isoCode: isoCode,
-          name: name,
-          extra: props,
-        ),
+        MapCountryModel(isoCode: isoCode, name: name, extra: props),
       );
     }
 
@@ -138,12 +132,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
 
   static String _pickShapeDataField(List<Map<String, dynamic>> features) {
     // "name" varsa onu tercih et; yoksa ilk uygun string alanı seç.
-    final candidates = <String>[
-      'name',
-      'NAME',
-      'admin',
-      'ADMIN',
-    ];
+    final candidates = <String>['name', 'NAME', 'admin', 'ADMIN'];
     final firstProps = features
         .map((f) => f['properties'])
         .whereType<Map>()
@@ -201,12 +190,14 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
         .toList(growable: false);
     final matcher = CountryMatchService(availableCountries: available);
 
-    return mapCountries.map((shape) {
-      final props = shape.extra;
-      if (props == null) return null;
-      final matched = matcher.matchFromMapProperties(props);
-      return matched?.isoCode;
-    }).toList(growable: false);
+    return mapCountries
+        .map((shape) {
+          final props = shape.extra;
+          if (props == null) return null;
+          final matched = matcher.matchFromMapProperties(props);
+          return matched?.isoCode;
+        })
+        .toList(growable: false);
   }
 
   void _showFinishedDialog(ConquestMultiplayerProvider provider) {
@@ -249,9 +240,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(p.username ?? 'Oyuncu'),
-                        ),
+                        Expanded(child: Text(p.username ?? 'Oyuncu')),
                         Text('Skor: ${p.score} • Can: ${p.remainingLives}'),
                       ],
                     ),
@@ -262,10 +251,14 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  Navigator.pushReplacement(
-                    context,
-                    FadePageRoute(page: const ConquestOnlineLobbyScreen()),
-                  );
+                  if (!mounted) return;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    Navigator.pushReplacement(
+                      this.context,
+                      FadePageRoute(page: const ConquestOnlineLobbyScreen()),
+                    );
+                  });
                 },
                 child: const Text('Lobiye Dön'),
               ),
@@ -273,11 +266,15 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                 onPressed: () {
                   Navigator.of(context).pop();
                   // Ana menüye dönmek için ana ekrana gidiyoruz.
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    FadePageRoute(page: const MainScreen()),
-                    (route) => false,
-                  );
+                  if (!mounted) return;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    Navigator.pushAndRemoveUntil(
+                      this.context,
+                      FadePageRoute(page: const MainScreen()),
+                      (route) => false,
+                    );
+                  });
                 },
                 child: const Text('Ana Menü'),
               ),
@@ -451,7 +448,9 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
 
                 if (snapshot.hasError) {
                   final message = snapshot.error.toString();
-                  final isMissingAsset = message.contains('Unable to load asset');
+                  final isMissingAsset = message.contains(
+                    'Unable to load asset',
+                  );
                   return _MapErrorCard(
                     title: 'Harita yüklenemedi',
                     message: isMissingAsset
@@ -471,7 +470,8 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                 }
 
                 final mapCountries = result.mapCountries;
-                final playableIso = provider.sessionState?.playableIsoCodes ?? const <String>[];
+                final playableIso =
+                    provider.sessionState?.playableIsoCodes ?? const <String>[];
 
                 final signature =
                     '${playableIso.join(',')}_${mapCountries.length}';
@@ -485,7 +485,8 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                   _shapePlayableSignature = signature;
                 }
 
-                final shapeKeys = _shapePlayableKeys ??
+                final shapeKeys =
+                    _shapePlayableKeys ??
                     List<String?>.filled(mapCountries.length, null);
 
                 final colors = provider.conqueredCountryColorsAsColors;
@@ -525,14 +526,16 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                             strokeColor: AppColors.borderLight,
                             strokeWidth: 0.6,
                             selectionSettings: MapSelectionSettings(
-                              color:
-                                  AppColors.primaryBlue.withValues(alpha: 0.18),
+                              color: AppColors.primaryBlue.withValues(
+                                alpha: 0.18,
+                              ),
                               strokeColor: AppColors.primaryBlue,
                               strokeWidth: 1.2,
                             ),
                             onSelectionChanged: (int index) async {
-                              final effectiveIndex =
-                                  index >= 0 ? index : _lastTappedShapeIndex;
+                              final effectiveIndex = index >= 0
+                                  ? index
+                                  : _lastTappedShapeIndex;
                               if (effectiveIndex == null) return;
                               _lastTappedShapeIndex = effectiveIndex;
 
@@ -541,17 +544,23 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                                 return;
                               }
 
+                              context
+                                  .read<SettingsProvider>()
+                                  .triggerButtonVibration();
+
                               final key = shapeKeys[effectiveIndex];
                               if (key == null) {
-                                _showSnackOnce('Bu bölge maç kapsamında değil.');
+                                _showSnackOnce(
+                                  'Bu bölge maç kapsamında değil.',
+                                );
                                 return;
                               }
 
                               final tapped = mapCountries[effectiveIndex];
-                              final props = tapped.extra ?? const <String, dynamic>{};
-                              await provider.submitOnlineAnswerFromMapProperties(
-                                props,
-                              );
+                              final props =
+                                  tapped.extra ?? const <String, dynamic>{};
+                              await provider
+                                  .submitOnlineAnswerFromMapProperties(props);
                             },
                           ),
                         ],
@@ -624,7 +633,9 @@ class _ScoreChip extends StatelessWidget {
               child: Icon(
                 i < lives ? Icons.favorite : Icons.favorite_border,
                 size: 14,
-                color: AppColors.errorRed.withValues(alpha: i < lives ? 0.95 : 0.32),
+                color: AppColors.errorRed.withValues(
+                  alpha: i < lives ? 0.95 : 0.32,
+                ),
               ),
             ),
         ],

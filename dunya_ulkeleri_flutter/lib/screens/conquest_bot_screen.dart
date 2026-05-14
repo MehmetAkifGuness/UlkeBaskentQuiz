@@ -54,7 +54,7 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
     enableDoubleTapZooming: true,
     enableMouseWheelZooming: true,
     minZoomLevel: 1,
-    maxZoomLevel: 15,
+    maxZoomLevel: 150,
   );
 
   late Future<_ConquestMapLoadResult> _loadFuture = _loadGeoJson();
@@ -116,10 +116,7 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(message),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
         );
     });
   }
@@ -163,11 +160,7 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
       final isoCode = (iso == null || iso.isEmpty) ? name : iso;
 
       mapCountries.add(
-        MapCountryModel(
-          isoCode: isoCode,
-          name: name,
-          extra: props,
-        ),
+        MapCountryModel(isoCode: isoCode, name: name, extra: props),
       );
     }
 
@@ -238,7 +231,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
               child: ChoiceChip(
                 label: Text(filter),
                 selected: _selectedContinent == filter,
-                onSelected: enabled ? (_) => setState(() => _selectedContinent = filter) : null,
+                onSelected: enabled
+                    ? (_) => setState(() => _selectedContinent = filter)
+                    : null,
               ),
             ),
         ],
@@ -294,7 +289,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                           ],
                         ),
                         selected: selected.toARGB32() == opt.color.toARGB32(),
-                        onSelected: enabled ? (_) => onChanged(opt.color) : null,
+                        onSelected: enabled
+                            ? (_) => onChanged(opt.color)
+                            : null,
                       ),
                     ),
                 ],
@@ -334,8 +331,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                       child: ChoiceChip(
                         label: Text(diff.displayName),
                         selected: _selectedDifficulty == diff,
-                        onSelected:
-                            enabled ? (_) => setState(() => _selectedDifficulty = diff) : null,
+                        onSelected: enabled
+                            ? (_) => setState(() => _selectedDifficulty = diff)
+                            : null,
                       ),
                     ),
                 ],
@@ -405,18 +403,22 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                         controller: _playerNameController,
                         decoration: InputDecoration(
                           labelText: 'Oyuncu Adı',
-                          labelStyle: const TextStyle(color: AppColors.textMuted),
+                          labelStyle: const TextStyle(
+                            color: AppColors.textMuted,
+                          ),
                           filled: true,
                           fillColor: AppColors.surface2.withOpacity(0.55),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight),
+                            borderSide: const BorderSide(
+                              color: AppColors.borderLight,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight),
+                            borderSide: const BorderSide(
+                              color: AppColors.borderLight,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -439,7 +441,10 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _continentPickerBar(context, enabled: !provider.isLoading),
+                      _continentPickerBar(
+                        context,
+                        enabled: !provider.isLoading,
+                      ),
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
@@ -546,7 +551,8 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      if (provider.botTimer != null && provider.isWaitingForAnswer)
+                      if (provider.botTimer != null &&
+                          provider.isWaitingForAnswer)
                         const Text(
                           'Bot düşünüyor...',
                           style: TextStyle(
@@ -602,7 +608,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryBlue),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryBlue,
+                      ),
                     );
                   }
 
@@ -610,15 +618,16 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                     final err = snapshot.error?.toString() ?? '';
                     final isMissingAsset =
                         err.contains('Unable to load asset') ||
-                            err.contains('Unable to load') ||
-                            err.contains('FlutterError');
+                        err.contains('Unable to load') ||
+                        err.contains('FlutterError');
 
                     return _MapErrorCard(
                       title: 'Harita yüklenemedi',
                       message: isMissingAsset
                           ? 'Harita verisi bulunamadı. Lütfen assets/maps/world_map_simplified.json dosyasını ekleyin.'
                           : 'Dünya haritası verisi okunamadı. Dosya formatını kontrol edin.',
-                      onRetry: () => setState(() => _loadFuture = _loadGeoJson()),
+                      onRetry: () =>
+                          setState(() => _loadFuture = _loadGeoJson()),
                     );
                   }
 
@@ -628,7 +637,8 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                       title: 'Harita verisi hazır değil',
                       message:
                           'Şu an assets/maps/world_map_simplified.json içinde ülke geometrisi bulunmuyor.',
-                      onRetry: () => setState(() => _loadFuture = _loadGeoJson()),
+                      onRetry: () =>
+                          setState(() => _loadFuture = _loadGeoJson()),
                     );
                   }
 
@@ -648,7 +658,8 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                     _shapePlayableSignature = signature;
                   }
 
-                  final shapeKeys = _shapePlayableKeys ??
+                  final shapeKeys =
+                      _shapePlayableKeys ??
                       List<String?>.filled(mapCountries.length, null);
 
                   final MapShapeSource source = MapShapeSource.memory(
@@ -660,7 +671,8 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                       final key = shapeKeys[index];
 
                       if (key != null) {
-                        final conqueredColor = provider.conqueredCountryColors[key];
+                        final conqueredColor =
+                            provider.conqueredCountryColors[key];
                         if (conqueredColor != null) {
                           return conqueredColor.withOpacity(0.85);
                         }
@@ -695,8 +707,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
                                 strokeWidth: 1.2,
                               ),
                               onSelectionChanged: (int index) async {
-                                final effectiveIndex =
-                                    index >= 0 ? index : _lastTappedShapeIndex;
+                                final effectiveIndex = index >= 0
+                                    ? index
+                                    : _lastTappedShapeIndex;
                                 if (effectiveIndex == null) return;
                                 _lastTappedShapeIndex = effectiveIndex;
 
@@ -714,7 +727,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
 
                                 final key = shapeKeys[effectiveIndex];
                                 if (key == null) {
-                                  _showSnackOnce('Bu bölge maç kapsamında değil.');
+                                  _showSnackOnce(
+                                    'Bu bölge maç kapsamında değil.',
+                                  );
                                   return;
                                 }
 
@@ -747,12 +762,14 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
     }
 
     final matcher = CountryMatchService(availableCountries: playableCountries);
-    return mapCountries.map((shape) {
-      final props = shape.extra;
-      if (props == null) return null;
-      final matched = matcher.matchFromMapProperties(props);
-      return matched?.isoCode;
-    }).toList(growable: false);
+    return mapCountries
+        .map((shape) {
+          final props = shape.extra;
+          if (props == null) return null;
+          final matched = matcher.matchFromMapProperties(props);
+          return matched?.isoCode;
+        })
+        .toList(growable: false);
   }
 }
 
@@ -826,11 +843,7 @@ class _ScorePill extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(
-                Icons.favorite,
-                size: 16,
-                color: AppColors.errorRed,
-              ),
+              const Icon(Icons.favorite, size: 16, color: AppColors.errorRed),
               const SizedBox(width: 6),
               Text(
                 'Can: $lives',

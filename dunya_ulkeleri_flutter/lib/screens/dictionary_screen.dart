@@ -14,7 +14,9 @@ import '../widgets/glass_card.dart';
 import 'country_detail_screen.dart';
 
 class DictionaryScreen extends StatefulWidget {
-  const DictionaryScreen({super.key});
+  final String? initialQuery;
+
+  const DictionaryScreen({super.key, this.initialQuery});
 
   @override
   _DictionaryScreenState createState() => _DictionaryScreenState();
@@ -34,6 +36,11 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
   @override
   void initState() {
     super.initState();
+
+    final initial = (widget.initialQuery ?? '').trim();
+    if (initial.isNotEmpty) {
+      _searchController.text = initial;
+    }
     _fetchDictionaryData();
   }
 

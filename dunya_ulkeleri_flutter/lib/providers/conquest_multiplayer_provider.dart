@@ -16,6 +16,10 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   final ConquestApiService _apiService = ConquestApiService();
   final ConquestWebSocketService _wsService = ConquestWebSocketService();
 
+  // Aynı session için peş peşe connect() çağrılarını engellemek için.
+  // (Örn: oda oluştur -> lobiye geçiş anında iki kere bağlanma denemesi.)
+  String? _connectingSessionId;
+
   bool isConnected = false;
   bool isLoading = false;
   String? errorMessage;
@@ -45,7 +49,36 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   bool get isGameFinished =>
       (sessionState?.status ?? '').toUpperCase() == 'FINISHED';
 
-  String? get currentTargetName => sessionState?.currentRound?.targetCountryName;
+  /// Online modda backend bazen hedef ülke adını İngilizce gönderebiliyor.
+  /// UI tarafında ISO kodundan Türkçe karşılığına çevirip gösteriyoruz.
+  String? get currentTargetName {
+    final round = sessionState?.currentRound;
+    if (round == null) return null;
+
+    final rawName = round.targetCountryName?.trim();
+    final rawIso = (round.targetIsoCode ?? '').trim();
+
+    String? trNameFromIso(String iso) {
+      final v = iso.trim();
+      if (v.isEmpty) return null;
+
+      // ISO3 ise direkt dene; ISO2 ise önce ISO3'e çevir.
+      if (v.length == 3) {
+        return IsoCountryService.turkishNameFromIso3(v);
+      }
+      if (v.length == 2) {
+        final iso3 = IsoCountryService.iso3FromAlpha2(v);
+        if (iso3 != null) return IsoCountryService.turkishNameFromIso3(iso3);
+      }
+      return null;
+    }
+
+    final translated = trNameFromIso(rawIso);
+    if (translated != null && translated.trim().isNotEmpty) return translated;
+
+    // ISO gelmiyorsa veya eşleşmezse, backend'in gönderdiği ismi fallback olarak kullan.
+    return (rawName == null || rawName.isEmpty) ? null : rawName;
+  }
 
   String? get currentTargetIsoCode => sessionState?.currentRound?.targetIsoCode;
 
@@ -170,12 +203,41 @@ class ConquestMultiplayerProvider with ChangeNotifier {
       return;
     }
 
+    final pid = playerId;
+
+    // Ülke adı çevirisi (ISO -> TR) ve ISO2/ISO3 eşleştirmeleri için gerekli.
+    try {
+      await IsoCountryService.ensureLoaded();
+    } catch (_) {}
+
+    // Aynı oturum için bağlantı zaten başlatıldıysa (veya bağlıysa) tekrar bağlanma.
+    // Hızlı ekran geçişlerinde birden fazla connect() çağrısı önceki bağlantıyı kapatıp
+    // kullanıcıya "WebSocket bağlantısı kapandı" gibi hatalar gösterebiliyor.
+    if (_wsService.connectedSessionId == currentSessionId) {
+      if (_wsService.isConnected) {
+        if (pid != null && pid.isNotEmpty) {
+          _wsService.requestState(
+            StartConquestGameRequest(sessionId: currentSessionId, playerId: pid),
+          );
+        }
+        return;
+      }
+
+      // Bağlantı devam ederken (henüz connected değilken) yeniden connect çağrısı yapma.
+      if (_connectingSessionId == currentSessionId) {
+        return;
+      }
+      // Aynı sessionId için daha önce denendi ama şu an bağlı değil -> yeniden dene.
+    }
+
     errorMessage = null;
+    _connectingSessionId = currentSessionId;
     notifyListeners();
 
     _wsService.connect(
       sessionId: currentSessionId,
       onState: (state) {
+        _connectingSessionId = null;
         sessionState = state;
         roomCode = state.roomCode ?? roomCode;
         isQuickMatchMode = state.quickMatch;
@@ -183,18 +245,23 @@ class ConquestMultiplayerProvider with ChangeNotifier {
         notifyListeners();
       },
       onError: (message) {
+        _connectingSessionId = null;
         errorMessage = message;
         isConnected = false;
         notifyListeners();
       },
-    );
+      onConnected: () {
+        _connectingSessionId = null;
+        isConnected = true;
+        notifyListeners();
 
-    final pid = playerId;
-    if (pid != null && pid.isNotEmpty) {
-      _wsService.requestState(
-        StartConquestGameRequest(sessionId: currentSessionId, playerId: pid),
-      );
-    }
+        if (pid != null && pid.isNotEmpty) {
+          _wsService.requestState(
+            StartConquestGameRequest(sessionId: currentSessionId, playerId: pid),
+          );
+        }
+      },
+    );
 
     // Not: STOMP bağlantısı asenkron kurulur; ilk state gelince isConnected true olur.
   }
@@ -375,6 +442,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     _wsService.disconnect();
     isConnected = false;
     isLoading = false;
+    _connectingSessionId = null;
 
     sessionId = null;
     roomCode = null;
