@@ -8,11 +8,14 @@ import lombok.Data;
 @Data
 public class UserProfileResponse {
     private String username;
+    private String displayName;
     private String email;
     private LocalDateTime creationDate;
     private int maxWinStreak;
     private int totalGamesPlayed;
     private Integer avatarId;
+    private String customAvatarBase64;
+    private String customAvatarContentType;
 
     private boolean hasPlayedDaily;
 

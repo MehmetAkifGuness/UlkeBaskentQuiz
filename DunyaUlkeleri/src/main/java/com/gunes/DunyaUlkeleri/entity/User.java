@@ -16,6 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.PrePersist;
@@ -59,6 +60,13 @@ public class User {
 
     @Column(columnDefinition = "integer default 1")
     private Integer avatarId = 1;
+
+    private String displayName;
+
+    @Lob
+    private byte[] customAvatar;
+
+    private String customAvatarContentType;
 
     private LocalDate lastDailyDate;
 

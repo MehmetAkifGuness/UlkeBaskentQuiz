@@ -1,7 +1,9 @@
 // lib/screens/profile_screen.dart
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user_profile_model.dart';
@@ -30,6 +32,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
   late Future<_ProfileData?> _profileFuture;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -51,6 +54,178 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = Provider.of<AuthProvider>(context, listen: false).token;
     if (token == null) return;
     setState(() => _profileFuture = _fetchProfileData(token));
+  }
+
+  Future<void> _showAvatarOptions(String token) async {
+    Provider.of<SettingsProvider>(context, listen: false).triggerButtonVibration();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.32,
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Profil Fotoğrafı',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                      color: AppColors.textMuted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await _pickAndUploadAvatar(token);
+                  },
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Galeriden Seç'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showAvatarSelection(token);
+                  },
+                  icon: const Icon(Icons.grid_view_rounded),
+                  label: const Text('Hazır Avatarlar'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textDark,
+                    side: BorderSide(color: AppColors.borderLight.withOpacity(0.9)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar(String token) async {
+    try {
+      final file = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 768,
+        maxHeight: 768,
+      );
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+      final name = file.name;
+      final contentType = _guessImageContentType(name);
+
+      final ok = await _userService.uploadCustomAvatar(
+        token,
+        bytes,
+        filename: name,
+        contentType: contentType,
+      );
+      if (!ok) return;
+      if (!mounted) return;
+      _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Profil fotoğrafı yüklenemedi: $e'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    }
+  }
+
+  String _guessImageContentType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
+  }
+
+  Future<void> _editDisplayName(String token, String currentName) async {
+    final controller = TextEditingController(text: currentName);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('İsim Güncelle'),
+          content: TextField(
+            controller: controller,
+            maxLength: 40,
+            decoration: const InputDecoration(
+              hintText: 'Görünen isim',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              child: const Text('Kaydet'),
+            ),
+          ],
+        );
+      },
+    );
+
+    final newName = result == null ? null : result.trim();
+    if (newName == null || newName.isEmpty || newName == currentName) return;
+
+    try {
+      final ok = await _userService.updateDisplayName(token, newName);
+      if (!ok) return;
+      if (!mounted) return;
+      _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('İsim güncellenemedi: $e'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    }
   }
 
   void _goToTab(int index) {
@@ -392,23 +567,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         listen: false,
                       ).token;
                       if (token == null) return;
-                      _showAvatarSelection(token);
+                      _showAvatarOptions(token);
                     },
                     child: _AvatarRing(
                       avatarId: profile.avatarId,
+                      avatarBytes: profile.customAvatarBytes,
                       ringColor: tier.color,
                       progress: progress,
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        profile.displayName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton(
+                        onPressed: () {
+                          final token = Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          ).token;
+                          if (token == null) return;
+                          _editDisplayName(token, profile.displayName);
+                        },
+                        icon: const Icon(Icons.edit, size: 18),
+                        color: AppColors.textMuted,
+                      ),
+                    ],
+                  ),
+                ),
                 Text(
-                  profile.username,
+                  '@${profile.username}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 26,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -668,11 +873,13 @@ class _IconGlassButton extends StatelessWidget {
 
 class _AvatarRing extends StatelessWidget {
   final int avatarId;
+  final Uint8List? avatarBytes;
   final Color ringColor;
   final double progress;
 
   const _AvatarRing({
     required this.avatarId,
+    this.avatarBytes,
     required this.ringColor,
     required this.progress,
   });
@@ -693,7 +900,7 @@ class _AvatarRing extends StatelessWidget {
             valueColor: AlwaysStoppedAnimation(ringColor),
           ),
         ),
-        AppAvatar(avatarId: avatarId, size: 112),
+        AppAvatar(avatarId: avatarId, size: 112, imageBytes: avatarBytes),
         Positioned(
           right: 10,
           bottom: 10,

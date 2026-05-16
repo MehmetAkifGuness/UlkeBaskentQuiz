@@ -1,7 +1,9 @@
 // lib/services/user.service.dart
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../models/user_profile_model.dart';
 import '../models/recent_session_model.dart';
 import 'api_exception.dart';
@@ -211,5 +213,76 @@ class UserService {
       print("Avatar güncellenemedi: $e");
     }
     return false;
+  }
+
+  Future<bool> updateDisplayName(String token, String displayName) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/profile'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'displayName': displayName}),
+    );
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      return false;
+    }
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    throw ApiException.fromResponse(response);
+  }
+
+  Future<bool> uploadCustomAvatar(
+    String token,
+    Uint8List bytes, {
+    required String filename,
+    required String contentType,
+  }) async {
+    final uri = Uri.parse('$baseUrl/avatar/upload');
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'avatar',
+        bytes,
+        filename: filename,
+        contentType: MediaType.parse(contentType),
+      ),
+    );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      return false;
+    }
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    throw ApiException.fromResponse(response);
+  }
+
+  Future<bool> clearCustomAvatar(String token) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/avatar/custom'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      return false;
+    }
+
+    return response.statusCode == 204;
   }
 }

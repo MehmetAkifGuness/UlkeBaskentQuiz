@@ -2,7 +2,7 @@ package com.gunes.DunyaUlkeleri.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gunes.DunyaUlkeleri.entity.User;
-import com.gunes.DunyaUlkeleri.exception.ApiErrorResponse;
+import com.gunes.DunyaUlkeleri.util.exception.ApiErrorResponse;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

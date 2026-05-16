@@ -331,6 +331,9 @@ class _PodiumUser extends StatelessWidget {
     final score = (user?['score'] is num)
         ? (user!['score'] as num).toInt()
         : user?['score'] ?? 0;
+    final avatarId = (user?['avatarId'] is num)
+        ? (user!['avatarId'] as num).toInt()
+        : AppAvatar.stableAvatarIdFromText(username);
 
     return Column(
       children: [
@@ -355,7 +358,7 @@ class _PodiumUser extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(3),
                 child: AppAvatar(
-                  avatarId: AppAvatar.stableAvatarIdFromText(username),
+                  avatarId: avatarId,
                   size: size,
                 ),
               ),
@@ -475,6 +478,9 @@ class _RankRow extends StatelessWidget {
     final score = (user['score'] is num)
         ? (user['score'] as num).toInt()
         : user['score'] ?? 0;
+    final avatarId = (user['avatarId'] is num)
+        ? (user['avatarId'] as num).toInt()
+        : AppAvatar.stableAvatarIdFromText(username);
 
     return GlassCard(
       tint: highlight ? AppColors.primaryBlueHover : AppColors.surface2,
@@ -492,7 +498,7 @@ class _RankRow extends StatelessWidget {
             ),
           ),
           AppAvatar(
-            avatarId: AppAvatar.stableAvatarIdFromText(username),
+            avatarId: avatarId,
             size: 36,
             showDot: highlight,
           ),

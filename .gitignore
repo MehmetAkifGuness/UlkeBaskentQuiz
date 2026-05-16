@@ -12,6 +12,7 @@
 # Maven / Spring Boot build outputs & repo icinde olusan cache
 .m2/
 .m2repo/
+m2repo/
 _mvn_home/
 _mvn_repo/
 **/target/
@@ -25,3 +26,6 @@ _mvn_*.err
 **/.flutter-plugins-dependencies
 **/.packages
 **/.pub-cache/
+
+# Flutter design boards
+**/boards/

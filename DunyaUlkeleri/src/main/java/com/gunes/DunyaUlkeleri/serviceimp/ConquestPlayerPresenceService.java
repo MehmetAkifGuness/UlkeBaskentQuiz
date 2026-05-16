@@ -1,0 +1,138 @@
+package com.gunes.DunyaUlkeleri.serviceimp;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import com.gunes.DunyaUlkeleri.dto.request.SetConquestReadyRequest;
+import com.gunes.DunyaUlkeleri.dto.request.StartConquestGameRequest;
+import com.gunes.DunyaUlkeleri.dto.response.ConquestSessionStateDto;
+import com.gunes.DunyaUlkeleri.entity.ConquestGameSession;
+import com.gunes.DunyaUlkeleri.entity.ConquestGameStatus;
+import com.gunes.DunyaUlkeleri.entity.ConquestPlayer;
+import com.gunes.DunyaUlkeleri.mapper.ConquestSessionStateMapper;
+import com.gunes.DunyaUlkeleri.repository.ConquestQuickMatchQueue;
+import com.gunes.DunyaUlkeleri.repository.ConquestSessionStore;
+import com.gunes.DunyaUlkeleri.util.exception.AppException;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class ConquestPlayerPresenceService {
+
+    private static final Logger log = LoggerFactory.getLogger(ConquestPlayerPresenceService.class);
+
+    private final ConquestSessionStore sessionStore;
+    private final ConquestQuickMatchQueue quickMatchQueue;
+    private final ConquestSessionStateMapper stateMapper;
+
+    public ConquestSessionStateDto setReady(SetConquestReadyRequest request) {
+        final String sessionId = safeTrim(request == null ? null : request.getSessionId());
+        final String playerId = safeTrim(request == null ? null : request.getPlayerId());
+        final boolean ready = request != null && request.isReady();
+
+        if (playerId == null || playerId.isBlank()) {
+            throw AppException.badRequest("PLAYER_ID_REQUIRED", "playerId boş olamaz.");
+        }
+
+        final ConquestGameSession session = sessionStore.requireById(sessionId);
+        synchronized (session) {
+            final ConquestPlayer player = session.getPlayer(playerId);
+            if (player == null) {
+                throw AppException.notFound("PLAYER_NOT_FOUND", "Oyuncu bulunamadı.");
+            }
+            player.setReady(ready);
+            session.touch();
+            return toStateDto(session, ready ? "Hazırım." : "Bekliyorum.", null, false);
+        }
+    }
+
+    public ConquestSessionStateDto leaveSession(StartConquestGameRequest request) {
+        final String sessionId = safeTrim(request == null ? null : request.getSessionId());
+        final String playerId = safeTrim(request == null ? null : request.getPlayerId());
+        if (playerId == null || playerId.isBlank()) {
+            throw AppException.badRequest("PLAYER_ID_REQUIRED", "playerId boş olamaz.");
+        }
+
+        final ConquestGameSession session = sessionStore.requireById(sessionId);
+        synchronized (session) {
+            session.removePlayer(playerId);
+
+            final boolean empty = session.getPlayers() == null || session.getPlayers().isEmpty();
+            if (empty) {
+                sessionStore.remove(session.getSessionId());
+                if (session.isQuickMatch()) {
+                    quickMatchQueue.removeWaitingSessionId(
+                            normalizeContinentFilter(session.getSelectedContinentFilter()),
+                            session.getSessionId()
+                    );
+                }
+                log.info(
+                        "Session removed (empty): sessionId={}, roomCode={}",
+                        session.getSessionId(),
+                        session.getRoomCode()
+                );
+                return null;
+            }
+
+            if (session.getStatus() == ConquestGameStatus.STARTED) {
+                session.setStatus(ConquestGameStatus.FINISHED);
+            }
+
+            Optional.ofNullable(session.getPlayers())
+                    .orElseGet(List::of)
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .forEach(p -> p.setReady(false));
+
+            session.touch();
+            return toStateDto(session, "Oyuncu ayrıldı.", null, false);
+        }
+    }
+
+    public void handleDisconnect(String sessionId, String playerId) {
+        if (sessionId == null || playerId == null) return;
+        try {
+            final ConquestGameSession session = sessionStore.requireById(sessionId);
+            synchronized (session) {
+                final ConquestPlayer player = session.getPlayer(playerId);
+                if (player != null) {
+                    player.setConnected(false);
+                    session.touch();
+                    log.info(
+                            "Player disconnected: sessionId={}, playerId={}",
+                            session.getSessionId(),
+                            playerId
+                    );
+                }
+            }
+        } catch (Exception ignored) {
+            // Session yoksa ignore.
+        }
+    }
+
+    private ConquestSessionStateDto toStateDto(
+            ConquestGameSession session,
+            String lastEventMessage,
+            String lastWinnerPlayerId,
+            boolean roundLocked
+    ) {
+        return stateMapper.toStateDto(session, lastEventMessage, lastWinnerPlayerId, roundLocked);
+    }
+
+    private static String safeTrim(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private static String normalizeContinentFilter(String value) {
+        final String v = safeTrim(value);
+        if (v == null || v.isBlank()) return "ALL";
+        return v;
+    }
+}
+

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
 import '../theme/app_theme.dart';
 
@@ -7,6 +8,7 @@ class AppAvatar extends StatelessWidget {
   final double size;
   final bool showDot;
   final VoidCallback? onTap;
+  final Uint8List? imageBytes;
 
   const AppAvatar({
     super.key,
@@ -14,6 +16,7 @@ class AppAvatar extends StatelessWidget {
     this.size = 40,
     this.showDot = false,
     this.onTap,
+    this.imageBytes,
   });
 
   static int stableAvatarIdFromText(String text, {int max = 15}) {
@@ -26,6 +29,9 @@ class AppAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ImageProvider? customProvider =
+        imageBytes == null ? null : MemoryImage(imageBytes!);
+
     final avatar = SizedBox(
       width: size,
       height: size,
@@ -44,25 +50,21 @@ class AppAvatar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(2.2),
           child: ClipOval(
-            child: Image.asset(
-              'assets/avatars/avatar_$avatarId.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return DecoratedBox(
-                  decoration: const BoxDecoration(
-                    color: AppColors.surface2,
-                    shape: BoxShape.circle,
+            child: customProvider != null
+                ? Image(
+                    image: customProvider,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _fallback(size);
+                    },
+                  )
+                : Image.asset(
+                    'assets/avatars/avatar_$avatarId.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _fallback(size);
+                    },
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person,
-                      color: AppColors.textMuted,
-                      size: size * 0.55,
-                    ),
-                  ),
-                );
-              },
-            ),
           ),
         ),
       ),
@@ -92,5 +94,21 @@ class AppAvatar extends StatelessWidget {
 
     if (onTap == null) return content;
     return GestureDetector(onTap: onTap, child: content);
+  }
+
+  Widget _fallback(double size) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.surface2,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.person,
+          color: AppColors.textMuted,
+          size: size * 0.55,
+        ),
+      ),
+    );
   }
 }

@@ -4,4 +4,6 @@ profil ekleme kısmında kullanıcıların kendi galerilerinden profil fotoğraf
 
 country_too_capital gibi yazılar vardı ya onlar kaldırılacak sıralama kısmından 
 
-tüm classları SOLID prensibine uygun düzenle backend , frontend . frontend de sadece tasarım olsun backendin yapacağı işler frontendde olmasın 
+CONQUESTİN ALTINDAKİ DTO PAKETİNİ REQUEST RESPONSE PAKETLERİ ALTINDA DÜZENLE VE CONFİG KISMINDA APİ CONFİG TANIMLA ŞİFRE ŞİFRELEMEYİ ORDAN YAP VE CONFİG KISMINA EKLENMESİ GERKEN BAŞKA CONFİG VARMI ONA DA BAK BAŞKA PROJELERDEN ANALİZ FİLAN YAP KARŞILAŞTIR ONA GÖRE DÜZEMLEME YAP GİTHUB ÜZERİNDEN ÖRNEK PROJELERE BAK VE DÜZENLE EN SON OLARAK DA PROJENİN EN AZ 1MİLYON KULLANICI KULLANSA BİLE ÇÖKMEYECEK ŞEKİLDE SENKRENİZZASYONUNU YAP 
+
+service ve service impl kısmında sınıflar hala çok uzun onları da düzenle aynı sornasında paket yapısında neden model var paketler sadece controller , service ,serviceimp , repository , entity , dto , mapper , security , config , util olacak ve cnoquestin kendine ait bu paketleri var ya onlar ayrı olmasın yani ayrı bir özelliğin kendine ait paketleri olmasın direk her şey controller , service ,serviceimp , repository , entity , dto , mapper , security , config , util  bu paketlerin altında doğru ve nizami bir şekilde yerleştirilmiş olması lazım o yüzden paket yapılarını düzenle özellikle config yapılandırmasını düzgün yap 
