@@ -8,9 +8,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.gunes.DunyaUlkeleri.dto.request.CreateConquestSessionRequest;
 import com.gunes.DunyaUlkeleri.dto.request.JoinConquestSessionRequest;
+import com.gunes.DunyaUlkeleri.dto.request.StartConquestGameRequest;
 import com.gunes.DunyaUlkeleri.dto.response.ConquestSessionStateDto;
 import com.gunes.DunyaUlkeleri.dto.response.CreateConquestSessionResponse;
 import com.gunes.DunyaUlkeleri.dto.response.JoinConquestSessionResponse;
@@ -29,8 +31,15 @@ public class ConquestRestController {
     // Oda oluşturma
     @PostMapping("/sessions")
     public ResponseEntity<CreateConquestSessionResponse> createSession(
-            @RequestBody CreateConquestSessionRequest request
+            @RequestBody CreateConquestSessionRequest request,
+            Authentication authentication
     ) {
+        if (request == null) {
+            request = new CreateConquestSessionRequest();
+        }
+        if (authentication != null) {
+            request.setUsername(authentication.getName());
+        }
         final CreateConquestSessionResponse response = conquestGameService.createSession(request);
         publishState(response.getSessionId());
         return ResponseEntity.ok(response);
@@ -40,8 +49,15 @@ public class ConquestRestController {
     @PostMapping("/sessions/{roomCode}/join")
     public ResponseEntity<JoinConquestSessionResponse> joinSession(
             @PathVariable String roomCode,
-            @RequestBody JoinConquestSessionRequest request
+            @RequestBody JoinConquestSessionRequest request,
+            Authentication authentication
     ) {
+        if (request == null) {
+            request = new JoinConquestSessionRequest();
+        }
+        if (authentication != null) {
+            request.setUsername(authentication.getName());
+        }
         final JoinConquestSessionResponse response = conquestGameService.joinSession(roomCode, request);
         publishState(response.getSessionId());
         return ResponseEntity.ok(response);
@@ -50,11 +66,36 @@ public class ConquestRestController {
     // Hızlı oyun (matchmaking)
     @PostMapping("/quick-match")
     public ResponseEntity<CreateConquestSessionResponse> quickMatch(
-            @RequestBody CreateConquestSessionRequest request
+            @RequestBody CreateConquestSessionRequest request,
+            Authentication authentication
     ) {
+        if (request == null) {
+            request = new CreateConquestSessionRequest();
+        }
+        if (authentication != null) {
+            request.setUsername(authentication.getName());
+        }
         final CreateConquestSessionResponse response = conquestGameService.quickMatch(request);
         publishState(response.getSessionId());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/sessions/{sessionId}/leave")
+    public ResponseEntity<Void> leaveSession(
+            @PathVariable String sessionId,
+            @RequestBody StartConquestGameRequest request
+    ) {
+        if (request == null) {
+            request = new StartConquestGameRequest();
+        }
+        if (request.getSessionId() == null || request.getSessionId().isBlank()) {
+            request.setSessionId(sessionId);
+        }
+        final ConquestSessionStateDto state = conquestGameService.leaveSession(request);
+        if (state != null && state.getSessionId() != null) {
+            messagingTemplate.convertAndSend("/topic/conquest/" + state.getSessionId(), state);
+        }
+        return ResponseEntity.noContent().build();
     }
 
     // Mevcut state

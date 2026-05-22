@@ -3,7 +3,7 @@ package com.gunes.DunyaUlkeleri.repository;
 import java.util.function.Supplier;
 
 public interface ConquestQuickMatchQueue {
-    <T> T withLock(Supplier<T> action);
+    <T> T withLock(String continentFilter, Supplier<T> action);
 
     String getWaitingSessionId(String continentFilter);
 

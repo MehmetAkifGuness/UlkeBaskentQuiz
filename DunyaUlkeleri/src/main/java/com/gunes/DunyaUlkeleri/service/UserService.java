@@ -1,6 +1,7 @@
 package com.gunes.DunyaUlkeleri.service;
 
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
+import com.gunes.DunyaUlkeleri.dto.response.AuthResponse;
 
 public interface UserService {
     
@@ -11,7 +12,11 @@ public interface UserService {
 
     UserProfileResponse updateDisplayName(String username, String displayName);
 
+    AuthResponse updateUsername(String username, String newUsername);
+
     UserProfileResponse uploadCustomAvatar(String username, byte[] imageBytes, String contentType);
 
     void clearCustomAvatar(String username);
+
+    void deleteAccount(String username);
 }

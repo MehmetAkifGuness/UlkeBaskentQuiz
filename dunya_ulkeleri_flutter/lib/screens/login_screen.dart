@@ -12,10 +12,10 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  LoginScreenState createState() => LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
 
                           // 🚨 DÜZELTME BURADA: Asenkron işlem sonrası context kontrolü
-                          if (!mounted) return;
+                          if (!context.mounted) return;
 
                           if (authProvider.token != null) {
                             Navigator.pushReplacement(
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           bool success = await authProvider.loginAsGuest();
 
                           // 🚨 DÜZELTME BURADA: Asenkron işlem sonrası context kontrolü
-                          if (!mounted) return;
+                          if (!context.mounted) return;
 
                           if (success) {
                             Navigator.pushReplacement(

@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
+import 'app/navigation.dart';
 import 'providers/auth_provider.dart';
 import 'providers/conquest_provider.dart';
 import 'providers/conquest_multiplayer_provider.dart';
+import 'providers/duel_provider.dart';
 import 'providers/game_provider.dart';
+import 'providers/profile_provider.dart';
 import 'providers/world_map_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart'; // 🚨 DÜZELTME: HomeScreen yerine MainScreen'i import ettik!
 import 'theme/app_theme.dart';
-
-// 🚨 YENİ EKLENDİ: Tüm uygulamayı her yerden (Servislerden bile) yönlendirebilmek için Global Anahtar
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 🚨 YENİ: Asenkron işlemlerden önce Flutter motorunu hazırla
@@ -32,6 +32,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => WorldMapProvider()),
         ChangeNotifierProvider(create: (_) => ConquestProvider()),
         ChangeNotifierProvider(create: (_) => ConquestMultiplayerProvider()),
+        ChangeNotifierProvider(create: (_) => DuelProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: MyApp(),
     ),

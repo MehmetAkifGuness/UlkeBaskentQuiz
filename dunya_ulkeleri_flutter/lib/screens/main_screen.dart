@@ -1,6 +1,8 @@
 // lib/screens/main_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // 🚨 YENİ EKLENDİ
+import '../providers/auth_provider.dart';
+import '../providers/profile_provider.dart';
 import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
 import '../widgets/geo_bottom_nav.dart';
 import 'dashboard_screen.dart';
@@ -13,12 +15,27 @@ class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   @override
-  _MainScreenState createState() => _MainScreenState();
+  MainScreenState createState() => MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   final Set<int> _loadedTabs = <int>{0};
+  bool _didBootstrapProfile = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didBootstrapProfile) return;
+    _didBootstrapProfile = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final token = context.read<AuthProvider>().token;
+      if (token == null || token.trim().isEmpty) return;
+      context.read<ProfileProvider>().refresh(token);
+    });
+  }
 
   void _setTabIndex(int index) {
     if (!mounted) return;
@@ -42,7 +59,10 @@ class _MainScreenState extends State<MainScreen> {
       case 3:
         return const LeaderboardScreen(); // Sıralama
       case 4:
-        return ProfileScreen(onNavigateTab: _setTabIndex);
+        return ProfileScreen(
+          onNavigateTab: _setTabIndex,
+          isActive: _currentIndex == 4,
+        );
       default:
         return const SizedBox.shrink();
     }

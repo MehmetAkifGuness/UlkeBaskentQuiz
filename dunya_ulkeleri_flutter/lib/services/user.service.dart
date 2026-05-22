@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../models/auth_model.dart';
 import '../models/user_profile_model.dart';
 import '../models/recent_session_model.dart';
 import 'api_exception.dart';
@@ -12,7 +13,7 @@ import 'api_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../main.dart'; // navigatorKey için
+import '../app/navigation.dart'; // navigatorKey için
 import '../screens/login_screen.dart';
 
 class UserService {
@@ -60,6 +61,28 @@ class UserService {
     }
   }
 
+  Future<Uint8List?> getCustomAvatarBytes(String token, String username) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/avatar/image/${Uri.encodeComponent(username)}'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      return null;
+    }
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    }
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+
+    throw ApiException.fromResponse(response);
+  }
+
   // 1. Profil için Kendi Kategori Skorlarımı Getir
   Future<Map<String, int>> getMyCategoryScores(String token) async {
     final response = await http.get(
@@ -94,7 +117,7 @@ class UserService {
 
     if (response.statusCode == 401 || response.statusCode == 403) {
       _handleUnauthorized();
-      return [];
+      throw ApiException.fromResponse(response);
     }
 
     if (response.statusCode == 200) {
@@ -102,16 +125,16 @@ class UserService {
         utf8.decode(response.bodyBytes),
       );
       return jsonResponse
-          .where((e) => e is Map)
+          .whereType<Map>()
           .map(
             (e) => RecentSessionModel.fromJson(
-              Map<String, dynamic>.from(e as Map),
+              Map<String, dynamic>.from(e),
             ),
           )
           .toList();
     }
 
-    return [];
+    throw ApiException.fromResponse(response);
   }
 
   // 2. Seçilen Kategoriye Göre Liderlik Tablosunu Getir
@@ -122,97 +145,79 @@ class UserService {
     String category,
     String mode,
   ) async {
-    try {
-      // 📡 URL'ye mode parametresini koyduk
-      final response = await http.get(
-        Uri.parse('$baseUrl/leaderboard/$category?mode=$mode'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+    final response = await http.get(
+      Uri.parse('$baseUrl/leaderboard/$category?mode=$mode'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-      // 🚨 YENİ EKLENDİ
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        _handleUnauthorized();
-        return [];
-      }
-
-      if (response.statusCode == 200) {
-        List jsonResponse = json.decode(utf8.decode(response.bodyBytes));
-        return List<Map<String, dynamic>>.from(jsonResponse);
-      }
-    } catch (e) {
-      print("Liderlik tablosu çekilemedi: $e");
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw ApiException.fromResponse(response);
     }
-    return [];
+
+    if (response.statusCode == 200) {
+      List jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+      return List<Map<String, dynamic>>.from(jsonResponse);
+    }
+
+    throw ApiException.fromResponse(response);
   }
 
   // Hata Defterini Getir
   Future<List<dynamic>> getMistakes(String token) async {
-    try {
-      final response = await http.get(
-        // 🚨 DÜZELTİLDİ: Sadece $baseUrl/mistakes yazıyoruz
-        Uri.parse('$baseUrl/mistakes'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+    final response = await http.get(
+      Uri.parse('$baseUrl/mistakes'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-      // 🚨 YENİ EKLENDİ
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        _handleUnauthorized();
-        return [];
-      }
-
-      print("🎯 API Cevap Kodu: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
-      }
-    } catch (e) {
-      print("🚨 Hata defteri çekilemedi: $e");
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw ApiException.fromResponse(response);
     }
-    return [];
+
+    if (response.statusCode == 200) {
+      return json.decode(utf8.decode(response.bodyBytes));
+    }
+
+    throw ApiException.fromResponse(response);
   }
 
   // Öğrenilen Hatayı Sil
   Future<bool> removeMistake(String token, int questionId) async {
-    try {
-      final response = await http.delete(
-        // 🚨 DÜZELTİLDİ: Sadece $baseUrl/mistakes/$questionId yazıyoruz
-        Uri.parse('$baseUrl/mistakes/$questionId'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+    final response = await http.delete(
+      Uri.parse('$baseUrl/mistakes/$questionId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-      // 🚨 YENİ EKLENDİ
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        _handleUnauthorized();
-        return false;
-      }
-
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw ApiException.fromResponse(response);
     }
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    throw ApiException.fromResponse(response);
   }
 
   // --- 🚨 AVATAR GÜNCELLEME SERVİSİ ---
   Future<bool> updateAvatar(String token, int avatarId) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/avatar/$avatarId'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+    final response = await http.put(
+      Uri.parse('$baseUrl/avatar/$avatarId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-      // 🚨 YENİ EKLENDİ
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        _handleUnauthorized();
-        return false;
-      }
-
-      if (response.statusCode == 200) {
-        return true;
-      }
-    } catch (e) {
-      print("Avatar güncellenemedi: $e");
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw ApiException.fromResponse(response);
     }
-    return false;
+
+    if (response.statusCode == 200) {
+      return true;
+    }
+
+    throw ApiException.fromResponse(response);
   }
 
   Future<bool> updateDisplayName(String token, String displayName) async {
@@ -232,6 +237,28 @@ class UserService {
 
     if (response.statusCode == 200) {
       return true;
+    }
+
+    throw ApiException.fromResponse(response);
+  }
+
+  Future<AuthModel> updateUsername(String token, String newUsername) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/username'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'username': newUsername}),
+    );
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw ApiException.fromResponse(response);
+    }
+
+    if (response.statusCode == 200) {
+      return AuthModel.fromJson(json.decode(utf8.decode(response.bodyBytes)));
     }
 
     throw ApiException.fromResponse(response);
@@ -284,5 +311,23 @@ class UserService {
     }
 
     return response.statusCode == 204;
+  }
+
+  Future<void> deleteAccount(String token) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/account'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      _handleUnauthorized();
+      throw ApiException.fromResponse(response);
+    }
+
+    if (response.statusCode == 204) {
+      return;
+    }
+
+    throw ApiException.fromResponse(response);
   }
 }

@@ -1,0 +1,120 @@
+﻿// lib/screens/profile_screen.dart
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../models/user_profile_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/profile_provider.dart';
+import '../providers/settings_provider.dart';
+import '../services/user.service.dart';
+import '../theme/app_theme.dart';
+import '../utils/error_message_utils.dart';
+import '../utils/page_trasitions.dart';
+import '../widgets/app_avatar.dart';
+import '../widgets/geo_background.dart';
+import '../widgets/glass_card.dart';
+import 'dictionary_screen.dart';
+import 'login_screen.dart';
+import 'mistake_screen.dart';
+import 'setup_screen.dart';
+
+class ProfileScreen extends StatefulWidget {
+  final ValueChanged<int>? onNavigateTab;
+
+  const ProfileScreen({super.key, this.onNavigateTab});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final UserService _userService = UserService();
+  late Future<_ProfileData?> _profileFuture;
+  _ProfileData? _cachedProfileData;
+  final ImagePicker _imagePicker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    _profileFuture = token == null
+        ? Future.value(null)
+        : _fetchProfileData(token);
+  }
+
+  Future<_ProfileData?> _fetchProfileData(String token) async {
+    final profileFuture = _userService.getUserProfile(token);
+    final scoresFuture = _userService.getMyCategoryScores(token).catchError(
+      (_) => <String, int>{},
+    );
+
+    final profile = await profileFuture;
+    if (profile == null) return null;
+
+    final scores = await scoresFuture;
+
+    Uint8List? avatarBytes;
+    if (profile.hasCustomAvatar) {
+      avatarBytes = await _userService.getCustomAvatarBytes(token, profile.username);
+    }
+
+    final updatedProfile = profile.copyWith(customAvatarBytes: avatarBytes);
+    return _ProfileData(profile: updatedProfile, scores: scores);
+  }
+
+  void _refresh() {
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    if (token == null) return;
+    setState(() => _profileFuture = _fetchProfileData(token));
+  }
+
+  void _updateLocalProfile(UserProfileModel Function(UserProfileModel current) updater) {
+    final current = _cachedProfileData;
+    if (current == null) {
+      _refresh();
+      return;
+    }
+
+    final updatedProfile = updater(current.profile);
+    final updatedData = _ProfileData(profile: updatedProfile, scores: current.scores);
+
+    setState(() {
+      _cachedProfileData = updatedData;
+      _profileFuture = Future.value(updatedData);
+    });
+
+    Provider.of<ProfileProvider>(context, listen: false).bump();
+  }
+
+  Future<void> _showAvatarOptions(String token) async {
+    Provider.of<SettingsProvider>(context, listen: false).triggerButtonVibration();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return _AvatarOptionsSheet(
+          onPickFromGallery: () async {
+            Navigator.of(sheetContext).pop();
+            await _pickAndUploadAvatar(token);
+          },
+          onReadyAvatars: () {
+            Navigator.of(sheetContext).pop();
+            _showAvatarSelection(token);
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar(String token) async {
+    try {
+      final file = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 768,

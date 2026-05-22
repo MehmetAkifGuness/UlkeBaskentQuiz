@@ -8,6 +8,7 @@ import '../utils/page_trasitions.dart';
 import '../widgets/geo_background.dart';
 import '../widgets/geo_top_bar.dart';
 import '../widgets/glass_card.dart';
+import 'setup_screen/delete_account_dialog.dart';
 
 class SetupScreen extends StatelessWidget {
   const SetupScreen({super.key});
@@ -66,7 +67,7 @@ class SetupScreen extends StatelessWidget {
                                     ? AppColors.primaryBlue
                                     : AppColors.textMuted,
                               ),
-                              activeColor: AppColors.primaryBlue,
+                              activeThumbColor: AppColors.primaryBlue,
                               value: settings.isSoundEnabled,
                               onChanged: (value) {
                                 Provider.of<SettingsProvider>(
@@ -100,7 +101,7 @@ class SetupScreen extends StatelessWidget {
                                     ? AppColors.primaryBlue
                                     : AppColors.textMuted,
                               ),
-                              activeColor: AppColors.primaryBlue,
+                              activeThumbColor: AppColors.primaryBlue,
                               value: settings.isVibrationEnabled,
                               onChanged: (value) {
                                 Provider.of<SettingsProvider>(
@@ -186,6 +187,52 @@ class SetupScreen extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             height: 1.45,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  GlassCard(
+                    onTap: () {
+                      Provider.of<SettingsProvider>(
+                        context,
+                        listen: false,
+                      ).triggerButtonVibration();
+                      showDeleteAccountDialog(context);
+                    },
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.delete_forever_rounded,
+                          color: AppColors.errorRed,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hesabı Sil',
+                                style: TextStyle(
+                                  color: AppColors.textDark,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Hesabını ve tüm verilerini kalıcı olarak sil',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.textMuted,
                         ),
                       ],
                     ),

@@ -17,6 +17,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws/conquest")
                 .setAllowedOriginPatterns(CorsOriginPatterns.devAllowedOriginPatternsArray())
                 .withSockJS();
+
+        registry.addEndpoint("/ws/duel")
+                .setAllowedOriginPatterns(CorsOriginPatterns.devAllowedOriginPatternsArray())
+                .withSockJS();
     }
 
     @Override

@@ -1,3 +1,8 @@
+-- NOTE: Postgres'ta eski surumlerden kalan DB'lerde `users.custom_avatar` bazen OID (large object) olabilir.
+-- Spring Boot `data.sql` calistirirken ScriptUtils icerdeki `;` karakterlerine gore parcala yapar.
+-- Bu nedenle `DO $$ ... $$` gibi PL/pgSQL bloklari burada guvenli degil (startup'ta Unterminated dollar quote hatasi verir).
+-- OID -> bytea donusumu, uygulama baslangicinda Java tarafinda otomatik yapilir (bkz: config/PostgresCustomAvatarMigration.java).
+
 -- A
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Afganistan', 'Kabil', 'Asya') ON CONFLICT (country_name) DO NOTHING;
 INSERT INTO question (country_name, capital_name, continent) VALUES ('Almanya', 'Berlin', 'Avrupa') ON CONFLICT (country_name) DO NOTHING;

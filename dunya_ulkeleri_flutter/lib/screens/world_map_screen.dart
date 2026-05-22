@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +12,9 @@ import '../utils/page_trasitions.dart';
 import '../widgets/geo_background.dart';
 import '../widgets/glass_card.dart';
 import 'dictionary_screen.dart';
-import '../services/country_match_service.dart'; // Kendi dosya yoluna göre düzenle
+
+part 'world_map_screen/widgets.dart';
+part 'world_map_screen/helpers.dart';
 
 class WorldMapScreen extends StatefulWidget {
   const WorldMapScreen({super.key});
@@ -35,10 +35,12 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
     maxZoomLevel: 200,
   );
 
-  late Future<_WorldMapLoadResult> _loadFuture = _loadGeoJson();
+  late Future<_WorldMapLoadResult> _loadFuture = _loadWorldGeoJson(_assetPath);
   String? _lastSnackMessage;
   int _selectedIndex = -1;
   int? _lastTappedShapeIndex;
+  int _mapsRefreshSeed = 0;
+  bool _didQueueInitialMapsRefresh = false;
 
   @override
   void initState() {
@@ -66,262 +68,6 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
           SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
         );
     });
-  }
-
-  Future<_WorldMapLoadResult> _loadGeoJson() async {
-    // Kullanıcı dostu hata için: dosyayı önce biz okuyup doğruluyoruz.
-    final ByteData data = await rootBundle.load(_assetPath);
-    final Uint8List bytes = data.buffer.asUint8List();
-    final Object decoded = jsonDecode(utf8.decode(bytes));
-
-    if (decoded is! Map) {
-      throw const FormatException(
-        'GeoJSON bekleniyor (FeatureCollection). Dosya formatını kontrol edin.',
-      );
-    }
-
-    final Map<String, dynamic> json = Map<String, dynamic>.from(decoded as Map);
-    final featuresValue = json['features'];
-    if (featuresValue is! List) {
-      throw const FormatException(
-        'GeoJSON içinde "features" alanı bulunamadı. Dosyayı kontrol edin.',
-      );
-    }
-
-    final List<Map<String, dynamic>> rawFeatures = featuresValue
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList(growable: false);
-
-    final String shapeDataField = _pickShapeDataField(rawFeatures);
-
-    final List<MapCountryModel> countries = <MapCountryModel>[];
-    final List<Map<String, dynamic>> features = <Map<String, dynamic>>[];
-    for (final feature in rawFeatures) {
-      final propsValue = feature['properties'];
-      if (propsValue is! Map) continue;
-      final props = Map<String, dynamic>.from(propsValue as Map);
-
-      final name = (props[shapeDataField] ?? '').toString().trim();
-      if (name.isEmpty) continue;
-
-      final iso = _pickIsoCode(props)?.trim();
-      final isoCode = (iso == null || iso.isEmpty) ? name : iso;
-
-      final continent = _pickContinent(props);
-      final capital = _pickCapital(props);
-
-      // Kıta haritası üretmek için feature'ları da saklıyoruz.
-      features.add(feature);
-      countries.add(
-        MapCountryModel(
-          isoCode: isoCode,
-          name: name,
-          continent: continent,
-          capital: capital,
-          extra: props,
-        ),
-      );
-    }
-
-    return _WorldMapLoadResult(
-      bytes: bytes,
-      countries: countries,
-      features: features,
-      shapeDataField: shapeDataField,
-    );
-  }
-
-  static String _pickShapeDataField(List<Map<String, dynamic>> features) {
-    // Ülke adı alanı farklı kaynaklarda farklı olabilir. En yaygın olanları dene.
-    const candidates = <String>[
-      'name',
-      'NAME',
-      'admin',
-      'ADMIN',
-      'NAME_EN',
-      'NAME_LONG',
-      'SOVEREIGNT',
-      'FORMAL_EN',
-    ];
-
-    for (final key in candidates) {
-      final found = features.any((feature) {
-        final props = feature['properties'];
-        if (props is! Map) return false;
-        final val = (props[key] ?? '').toString().trim();
-        return val.isNotEmpty;
-      });
-      if (found) return key;
-    }
-
-    // Fallback: ilk feature'daki string property.
-    if (features.isNotEmpty) {
-      final props = features.first['properties'];
-      if (props is Map) {
-        for (final entry in props.entries) {
-          final val = entry.value?.toString().trim() ?? '';
-          if (val.isNotEmpty) return entry.key.toString();
-        }
-      }
-    }
-
-    return 'name';
-  }
-
-  static String? _pickIsoCode(Map<String, dynamic> props) {
-    const candidates = <String>[
-      'ISO3166-1-Alpha-3',
-      'ISO3166-1-Alpha-2',
-      'ISO_A3',
-      'iso_a3',
-      'ISO_A2',
-      'iso_a2',
-      'ADM0_A3',
-      'adm0_a3',
-      'ADM0_ISO',
-      'adm0_iso',
-      'cca3',
-      'countryCode',
-      'code',
-      'CODE',
-      'id',
-    ];
-
-    for (final key in candidates) {
-      final raw = props[key];
-      final value = raw?.toString().trim();
-      if (value == null || value.isEmpty || value == '-99') continue;
-      return value;
-    }
-    return null;
-  }
-
-  static String? _pickContinent(Map<String, dynamic> props) {
-    const candidates = <String>[
-      'continent',
-      'CONTINENT',
-      'region',
-      'REGION_UN',
-    ];
-    for (final key in candidates) {
-      final raw = props[key];
-      final value = raw?.toString().trim();
-      if (value == null || value.isEmpty || value == '-99') continue;
-      return value;
-    }
-    return null;
-  }
-
-  static String? _pickCapital(Map<String, dynamic> props) {
-    const candidates = <String>['capital', 'CAPITAL', 'CAPITAL_EN'];
-    for (final key in candidates) {
-      final raw = props[key];
-      final value = raw?.toString().trim();
-      if (value == null || value.isEmpty || value == '-99') continue;
-      return value;
-    }
-    return null;
-  }
-
-  Future<void> _openSelectedCountrySheet({
-    required BuildContext rootContext,
-    required MapCountryModel mapCountry,
-    required MapCountryModel? matchedCountry,
-    required String? errorMessage,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: rootContext,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: false,
-      useRootNavigator: true,
-      builder: (sheetContext) {
-        final effectiveName = matchedCountry?.name ?? mapCountry.name;
-        final detailQuery = effectiveName.trim();
-
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            child: GlassCard(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    effectiveName,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                    ),
-                  ),
-                  if (errorMessage != null && errorMessage.trim().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: Text(
-                        errorMessage,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.textDark,
-                            side: const BorderSide(
-                              color: AppColors.borderLight,
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text(
-                            'Kapat',
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: detailQuery.isEmpty
-                              ? null
-                              : () {
-                                  Navigator.of(sheetContext).pop();
-                                  Navigator.push(
-                                    rootContext,
-                                    FadePageRoute(
-                                      page: DictionaryScreen(
-                                        initialQuery: detailQuery,
-                                      ),
-                                    ),
-                                  );
-                                },
-                          child: const Text(
-                            'Detay',
-                            style: TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -377,7 +123,7 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                           ? 'Harita verisi bulunamadı. Lütfen assets/maps/world_map_simplified.json dosyasını ekleyin.'
                           : 'Dünya haritası verisi okunamadı. Dosya formatını kontrol edin.',
                       onRetry: () =>
-                          setState(() => _loadFuture = _loadGeoJson()),
+                          setState(() => _loadFuture = _loadWorldGeoJson(_assetPath)),
                     );
                   }
 
@@ -389,12 +135,23 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                           'Şu an `assets/maps/world_map_simplified.json` içinde ülke geometrisi bulunmuyor.\n'
                           'Dosya eklendiğinde bu ekran otomatik çalışacak.',
                       onRetry: () =>
-                          setState(() => _loadFuture = _loadGeoJson()),
+                          setState(() => _loadFuture = _loadWorldGeoJson(_assetPath)),
                     );
                   }
 
                   final countries = result.countries;
                   final bytes = result.bytes;
+
+                  // Bazı cihazlarda/ilk açılışta SfMaps'in hit-test/gesture katmanı
+                  // ilk frame'de doğru initialize olmayabiliyor (özellikle tab içinde).
+                  // İlk çizimden hemen sonra 1 kez yeniden oluşturup etkileşimi garanti ediyoruz.
+                  if (!_didQueueInitialMapsRefresh) {
+                    _didQueueInitialMapsRefresh = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      setState(() => _mapsRefreshSeed++);
+                    });
+                  }
 
                   // Harita renkleri / seçimleri Provider state'i ile güncelleneceği için
                   // key ile yeniden çizimi garanti altına alıyoruz.
@@ -408,10 +165,10 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                       final conquered =
                           provider.conqueredCountryColors[c.isoCode];
                       if (conquered != null) {
-                        return conquered.withOpacity(0.85);
+                        return conquered.withValues(alpha: 0.85);
                       }
                       // Varsayılan ülke rengi (fetih modunda ileride değişecek).
-                      return AppColors.surface2.withOpacity(0.70);
+                      return AppColors.surface2.withValues(alpha: 0.70);
                     },
                   );
 
@@ -422,9 +179,10 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.borderLight),
-                          color: AppColors.surface.withOpacity(0.35),
+                          color: AppColors.surface.withValues(alpha: 0.35),
                         ),
                         child: SfMaps(
+                          key: ValueKey<int>(_mapsRefreshSeed),
                           layers: [
                             MapShapeLayer(
                               source: source,
@@ -433,7 +191,7 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                               strokeWidth: 0.6,
                               selectedIndex: _selectedIndex,
                               selectionSettings: MapSelectionSettings(
-                                color: AppColors.primaryBlue.withOpacity(0.25),
+                                color: AppColors.primaryBlue.withValues(alpha: 0.25),
                                 strokeColor: AppColors.primaryBlue,
                                 strokeWidth: 1.4,
                               ),
@@ -505,82 +263,4 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
   }
 }
 
-class _WorldMapLoadResult {
-  final Uint8List bytes;
-  final List<MapCountryModel> countries;
-  final List<Map<String, dynamic>> features;
-  final String shapeDataField;
 
-  const _WorldMapLoadResult({
-    required this.bytes,
-    required this.countries,
-    required this.features,
-    required this.shapeDataField,
-  });
-}
-
-class _MapErrorCard extends StatelessWidget {
-  final String title;
-  final String message;
-  final VoidCallback onRetry;
-
-  const _MapErrorCard({
-    required this.title,
-    required this.message,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: GlassCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w600,
-                  height: 1.35,
-                ),
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text(
-                    'Tekrar Dene',
-                    style: TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textDark,
-                    side: const BorderSide(color: AppColors.borderLight),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

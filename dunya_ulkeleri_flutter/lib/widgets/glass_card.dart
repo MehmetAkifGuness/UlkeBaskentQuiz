@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -35,7 +35,7 @@ class GlassCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [tint.withOpacity(0.78), tint.withOpacity(0.55)],
+              colors: [tint.withValues(alpha: 0.78), tint.withValues(alpha: 0.55)],
             ),
           ),
           child: Padding(padding: padding, child: child),
@@ -51,3 +51,4 @@ class GlassCard extends StatelessWidget {
     );
   }
 }
+

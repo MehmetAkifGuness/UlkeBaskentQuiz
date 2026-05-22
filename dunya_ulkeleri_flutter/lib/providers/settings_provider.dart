@@ -44,7 +44,7 @@ class SettingsProvider with ChangeNotifier {
     if (!_isVibrationEnabled) return;
 
     try {
-      final bool? hasVibrator = await Vibration.hasVibrator();
+      final hasVibrator = await Vibration.hasVibrator();
       if (hasVibrator == true) {
         // 40 milisaniyelik zarif ve klavye tuşuna basmış gibi hissettiren kısa titreşim
         Vibration.vibrate(duration: 40);

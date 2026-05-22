@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../main.dart';
+import '../app/navigation.dart';
 import '../models/dictionary_model.dart';
 import '../models/map_country_model.dart';
 import '../providers/auth_provider.dart';
@@ -9,6 +9,8 @@ import '../services/country_match_service.dart';
 import '../services/game_service.dart';
 import '../services/iso_country_service.dart';
 import '../utils/error_message_utils.dart';
+
+part 'world_map_provider/helpers.dart';
 
 class WorldMapProvider with ChangeNotifier {
   // ADIM 2: Harita ekranı hem GeoJSON verisi, hem de backend/uygulama ülke listesiyle
@@ -69,17 +71,18 @@ class WorldMapProvider with ChangeNotifier {
       } catch (_) {}
 
       availableCountries = dictionary
-          .map((item) => MapCountryModel(
-                // Backend şu an ISO vermiyor; eşleştirme ağırlıkla isim üzerinden yapılacak.
-                // ISO eşleşmesi gerektiğinde map-properties'ten bulunan ISO tercih edilir.
-                isoCode:
-                    IsoCountryService.iso3FromTurkishName(item.countryName) ??
-                        item.countryName.trim(),
-                name: item.countryName.trim(),
-                capital: item.capitalName.trim(),
-                continent: _toEnglishContinent(item.continent),
-                extra: const <String, dynamic>{'source': 'dictionary'},
-              ))
+          .map(
+            (item) => MapCountryModel(
+              // Backend şu an ISO vermiyor; eşleştirme ağırlıkla isim üzerinden yapılacak.
+              // ISO eşleşmesi gerektiğinde map-properties'ten bulunan ISO tercih edilir.
+              isoCode: IsoCountryService.iso3FromTurkishName(item.countryName) ??
+                  item.countryName.trim(),
+              name: item.countryName.trim(),
+              capital: item.capitalName.trim(),
+              continent: _toEnglishContinent(item.continent),
+              extra: const <String, dynamic>{'source': 'dictionary'},
+            ),
+          )
           .toList(growable: false);
 
       isMapDataReady = true;
@@ -156,7 +159,8 @@ class WorldMapProvider with ChangeNotifier {
 
     if (!hasContinent && selectedContinentFilter != 'ALL') {
       // Filtreyi pasif kabul et ama kullanıcıyı bilgilendir.
-      errorMessage = 'Kıta filtresi için ülke verilerinde kıta bilgisi bulunmalı.';
+      errorMessage =
+          'Kıta filtresi için ülke verilerinde kıta bilgisi bulunmalı.';
     } else if (hasContinent &&
         selectedContinentFilter != 'ALL' &&
         !isCountryVisibleForCurrentContinent(matched)) {
@@ -252,74 +256,5 @@ class WorldMapProvider with ChangeNotifier {
   void resetConqueredCountries() {
     conqueredCountryColors.clear();
     notifyListeners();
-  }
-
-  String? _readAuthToken() {
-    final ctx = navigatorKey.currentContext;
-    if (ctx == null) return null;
-
-    try {
-      return Provider.of<AuthProvider>(ctx, listen: false).token;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  static String? _readFirstNonEmpty(
-    Map<String, dynamic> props,
-    List<String> keys,
-  ) {
-    for (final key in keys) {
-      final raw = props[key];
-      final value = raw?.toString().trim();
-      if (value != null && value.isNotEmpty && value != '-99') return value;
-    }
-    return null;
-  }
-
-  static String? _toEnglishContinent(String? value) {
-    final v = (value ?? '').trim();
-    if (v.isEmpty) return null;
-
-    return switch (v) {
-      'Avrupa' => 'Europe',
-      'Asya' => 'Asia',
-      'Afrika' => 'Africa',
-      'Kuzey Amerika' => 'North America',
-      'Güney Amerika' => 'South America',
-      'Okyanusya' => 'Oceania',
-      _ => v,
-    };
-  }
-
-  static List<MapCountryModel> _fallbackCountries() {
-    // ADIM 2: Endpoint hazır değilse minimum örnek veri ile ekran çalışsın.
-    // TODO: Backend'den ISO + kıta + başkent ile tam liste getirilecek.
-    return const <MapCountryModel>[
-      MapCountryModel(
-        isoCode: 'TUR',
-        name: 'Türkiye',
-        continent: 'Asia',
-        capital: 'Ankara',
-      ),
-      MapCountryModel(
-        isoCode: 'USA',
-        name: 'United States',
-        continent: 'North America',
-        capital: 'Washington, D.C.',
-      ),
-      MapCountryModel(
-        isoCode: 'DEU',
-        name: 'Germany',
-        continent: 'Europe',
-        capital: 'Berlin',
-      ),
-      MapCountryModel(
-        isoCode: 'FRA',
-        name: 'France',
-        continent: 'Europe',
-        capital: 'Paris',
-      ),
-    ];
   }
 }

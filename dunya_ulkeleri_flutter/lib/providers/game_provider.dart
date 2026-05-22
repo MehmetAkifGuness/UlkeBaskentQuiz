@@ -7,7 +7,7 @@ import '../models/game_status_model.dart';
 import '../services/game_service.dart';
 import 'package:audioplayers/audioplayers.dart'; // 🚨 Ses için eklendi
 import 'package:vibration/vibration.dart'; // 🚨 YENİ EKLENDİ (Gerçek titreşim motoru için)
-import '../main.dart'; // 🚨 YENİ: navigatorKey için eklendi
+import '../app/navigation.dart'; // 🚨 YENİ: navigatorKey için eklendi
 import '../utils/error_message_utils.dart';
 
 class GameProvider with ChangeNotifier {
@@ -44,7 +44,7 @@ class GameProvider with ChangeNotifier {
         _status = GameStatusModel.fromJson(jsonDecode(savedGame));
         notifyListeners();
       } catch (e) {
-        print("Kayıtlı oyun yüklenirken hata: $e");
+        debugPrint("Kayıtlı oyun yüklenirken hata: $e");
       }
     }
   }
@@ -88,7 +88,7 @@ class GameProvider with ChangeNotifier {
       await _saveGameLocally();
       _startStopwatch();
     } catch (e) {
-      print("Oyun başlatma hatası: $e");
+      debugPrint("Oyun başlatma hatası: $e");
       final message = errorMessageFrom(e);
       if (navigatorKey.currentContext != null) {
         ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
@@ -168,7 +168,7 @@ class GameProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print("💥 FLUTTER HATASI (sendGuess): $e");
+      debugPrint("💥 FLUTTER HATASI (sendGuess): $e");
 
       // 🚨 ÇÖZÜM 1: İnternet koptuğunda SARI BEKLEME BUTONUNU SIFIRLA
       _showResult = false;
@@ -238,7 +238,7 @@ class GameProvider with ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print("Senkronizasyon başarısız: $e");
+      debugPrint("Senkronizasyon başarısız: $e");
       if (navigatorKey.currentContext != null) {
         ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
           const SnackBar(

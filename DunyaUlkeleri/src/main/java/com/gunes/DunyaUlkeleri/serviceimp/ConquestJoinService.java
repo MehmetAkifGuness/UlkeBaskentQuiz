@@ -59,9 +59,42 @@ public class ConquestJoinService {
         );
 
         synchronized (session) {
+            if (session.isQuickMatch()) {
+                throw AppException.conflict(
+                        "ROOM_NOT_JOINABLE",
+                        "Bu oda hızlı oyun odasıdır. Odaya katılamazsınız."
+                );
+            }
             if (session.getStatus() == ConquestGameStatus.FINISHED) {
                 throw AppException.conflict("ROOM_FINISHED", "Oda kapandı. Lütfen yeni bir oda oluşturun.");
             }
+            if (session.getStatus() != ConquestGameStatus.WAITING) {
+                throw AppException.conflict("ROOM_ALREADY_STARTED", "Oyun başladı. Odaya katılamazsınız.");
+            }
+
+            final boolean alreadyInRoom = Optional.ofNullable(session.getPlayers())
+                    .orElseGet(List::of)
+                    .stream()
+                    .anyMatch(p -> p != null && p.getUsername() != null && p.getUsername().equalsIgnoreCase(username));
+            if (alreadyInRoom) {
+                throw AppException.conflict("ALREADY_IN_ROOM", "Bu odada zaten varsınız.");
+            }
+
+            final String normalizedColor = normalizeColorHex(colorHex);
+            if (normalizedColor != null) {
+                final boolean colorTaken = Optional.ofNullable(session.getPlayers())
+                        .orElseGet(List::of)
+                        .stream()
+                        .anyMatch(p -> normalizeColorHex(p == null ? null : p.getColorHex())
+                                .equalsIgnoreCase(normalizedColor));
+                if (colorTaken) {
+                    throw AppException.conflict(
+                            "COLOR_TAKEN",
+                            "Bu renk zaten seçildi. Lütfen farklı bir renk seçin."
+                    );
+                }
+            }
+
             final int currentSize = Optional.ofNullable(session.getPlayers()).orElseGet(List::of).size();
             if (currentSize >= 2) {
                 throw AppException.conflict("ROOM_FULL", "Oda dolu.");
@@ -84,5 +117,21 @@ public class ConquestJoinService {
     private static String safeTrim(String value) {
         return value == null ? null : value.trim();
     }
-}
 
+    private static String normalizeColorHex(String raw) {
+        final String v = safeTrim(raw);
+        if (v == null || v.isBlank()) return "";
+
+        String cleaned = v.replace("#", "");
+        if (cleaned.startsWith("0x") || cleaned.startsWith("0X")) {
+            cleaned = cleaned.substring(2);
+        }
+        cleaned = cleaned.trim().toUpperCase();
+
+        if (cleaned.length() == 6) {
+            cleaned = "FF" + cleaned;
+        }
+
+        return cleaned;
+    }
+}

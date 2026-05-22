@@ -11,10 +11,10 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  RegisterScreenState createState() => RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class RegisterScreenState extends State<RegisterScreen> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -143,6 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             password,
                           );
 
+                          if (!context.mounted) return;
                           setState(() => _isLoading = false);
 
                           // Cevap içinde "başarı" veya "doğrulayın" kelimesi geçiyorsa kayıt başarılıdır
@@ -177,7 +178,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
                           }
                         } catch (e) {
-                          // 🚨 EĞER BACKEND ÇÖKERSE VEYA 400/500 HATASI FIRLATIRSA UYGULAMA DONMASIN DİYE BURAYA DÜŞER
+                          if (!context.mounted) return;
                           setState(() => _isLoading = false);
 
                           _showError(errorMessageFrom(e));

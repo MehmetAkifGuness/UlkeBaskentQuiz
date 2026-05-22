@@ -16,6 +16,8 @@ public class ConquestGameSession {
     private String selectedContinentFilter;
     private String hostPlayerId;
     private boolean quickMatch;
+    private String matchmakingKey;
+    private boolean trophiesApplied;
 
     private List<ConquestPlayer> players = new ArrayList<>();
 

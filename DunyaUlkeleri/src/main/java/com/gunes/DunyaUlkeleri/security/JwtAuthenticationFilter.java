@@ -1,7 +1,6 @@
 package com.gunes.DunyaUlkeleri.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gunes.DunyaUlkeleri.entity.User;
 import com.gunes.DunyaUlkeleri.util.exception.ApiErrorResponse;
 import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -61,12 +60,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findByUsername(username).orElse(null);
+            boolean userExists = userRepository.existsByUsername(username);
 
-            if (user != null && jwtUtil.validateToken(jwt, user.getUsername())) {
+            if (userExists && jwtUtil.validateToken(jwt, username)) {
                 // ✅ DÜZELTİLDİ: Principal olarak sadece username (String) veriyoruz.
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        user.getUsername(), null, new ArrayList<>());
+                        username, null, new ArrayList<>());
                 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);

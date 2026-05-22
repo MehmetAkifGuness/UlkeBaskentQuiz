@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
@@ -18,7 +18,7 @@ class GeoBackground extends StatelessWidget {
             left: -140,
             top: -160,
             child: _GlowBlob(
-              color: AppColors.primaryBlue.withOpacity(0.25),
+              color: AppColors.primaryBlue.withValues(alpha: 0.25),
               size: 360,
             ),
           ),
@@ -26,7 +26,7 @@ class GeoBackground extends StatelessWidget {
             right: -130,
             top: -180,
             child: _GlowBlob(
-              color: AppColors.successGreen.withOpacity(0.12),
+              color: AppColors.successGreen.withValues(alpha: 0.12),
               size: 340,
             ),
           ),
@@ -34,7 +34,7 @@ class GeoBackground extends StatelessWidget {
             left: -80,
             bottom: -140,
             child: _GlowBlob(
-              color: AppColors.primaryBlueHover.withOpacity(0.12),
+              color: AppColors.primaryBlueHover.withValues(alpha: 0.12),
               size: 280,
             ),
           ),
@@ -66,3 +66,4 @@ class _GlowBlob extends StatelessWidget {
     );
   }
 }
+

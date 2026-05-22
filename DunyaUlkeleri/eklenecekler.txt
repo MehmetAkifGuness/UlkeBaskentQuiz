@@ -1,9 +1,9 @@
-﻿oyun kısmında serbest mod daha iyi gözükse günün görevi veyahut sonsuz mod gibi gözüse aslında çok daha güzel olur ve oyun  sayfasında buton renklerini filan halletmemiz gerekecek o yüzden sayfayı yeniden tasarlattıralım
+﻿oyunlarda hani ülke başkent tahmin edebiliyoruz ya orada şöyle bir şey yapabiliriz online modunu yaapbiliriz aynı anda 2 kullanıcı aynı soruda cevap vermeye çalışır ve en yüksek puan alan oyuncu bir miktar kupa kazanabiir kaybeden oyuncu da belli bir miktar kupa kaybedebilir ve böylelikle lig sistemi oluşturulur lig sistemi kullannıcının profil sayfasında tutulsun ve eşleşme sisteminde kullanıcılar aynı ligden kullanıcılar ile eşleşsinler ve her sezon ayın 1 inde yenilensin ona göre bir lig sistemi oluştur 
 
-profil ekleme kısmında kullanıcıların kendi galerilerinden profil fotoğrafı ve isim koymaları sağlanacak ve uygunsuz foto koymamaları için yapay zeka destekli kontrol sağlanacak
+dünya fetih modu özelliğinde 2 farklı oyuncu o-var ya onların aynı rengi seçememes için kontrol sağlanacak
 
-country_too_capital gibi yazılar vardı ya onlar kaldırılacak sıralama kısmından 
+toplam ustalık puanı artmıyor oynanan oyunda artmıyor en yüksek skor değişiyormu onun hakkında da bir fikrim yok onları da düzeltmem gerekecek
 
-CONQUESTİN ALTINDAKİ DTO PAKETİNİ REQUEST RESPONSE PAKETLERİ ALTINDA DÜZENLE VE CONFİG KISMINDA APİ CONFİG TANIMLA ŞİFRE ŞİFRELEMEYİ ORDAN YAP VE CONFİG KISMINA EKLENMESİ GERKEN BAŞKA CONFİG VARMI ONA DA BAK BAŞKA PROJELERDEN ANALİZ FİLAN YAP KARŞILAŞTIR ONA GÖRE DÜZEMLEME YAP GİTHUB ÜZERİNDEN ÖRNEK PROJELERE BAK VE DÜZENLE EN SON OLARAK DA PROJENİN EN AZ 1MİLYON KULLANICI KULLANSA BİLE ÇÖKMEYECEK ŞEKİLDE SENKRENİZZASYONUNU YAP 
+online mod da şöyle bir sorun var hızlı giriş yaptığımda aynı anda 2 kişi giriyor ya orada şu var bulunacak ülkenin rengi direk böyle belli ediyor odalarda da aynı şekilde kendini yani bir tetikleyici gibi düşün ve şöyle bir şey var ona dokununca başka ülkelerde boyanıyor sanırım biraz karışıklık var onu çözelim yani komple lobiye dönme ve geri tuşları çalışmıyor
 
-service ve service impl kısmında sınıflar hala çok uzun onları da düzenle aynı sornasında paket yapısında neden model var paketler sadece controller , service ,serviceimp , repository , entity , dto , mapper , security , config , util olacak ve cnoquestin kendine ait bu paketleri var ya onlar ayrı olmasın yani ayrı bir özelliğin kendine ait paketleri olmasın direk her şey controller , service ,serviceimp , repository , entity , dto , mapper , security , config , util  bu paketlerin altında doğru ve nizami bir şekilde yerleştirilmiş olması lazım o yüzden paket yapılarını düzenle özellikle config yapılandırmasını düzgün yap 
+online modda hızlı girş modunda şöyle de bir şey var en başta harita gelince işlem yapılamıoyr onun da çözülmesi gerekecek

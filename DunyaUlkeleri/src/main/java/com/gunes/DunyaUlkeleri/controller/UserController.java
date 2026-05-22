@@ -1,35 +1,32 @@
 package com.gunes.DunyaUlkeleri.controller;
 
 import com.gunes.DunyaUlkeleri.dto.request.UpdateProfileRequest;
-import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
+import com.gunes.DunyaUlkeleri.dto.request.UpdateUsernameRequest;
+import com.gunes.DunyaUlkeleri.dto.response.AuthResponse;
+import com.gunes.DunyaUlkeleri.dto.response.LeaderboardEntryResponse;
 import com.gunes.DunyaUlkeleri.dto.response.RecentSessionResponse;
-import com.gunes.DunyaUlkeleri.entity.GameSession;
+import com.gunes.DunyaUlkeleri.dto.response.UserAvatarImageResponse;
+import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
 import com.gunes.DunyaUlkeleri.entity.Question;
-import com.gunes.DunyaUlkeleri.entity.User;
 import com.gunes.DunyaUlkeleri.util.exception.AppException;
-import com.gunes.DunyaUlkeleri.repository.GameSessionRepository;
-import com.gunes.DunyaUlkeleri.repository.UserRepository;
+import com.gunes.DunyaUlkeleri.service.LeaderboardService;
+import com.gunes.DunyaUlkeleri.service.UserProfileQueryService;
 import com.gunes.DunyaUlkeleri.service.UserService;
 import lombok.RequiredArgsConstructor;
-
-import com.gunes.DunyaUlkeleri.repository.QuestionRepository;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/user")
@@ -37,8 +34,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
-    private final GameSessionRepository gameSessionRepository; 
+    private final LeaderboardService leaderboardService;
+    private final UserProfileQueryService userProfileQueryService;
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getUserProfile() {
@@ -53,126 +50,32 @@ public class UserController {
 
     @GetMapping("/my-category-scores")
     public ResponseEntity<Map<String, Integer>> getMyCategoryScores(Authentication authentication) {
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
-        return ResponseEntity.ok(user.getCategoryBestScores());
+        return ResponseEntity.ok(userProfileQueryService.getMyCategoryScores(authentication.getName()));
     }
 
     @GetMapping("/recent-sessions")
     public ResponseEntity<List<RecentSessionResponse>> getRecentSessions(
             Authentication authentication,
             @RequestParam(defaultValue = "3") int limit) {
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
-
-        int safeLimit = Math.max(1, Math.min(limit, 10));
-        List<GameSession> sessions = gameSessionRepository.findTop10ByUserAndIsFinishedTrueOrderByUpdateAtDesc(user);
-
-        List<RecentSessionResponse> response = sessions.stream()
-                .limit(safeLimit)
-                .map(session -> {
-                    RecentSessionResponse dto = new RecentSessionResponse();
-                    dto.setId(session.getId());
-                    dto.setCategory(session.getCategory() == null ? "Dünya" : session.getCategory());
-                    dto.setGameMode(session.getGameMode() == null ? "MIXED" : session.getGameMode());
-                    dto.setCurrentScore(session.getCurrentScore());
-                    dto.setRemainingLives(session.getRemainingLives());
-                    dto.setFinished(session.isFinished());
-                    dto.setCreatedAt(session.getCreatedAt());
-                    dto.setUpdateAt(session.getUpdateAt());
-                    return dto;
-                })
-                .toList();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userProfileQueryService.getRecentSessions(authentication.getName(), limit));
     }
 
     // 🚨 YENİ: mode parametresi eklendi
     @GetMapping("/leaderboard/{category}")
-    public ResponseEntity<List<Map<String, Object>>> getCategoryLeaderboard(
+    public ResponseEntity<List<LeaderboardEntryResponse>> getCategoryLeaderboard(
             @PathVariable String category,
-            @RequestParam(defaultValue = "MIXED") String mode) { // Varsayılan mod Karışıktır
-            
-        List<Object[]> topUsers;
-        
-        if ("DailyChallenge".equals(category)) {
-            LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); 
-            topUsers = gameSessionRepository.findTop10DailyScores(category, startOfDay, PageRequest.of(0, 10));
-        } else if ("ENDLESS".equalsIgnoreCase(mode)) {
-            // Sonsuz mod ayrı bir leaderboard olarak tutuluyor (kategori aynı olsa bile karışmamalı).
-            topUsers = gameSessionRepository.findTop10ByCategoryAndMode(category, "ENDLESS", PageRequest.of(0, 10));
-        } else {
-            // Mod seçimi kaldırıldı: Kategori (kıta) bazında tüm quiz modlarındaki en iyi skor.
-            topUsers = gameSessionRepository.findTop10ByCategoryOverall(category, PageRequest.of(0, 10));
-        }
-
-        List<String> usernames = new ArrayList<>();
-        for (Object[] record : topUsers) {
-            if (record != null && record.length > 0 && record[0] != null) {
-                usernames.add(record[0].toString());
-            }
-        }
-
-        Map<String, Integer> avatarIdByUsername = new HashMap<>();
-        Map<String, String> displayNameByUsername = new HashMap<>();
-        if (!usernames.isEmpty()) {
-            List<Object[]> profileRows = userRepository.findLeaderboardProfileByUsernames(usernames);
-            for (Object[] row : profileRows) {
-                if (row == null || row.length < 2 || row[0] == null) continue;
-
-                String username = row[0].toString();
-
-                Integer avatarId = null;
-                if (row[1] instanceof Number number) {
-                    avatarId = number.intValue();
-                }
-
-                avatarIdByUsername.put(username, avatarId);
-
-                String displayName = (row.length > 2 && row[2] != null) ? row[2].toString() : null;
-                displayNameByUsername.put(username, displayName);
-            }
-        }
-        
-        List<Map<String, Object>> leaderboard = new ArrayList<>();
-        for (Object[] record : topUsers) {
-            Map<String, Object> map = new HashMap<>();
-            String username = record[0] == null ? null : record[0].toString();
-            map.put("username", username);
-            map.put("score", record[1]);
-
-            if (username != null) {
-                Integer avatarId = avatarIdByUsername.get(username);
-                if (avatarId != null) {
-                    map.put("avatarId", avatarId);
-                }
-
-                String displayName = displayNameByUsername.get(username);
-                if (displayName != null && !displayName.isBlank()) {
-                    map.put("displayName", displayName);
-                }
-            }
-            leaderboard.add(map);
-        }
-        return ResponseEntity.ok(leaderboard);
+            @RequestParam(defaultValue = "MIXED") String mode) {
+        return ResponseEntity.ok(leaderboardService.getCategoryLeaderboard(category, mode));
     }
-
-    private final QuestionRepository questionRepository; 
 
     @GetMapping("/mistakes")
     public ResponseEntity<Set<Question>> getUserMistakes(Authentication authentication) {
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
-        return ResponseEntity.ok(user.getFailedQuestions());
+        return ResponseEntity.ok(userProfileQueryService.getUserMistakes(authentication.getName()));
     }
 
     @DeleteMapping("/mistakes/{questionId}")
     public ResponseEntity<String> removeMistake(@PathVariable Long questionId, Authentication authentication) {
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
-        
-        user.getFailedQuestions().removeIf(q -> q.getId().equals(questionId));
-        userRepository.save(user); 
+        userProfileQueryService.removeMistake(authentication.getName(), questionId);
         return ResponseEntity.ok("Hata başarıyla silindi.");
     }
 
@@ -189,11 +92,28 @@ public class UserController {
         return ResponseEntity.ok(userService.updateDisplayName(username, request.getDisplayName()));
     }
 
+    @PutMapping("/username")
+    public ResponseEntity<AuthResponse> updateUsername(@RequestBody UpdateUsernameRequest request) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(userService.updateUsername(username, request.getUsername()));
+    }
+
     @PostMapping(value = "/avatar/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserProfileResponse> uploadCustomAvatar(@RequestParam("avatar") MultipartFile avatar) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (avatar == null || avatar.isEmpty()) {
+            throw AppException.badRequest("AVATAR_IMAGE_REQUIRED", "Profil fotoğrafı boş olamaz.");
+        }
+
         try {
-            return ResponseEntity.ok(userService.uploadCustomAvatar(username, avatar.getBytes(), avatar.getContentType()));
+            return ResponseEntity.ok(
+                    userService.uploadCustomAvatar(
+                            username,
+                            avatar.getBytes(),
+                            avatar.getContentType()
+                    )
+            );
         } catch (Exception e) {
             throw AppException.badRequest("AVATAR_IMAGE_INVALID", "Profil fotoğrafı okunamadı.");
         }
@@ -203,6 +123,27 @@ public class UserController {
     public ResponseEntity<Void> clearCustomAvatar() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         userService.clearCustomAvatar(username);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/avatar/image/{username}")
+    public ResponseEntity<byte[]> getCustomAvatarImage(@PathVariable String username) {
+        UserAvatarImageResponse imageResponse = userProfileQueryService.getCustomAvatarImage(username);
+        byte[] image = imageResponse.bytes();
+        String contentType = imageResponse.contentType();
+        MediaType mediaType = (contentType == null || contentType.isBlank())
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(contentType);
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePrivate())
+                .body(image);
+    }
+
+    @DeleteMapping("/account")
+    public ResponseEntity<Void> deleteAccount(Authentication authentication) {
+        userService.deleteAccount(authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }

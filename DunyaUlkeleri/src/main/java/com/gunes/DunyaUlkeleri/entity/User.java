@@ -16,7 +16,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.PrePersist;
@@ -38,6 +37,18 @@ public class User {
     private String email;
     @Column(columnDefinition = "integer default 0")
     private int totalGamesPlayed = 0;
+
+    @Column(columnDefinition = "bigint default 0")
+    private long totalMasteryPoints = 0L;
+
+    @Column(columnDefinition = "integer default 0")
+    private int trophies = 0;
+
+    /**
+     * Season identifier in YYYYMM format (e.g. 202605). Used for monthly season resets.
+     */
+    @Column(columnDefinition = "integer default 0")
+    private int trophySeason = 0;
 
     private String password;
 
@@ -63,7 +74,7 @@ public class User {
 
     private String displayName;
 
-    @Lob
+    @Column(columnDefinition = "bytea")
     private byte[] customAvatar;
 
     private String customAvatarContentType;

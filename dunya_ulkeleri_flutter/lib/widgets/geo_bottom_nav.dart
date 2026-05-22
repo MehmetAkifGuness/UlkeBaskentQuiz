@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'glass_card.dart';
@@ -63,7 +63,7 @@ class _GeoNavButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final fg = selected ? AppColors.primaryBlue : AppColors.textMuted;
     final bg = selected
-        ? AppColors.primaryBlue.withOpacity(0.18)
+        ? AppColors.primaryBlue.withValues(alpha: 0.18)
         : Colors.transparent;
 
     return Material(
@@ -100,3 +100,4 @@ class _GeoNavButton extends StatelessWidget {
     );
   }
 }
+

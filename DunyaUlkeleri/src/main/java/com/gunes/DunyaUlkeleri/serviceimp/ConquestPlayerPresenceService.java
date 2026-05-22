@@ -17,6 +17,7 @@ import com.gunes.DunyaUlkeleri.entity.ConquestPlayer;
 import com.gunes.DunyaUlkeleri.mapper.ConquestSessionStateMapper;
 import com.gunes.DunyaUlkeleri.repository.ConquestQuickMatchQueue;
 import com.gunes.DunyaUlkeleri.repository.ConquestSessionStore;
+import com.gunes.DunyaUlkeleri.service.LeagueService;
 import com.gunes.DunyaUlkeleri.util.exception.AppException;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ public class ConquestPlayerPresenceService {
     private final ConquestSessionStore sessionStore;
     private final ConquestQuickMatchQueue quickMatchQueue;
     private final ConquestSessionStateMapper stateMapper;
+    private final ConquestLeagueAwarder leagueAwarder;
+    private final LeagueService leagueService;
 
     public ConquestSessionStateDto setReady(SetConquestReadyRequest request) {
         final String sessionId = safeTrim(request == null ? null : request.getSessionId());
@@ -60,7 +63,21 @@ public class ConquestPlayerPresenceService {
         }
 
         final ConquestGameSession session = sessionStore.requireById(sessionId);
+        Optional<ConquestLeagueAwarder.MatchResult> matchResult = Optional.empty();
+        ConquestSessionStateDto stateDto;
         synchronized (session) {
+            final boolean wasHost = playerId.equals(safeTrim(session.getHostPlayerId()));
+            final ConquestPlayer leavingPlayer = session.getPlayer(playerId);
+            if (leavingPlayer == null) {
+                // Idempotent leave: do not mutate session state if the player is already gone.
+                session.touch();
+                return toStateDto(session, null, null, false);
+            }
+
+            if (session.getStatus() == ConquestGameStatus.STARTED) {
+                matchResult = leagueAwarder.tryMarkLeave(session, playerId);
+            }
+
             session.removePlayer(playerId);
 
             final boolean empty = session.getPlayers() == null || session.getPlayers().isEmpty();
@@ -68,20 +85,34 @@ public class ConquestPlayerPresenceService {
                 sessionStore.remove(session.getSessionId());
                 if (session.isQuickMatch()) {
                     quickMatchQueue.removeWaitingSessionId(
-                            normalizeContinentFilter(session.getSelectedContinentFilter()),
+                            normalizeMatchmakingKey(session),
                             session.getSessionId()
                     );
                 }
                 log.info(
                         "Session removed (empty): sessionId={}, roomCode={}",
                         session.getSessionId(),
-                        session.getRoomCode()
-                );
-                return null;
-            }
+                         session.getRoomCode()
+                 );
+                 return null;
+             }
 
-            if (session.getStatus() == ConquestGameStatus.STARTED) {
-                session.setStatus(ConquestGameStatus.FINISHED);
+             if (session.getStatus() == ConquestGameStatus.STARTED) {
+                 session.setStatus(ConquestGameStatus.FINISHED);
+             }
+
+            if (wasHost && session.getStatus() == ConquestGameStatus.WAITING) {
+                final String newHostId = Optional.ofNullable(session.getPlayers())
+                        .orElseGet(List::of)
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(ConquestPlayer::getPlayerId)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .orElse(null);
+                if (newHostId != null && !newHostId.isBlank()) {
+                    session.setHostPlayerId(newHostId);
+                }
             }
 
             Optional.ofNullable(session.getPlayers())
@@ -91,8 +122,11 @@ public class ConquestPlayerPresenceService {
                     .forEach(p -> p.setReady(false));
 
             session.touch();
-            return toStateDto(session, "Oyuncu ayrıldı.", null, false);
+            stateDto = toStateDto(session, "Oyuncu ayrıldı.", null, false);
         }
+
+        matchResult.ifPresent(result -> leagueService.applyMatchResult(result.winnerUsername(), result.loserUsername()));
+        return stateDto;
     }
 
     public void handleDisconnect(String sessionId, String playerId) {
@@ -134,5 +168,11 @@ public class ConquestPlayerPresenceService {
         if (v == null || v.isBlank()) return "ALL";
         return v;
     }
-}
 
+    private static String normalizeMatchmakingKey(ConquestGameSession session) {
+        if (session == null) return "ALL";
+        final String key = safeTrim(session.getMatchmakingKey());
+        if (key != null && !key.isBlank()) return key;
+        return normalizeContinentFilter(session.getSelectedContinentFilter());
+    }
+}

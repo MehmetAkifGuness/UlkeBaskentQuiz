@@ -11,10 +11,10 @@ class ForgotPasswordDialog extends StatefulWidget {
   const ForgotPasswordDialog({super.key, this.email});
 
   @override
-  _ForgotPasswordDialogState createState() => _ForgotPasswordDialogState();
+  ForgotPasswordDialogState createState() => ForgotPasswordDialogState();
 }
 
-class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
+class ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   int _step = 1;
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
@@ -40,6 +40,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         _emailController.text.trim(),
       );
 
+      if (!mounted) return;
       setState(() {
         _step = 2;
       });
@@ -51,6 +52,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessageFrom(e)),
@@ -86,6 +88,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         _newPasswordController.text.trim(),
       );
 
+      if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -94,6 +97,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessageFrom(e)),

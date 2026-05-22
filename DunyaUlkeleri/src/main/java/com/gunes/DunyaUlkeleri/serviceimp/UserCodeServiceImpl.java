@@ -45,7 +45,7 @@ public class UserCodeServiceImpl implements UserCodeService {
         if (user == null) {
             throw AppException.badRequest(
                     "USER_REQUIRED",
-                    "KullanÄ±cÄ± bilgisi zorunludur."
+                    "Kullanıcı bilgisi zorunludur."
             );
         }
 
@@ -54,14 +54,14 @@ public class UserCodeServiceImpl implements UserCodeService {
                 && generatedAt.plusMinutes(EXPIRY_MINUTES).isBefore(LocalDateTime.now())) {
             throw AppException.badRequest(
                     "CODE_EXPIRED",
-                    "DoÄŸrulama kodunun sÃ¼resi dolmuÅŸ (10 dakika). LÃ¼tfen yeni bir kod isteyin."
+                    "Doğrulama kodunun süresi dolmuş (10 dakika). Lütfen yeni bir kod isteyin."
             );
         }
 
         if (user.getFailedAttemptCount() >= MAX_ATTEMPTS) {
             throw AppException.tooManyRequests(
                     "TOO_MANY_ATTEMPTS",
-                    "Ã‡ok fazla yanlÄ±ÅŸ deneme yapÄ±ldÄ±. LÃ¼tfen yeni bir kod isteyin."
+                    "Çok fazla yanlış deneme yapıldı. Lütfen yeni bir kod isteyin."
             );
         }
     }

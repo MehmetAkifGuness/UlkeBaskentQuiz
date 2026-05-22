@@ -1,5 +1,7 @@
 // lib/services/conquest_websocket_service.dart
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
@@ -14,6 +16,14 @@ class ConquestWebSocketService {
   String? _connectedSessionId;
   int _generation = 0;
   bool _isManualDisconnect = false;
+
+  Timer? _reconnectTimer;
+  int _reconnectAttempt = 0;
+  final Random _random = Random();
+
+  void Function(ConquestSessionState state)? _onState;
+  void Function(String message)? _onError;
+  void Function()? _onConnected;
 
   bool get isConnected => _client?.connected ?? false;
 
@@ -39,18 +49,59 @@ class ConquestWebSocketService {
     _generation += 1;
     final int generation = _generation;
     _isManualDisconnect = false;
+    _reconnectAttempt = 0;
 
     _connectedSessionId = sessionId;
+    _onState = onState;
+    _onError = onError;
+    _onConnected = onConnected;
+
+    _activateClient(generation);
+  }
+
+  void disconnect() {
+    _generation += 1;
+    _isManualDisconnect = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _stateUnsubscribe?.call(unsubscribeHeaders: {});
+    _errorUnsubscribe?.call(unsubscribeHeaders: {});
+    _stateUnsubscribe = null;
+    _errorUnsubscribe = null;
+
+    _client?.deactivate();
+    _client = null;
+    _connectedSessionId = null;
+    _onState = null;
+    _onError = null;
+    _onConnected = null;
+    _reconnectAttempt = 0;
+  }
+
+  void _activateClient(int generation) {
+    final sessionId = _connectedSessionId;
+    final onState = _onState;
+    final onError = _onError;
+    if (sessionId == null || onState == null || onError == null) return;
+
     final wsUrl = _resolveWsUrl();
+    _disposeClientOnly();
 
     _client = StompClient(
       config: StompConfig.sockJS(
         url: wsUrl,
-        reconnectDelay: const Duration(seconds: 2),
+        // Sabit reconnectDelay "thundering herd" riski yaratıyor.
+        // 0ms -> otomatik reconnect kapalı. Backoff+jitter'i biz yönetiyoruz.
+        reconnectDelay: Duration.zero,
         heartbeatIncoming: const Duration(seconds: 5),
         heartbeatOutgoing: const Duration(seconds: 5),
         onConnect: (frame) {
           if (generation != _generation) return;
+
+          _reconnectAttempt = 0;
+          _reconnectTimer?.cancel();
+          _reconnectTimer = null;
+
           // State topic
           _stateUnsubscribe = _client?.subscribe(
             destination: '/topic/conquest/$sessionId',
@@ -94,7 +145,7 @@ class ConquestWebSocketService {
 
           try {
             if (generation != _generation) return;
-            onConnected?.call();
+            _onConnected?.call();
           } catch (e) {
             onError("Bağlantı callback hatası: $e");
           }
@@ -103,19 +154,24 @@ class ConquestWebSocketService {
           if (generation != _generation) return;
           if (_isManualDisconnect) return;
           onError(error.toString());
+          _scheduleReconnect(generation);
         },
         onWebSocketDone: () {
           if (generation != _generation) return;
           if (_isManualDisconnect) return;
           onError("WebSocket bağlantısı kapandı.");
+          _scheduleReconnect(generation);
         },
         onStompError: (frame) {
           if (generation != _generation) return;
           if (_isManualDisconnect) return;
           onError(frame.body ?? 'STOMP error');
+          _scheduleReconnect(generation);
         },
         onDisconnect: (frame) {
-          // Bağlantı koparsa provider tekrar bağlanmayı yönetebilir.
+          if (generation != _generation) return;
+          if (_isManualDisconnect) return;
+          _scheduleReconnect(generation);
         },
       ),
     );
@@ -123,17 +179,45 @@ class ConquestWebSocketService {
     _client?.activate();
   }
 
-  void disconnect() {
-    _generation += 1;
-    _isManualDisconnect = true;
+  void _scheduleReconnect(int generation) {
+    if (generation != _generation) return;
+    if (_isManualDisconnect) return;
+    if (_reconnectTimer != null) return;
+    if (_connectedSessionId == null) return;
+
+    _disposeClientOnly();
+
+    final delay = _computeReconnectDelay(_reconnectAttempt);
+    _reconnectAttempt += 1;
+
+    _reconnectTimer = Timer(delay, () {
+      if (generation != _generation) return;
+      if (_isManualDisconnect) return;
+      _reconnectTimer = null;
+      _activateClient(generation);
+    });
+  }
+
+  Duration _computeReconnectDelay(int attempt) {
+    const int baseSeconds = 2;
+    const int maxSeconds = 30;
+
+    final int safeAttempt = attempt < 0 ? 0 : (attempt > 10 ? 10 : attempt);
+    final int rawSeconds = baseSeconds * (1 << safeAttempt);
+    final int seconds =
+        rawSeconds < 1 ? 1 : (rawSeconds > maxSeconds ? maxSeconds : rawSeconds);
+    final int jitterMs = _random.nextInt(750);
+
+    return Duration(seconds: seconds, milliseconds: jitterMs);
+  }
+
+  void _disposeClientOnly() {
     _stateUnsubscribe?.call(unsubscribeHeaders: {});
     _errorUnsubscribe?.call(unsubscribeHeaders: {});
     _stateUnsubscribe = null;
     _errorUnsubscribe = null;
-
     _client?.deactivate();
     _client = null;
-    _connectedSessionId = null;
   }
 
   void startGame(StartConquestGameRequest request) {

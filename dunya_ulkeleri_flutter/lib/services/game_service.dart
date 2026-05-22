@@ -12,7 +12,7 @@ import 'api_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../main.dart'; // navigatorKey için
+import '../app/navigation.dart'; // navigatorKey için
 import '../screens/login_screen.dart';
 
 class GameService {
@@ -84,12 +84,12 @@ class GameService {
         throw ApiException.fromResponse(response);
       }
 
-      print("--- OYUN BAŞLATMA İSTEĞİ ---");
-      print("Seçilen Kategori: $category, Seçilen Mod: $mode");
-      print("Durum Kodu: ${response.statusCode}");
-      print("Gelen Cevap: '${response.body}'");
+      debugPrint("--- OYUN BAŞLATMA İSTEĞİ ---");
+      debugPrint("Seçilen Kategori: $category, Seçilen Mod: $mode");
+      debugPrint("Durum Kodu: ${response.statusCode}");
+      debugPrint("Gelen Cevap: '${utf8.decode(response.bodyBytes)}'");
 
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return GameStatusModel.fromJson(
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
@@ -181,12 +181,12 @@ class GameService {
         throw ApiException.fromResponse(response);
       }
 
-      print("--- TAHMİN İSTEĞİ ---");
-      print("Geçen Süre: $timeTaken saniye");
-      print("Durum Kodu: ${response.statusCode}");
-      print("Gelen Cevap: ${response.body}");
+      debugPrint("--- TAHMİN İSTEĞİ ---");
+      debugPrint("Geçen Süre: $timeTaken saniye");
+      debugPrint("Durum Kodu: ${response.statusCode}");
+      debugPrint("Gelen Cevap: ${utf8.decode(response.bodyBytes)}");
 
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return GameStatusModel.fromJson(
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
@@ -212,7 +212,7 @@ class GameService {
 
       if (response.statusCode == 204 || response.statusCode == 404) {
         return null; // Aktif/yarım oyun yok
-      } else if (response.statusCode == 200 && response.body.isNotEmpty) {
+      } else if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return GameStatusModel.fromJson(
           jsonDecode(utf8.decode(response.bodyBytes)),
         );

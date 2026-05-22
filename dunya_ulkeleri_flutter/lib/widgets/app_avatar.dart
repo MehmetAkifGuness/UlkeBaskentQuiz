@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:typed_data';
 
 import '../theme/app_theme.dart';
@@ -41,7 +41,7 @@ class AppAvatar extends StatelessWidget {
           gradient: AppGradients.primary,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryBlue.withOpacity(0.25),
+              color: AppColors.primaryBlue.withValues(alpha: 0.25),
               blurRadius: 18,
               spreadRadius: 1,
             ),
@@ -112,3 +112,4 @@ class AppAvatar extends StatelessWidget {
     );
   }
 }
+

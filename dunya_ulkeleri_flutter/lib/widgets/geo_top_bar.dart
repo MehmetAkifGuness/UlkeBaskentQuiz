@@ -1,24 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
+import '../providers/profile_provider.dart';
 import '../theme/app_theme.dart';
 import 'app_avatar.dart';
 import 'glass_card.dart';
 
 class GeoTopBar extends StatelessWidget {
   final String title;
-  final int? avatarId;
   final VoidCallback? onAvatarTap;
 
   const GeoTopBar({
     super.key,
     this.title = '',
-    this.avatarId,
     this.onAvatarTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final hasTitle = title.trim().isNotEmpty;
+
+    final profile = context.watch<ProfileProvider>().profile;
+    final username = context.watch<AuthProvider>().username;
+
+    final resolvedAvatarId =
+        profile?.avatarId ??
+        ((username == null || username.trim().isEmpty)
+            ? null
+            : AppAvatar.stableAvatarIdFromText(username.trim()));
+
+    final resolvedAvatarBytes =
+        (profile?.hasCustomAvatar == true) ? profile?.customAvatarBytes : null;
 
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -44,8 +57,13 @@ class GeoTopBar extends StatelessWidget {
             ),
           ],
           const Spacer(),
-          if (avatarId != null)
-            AppAvatar(avatarId: avatarId!, size: 40, onTap: onAvatarTap),
+          if (resolvedAvatarId != null)
+            AppAvatar(
+              avatarId: resolvedAvatarId,
+              size: 40,
+              imageBytes: resolvedAvatarBytes,
+              onTap: onAvatarTap,
+            ),
         ],
       ),
     );

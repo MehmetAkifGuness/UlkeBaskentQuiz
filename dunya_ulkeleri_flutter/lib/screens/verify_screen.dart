@@ -11,10 +11,10 @@ class VerifyScreen extends StatefulWidget {
   const VerifyScreen({super.key, required this.email});
 
   @override
-  _VerifyScreenState createState() => _VerifyScreenState();
+  VerifyScreenState createState() => VerifyScreenState();
 }
 
-class _VerifyScreenState extends State<VerifyScreen> {
+class VerifyScreenState extends State<VerifyScreen> {
   // --- DEĞİŞKENLER VE KONTROLCÜLER ---
   final _codeController = TextEditingController();
   final _authService = AuthService();
@@ -55,6 +55,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     try {
       final result = await _authService.verify(widget.email, enteredCode);
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -75,6 +76,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       }
     } catch (e) {
       // 🚨 EĞER KOD YANLIŞSA VEYA BACKEND HATA FIRLATIRSA DONMAYIP BURAYA DÜŞECEK
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -97,13 +99,19 @@ class _VerifyScreenState extends State<VerifyScreen> {
     try {
       // Backend'deki yeni API'mizi tetikliyoruz
       final result = await _authService.resendVerification(widget.email);
+      if (!mounted) return;
       _showSnackBar(result.message ?? "Yeni kod gönderildi.", Colors.green);
     } catch (e) {
+      if (!mounted) return;
       _showSnackBar(errorMessageFrom(e), Colors.red);
     } finally {
-      setState(() {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
         _isLoading = false;
-      });
+      }
     }
   }
 
@@ -148,7 +156,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
               // Bilgilendirme Metinleri
               Text(
-                "${widget.email}",
+                widget.email,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,

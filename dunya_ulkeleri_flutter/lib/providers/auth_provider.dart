@@ -1,4 +1,6 @@
 // lib/providers/auth_provider.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 🚨 YENİ ŞİFRELİ DEPO PAKETİ EKLENDİ
 import '../models/auth_model.dart';
@@ -20,6 +22,16 @@ class AuthProvider with ChangeNotifier {
   String? get username => _username;
   bool get isLoading => _isLoading;
 
+  Future<void> updateSession({required String token, required String username}) async {
+    _token = token;
+    _username = username;
+
+    await _secureStorage.write(key: 'token', value: token);
+    await _secureStorage.write(key: 'username', value: username);
+
+    notifyListeners();
+  }
+
   // Misafir olarak giriş yapma fonksiyonu
   Future<bool> loginAsGuest() async {
     _isLoading = true;
@@ -36,7 +48,7 @@ class AuthProvider with ChangeNotifier {
 
       return true;
     } catch (e) {
-      print("Misafir giriş hatası: $e");
+      debugPrint("Misafir giriş hatası: $e");
       return false;
     } finally {
       _isLoading = false;
@@ -68,7 +80,7 @@ class AuthProvider with ChangeNotifier {
       // 🚨 HATA OLSA BİLE yükleniyor simgesini kapat ki ekran donmasın!
       _isLoading = false;
       notifyListeners();
-      print("GİRİŞ HATASI: $e"); // Hatayı terminale yazdır
+      debugPrint("GİRİŞ HATASI: $e"); // Hatayı terminale yazdır
       return AuthModel(message: errorMessageFrom(e));
     }
   }
@@ -92,7 +104,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return await _authService.forgotPassword(email);
     } catch (e) {
-      print("Şifre sıfırlama hatası: $e");
+      debugPrint("Şifre sıfırlama hatası: $e");
       throw Exception(errorMessageFrom(e));
     } finally {
       _isLoading = false;
@@ -111,7 +123,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return await _authService.resetPassword(email, code, newPassword);
     } catch (e) {
-      print("Şifre yenileme hatası: $e");
+      debugPrint("Şifre yenileme hatası: $e");
       throw Exception(errorMessageFrom(e));
     } finally {
       _isLoading = false;
@@ -129,10 +141,52 @@ class AuthProvider with ChangeNotifier {
       return false; // Token yoksa false dön (Giriş ekranında kalır)
     }
 
+    if (_isJwtExpired(storedToken)) {
+      await logout();
+      return false;
+    }
+
     _token = storedToken;
     _username = storedUsername;
 
     notifyListeners();
     return true; // Token varsa true dön (Ana ekrana geçer)
+  }
+
+  bool _isJwtExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      final payload = _decodeBase64Url(parts[1]);
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map) return true;
+
+      final exp = decoded['exp'];
+      if (exp is! num) return false;
+
+      final expiry =
+          DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000, isUtc: true);
+      return expiry.isBefore(DateTime.now().toUtc());
+    } catch (_) {
+      return true;
+    }
+  }
+
+  String _decodeBase64Url(String input) {
+    var output = input.replaceAll('-', '+').replaceAll('_', '/');
+    switch (output.length % 4) {
+      case 0:
+        break;
+      case 2:
+        output += '==';
+        break;
+      case 3:
+        output += '=';
+        break;
+      default:
+        throw const FormatException('Invalid base64url');
+    }
+    return utf8.decode(base64Decode(output));
   }
 }

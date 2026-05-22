@@ -54,6 +54,7 @@ public class GameSessionFinalizer {
             user.setMaxWinStreak(currentScore);
         }
         user.setTotalGamesPlayed(user.getTotalGamesPlayed() + 1);
+        user.setTotalMasteryPoints(user.getTotalMasteryPoints() + currentScore);
 
         if (isDaily) {
             user.setLastDailyDate(LocalDate.now());

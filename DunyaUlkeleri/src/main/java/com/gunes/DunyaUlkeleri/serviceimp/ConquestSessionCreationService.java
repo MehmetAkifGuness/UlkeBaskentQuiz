@@ -41,13 +41,13 @@ public class ConquestSessionCreationService {
         );
 
         if (username == null || username.isBlank()) {
-            throw AppException.badRequest("USERNAME_REQUIRED", "KullanÄ±cÄ± adÄ± boÅŸ olamaz.");
+            throw AppException.badRequest("USERNAME_REQUIRED", "Kullanıcı adı boş olamaz.");
         }
         if (colorHex == null || colorHex.isBlank()) {
-            throw AppException.badRequest("COLOR_REQUIRED", "Renk bilgisi (colorHex) boÅŸ olamaz.");
+            throw AppException.badRequest("COLOR_REQUIRED", "Renk bilgisi (colorHex) boş olamaz.");
         }
         if (continentFilter == null || continentFilter.isBlank()) {
-            throw AppException.badRequest("CONTINENT_REQUIRED", "KÄ±ta filtresi boÅŸ olamaz.");
+            throw AppException.badRequest("CONTINENT_REQUIRED", "Kıta filtresi boş olamaz.");
         }
 
         final String sessionId = UUID.randomUUID().toString();
@@ -71,6 +71,7 @@ public class ConquestSessionCreationService {
         session.setRoomCode(roomCode);
         session.setStatus(ConquestGameStatus.WAITING);
         session.setSelectedContinentFilter(continentFilter);
+        session.setMatchmakingKey(continentFilter);
         session.setHostPlayerId(playerId);
         session.setQuickMatch(quickMatch);
         session.setCreatedAt(Instant.now());

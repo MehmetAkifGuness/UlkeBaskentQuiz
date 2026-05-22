@@ -13,9 +13,12 @@ public class UserProfileResponse {
     private LocalDateTime creationDate;
     private int maxWinStreak;
     private int totalGamesPlayed;
+    private long totalMasteryPoints;
+    private int trophies;
+    private String league;
+    private int trophySeason;
     private Integer avatarId;
-    private String customAvatarBase64;
-    private String customAvatarContentType;
+    private boolean hasCustomAvatar;
 
     private boolean hasPlayedDaily;
 

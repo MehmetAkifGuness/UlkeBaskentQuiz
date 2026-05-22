@@ -9,11 +9,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class InMemoryConquestQuickMatchQueue implements ConquestQuickMatchQueue {
 
-    private final Object lock = new Object();
+    private final Map<String, Object> locksByContinent = new ConcurrentHashMap<>();
     private final Map<String, String> waitingByContinent = new ConcurrentHashMap<>();
 
     @Override
-    public <T> T withLock(Supplier<T> action) {
+    public <T> T withLock(String continentFilter, Supplier<T> action) {
+        final String key = continentFilter == null ? "ALL" : continentFilter;
+        final Object lock = locksByContinent.computeIfAbsent(key, k -> new Object());
         synchronized (lock) {
             return action.get();
         }

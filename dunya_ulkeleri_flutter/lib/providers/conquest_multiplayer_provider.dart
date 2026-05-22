@@ -12,6 +12,11 @@ import '../services/iso_country_service.dart';
 import '../utils/color_hex_utils.dart';
 import '../utils/error_message_utils.dart';
 
+part 'conquest_multiplayer_provider/answer_mapping.dart';
+part 'conquest_multiplayer_provider/connection.dart';
+part 'conquest_multiplayer_provider/exit.dart';
+part 'conquest_multiplayer_provider/target.dart';
+
 class ConquestMultiplayerProvider with ChangeNotifier {
   final ConquestApiService _apiService = ConquestApiService();
   final ConquestWebSocketService _wsService = ConquestWebSocketService();
@@ -49,37 +54,6 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   bool get isGameFinished =>
       (sessionState?.status ?? '').toUpperCase() == 'FINISHED';
 
-  /// Online modda backend bazen hedef ülke adını İngilizce gönderebiliyor.
-  /// UI tarafında ISO kodundan Türkçe karşılığına çevirip gösteriyoruz.
-  String? get currentTargetName {
-    final round = sessionState?.currentRound;
-    if (round == null) return null;
-
-    final rawName = round.targetCountryName?.trim();
-    final rawIso = (round.targetIsoCode ?? '').trim();
-
-    String? trNameFromIso(String iso) {
-      final v = iso.trim();
-      if (v.isEmpty) return null;
-
-      // ISO3 ise direkt dene; ISO2 ise önce ISO3'e çevir.
-      if (v.length == 3) {
-        return IsoCountryService.turkishNameFromIso3(v);
-      }
-      if (v.length == 2) {
-        final iso3 = IsoCountryService.iso3FromAlpha2(v);
-        if (iso3 != null) return IsoCountryService.turkishNameFromIso3(iso3);
-      }
-      return null;
-    }
-
-    final translated = trNameFromIso(rawIso);
-    if (translated != null && translated.trim().isNotEmpty) return translated;
-
-    // ISO gelmiyorsa veya eşleşmezse, backend'in gönderdiği ismi fallback olarak kullan.
-    return (rawName == null || rawName.isEmpty) ? null : rawName;
-  }
-
   String? get currentTargetIsoCode => sessionState?.currentRound?.targetIsoCode;
 
   Map<String, Color> get conqueredCountryColorsAsColors {
@@ -88,6 +62,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   }
 
   Future<bool> createOnlineSession({
+    required String token,
     required String username,
     required Color color,
     required String continentFilter,
@@ -104,6 +79,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
           colorHex: colorToHex(color),
           continentFilter: continentFilter,
         ),
+        token: token,
       );
 
       sessionId = response.sessionId;
@@ -125,6 +101,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   }
 
   Future<bool> joinOnlineSession({
+    required String token,
     required String username,
     required String roomCode,
     required Color color,
@@ -137,7 +114,11 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     try {
       final response = await _apiService.joinSession(
         roomCode,
-        JoinConquestSessionRequest(username: username, colorHex: colorToHex(color)),
+        JoinConquestSessionRequest(
+          username: username,
+          colorHex: colorToHex(color),
+        ),
+        token: token,
       );
 
       sessionId = response.sessionId;
@@ -159,6 +140,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   }
 
   Future<bool> quickMatch({
+    required String token,
     required String username,
     required Color color,
     required String continentFilter,
@@ -175,6 +157,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
           colorHex: colorToHex(color),
           continentFilter: continentFilter,
         ),
+        token: token,
       );
 
       sessionId = response.sessionId;
@@ -193,77 +176,6 @@ class ConquestMultiplayerProvider with ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> connectToSession() async {
-    final currentSessionId = sessionId;
-    if (currentSessionId == null || currentSessionId.isEmpty) {
-      errorMessage = "sessionId bulunamadı.";
-      notifyListeners();
-      return;
-    }
-
-    final pid = playerId;
-
-    // Ülke adı çevirisi (ISO -> TR) ve ISO2/ISO3 eşleştirmeleri için gerekli.
-    try {
-      await IsoCountryService.ensureLoaded();
-    } catch (_) {}
-
-    // Aynı oturum için bağlantı zaten başlatıldıysa (veya bağlıysa) tekrar bağlanma.
-    // Hızlı ekran geçişlerinde birden fazla connect() çağrısı önceki bağlantıyı kapatıp
-    // kullanıcıya "WebSocket bağlantısı kapandı" gibi hatalar gösterebiliyor.
-    if (_wsService.connectedSessionId == currentSessionId) {
-      if (_wsService.isConnected) {
-        if (pid != null && pid.isNotEmpty) {
-          _wsService.requestState(
-            StartConquestGameRequest(sessionId: currentSessionId, playerId: pid),
-          );
-        }
-        return;
-      }
-
-      // Bağlantı devam ederken (henüz connected değilken) yeniden connect çağrısı yapma.
-      if (_connectingSessionId == currentSessionId) {
-        return;
-      }
-      // Aynı sessionId için daha önce denendi ama şu an bağlı değil -> yeniden dene.
-    }
-
-    errorMessage = null;
-    _connectingSessionId = currentSessionId;
-    notifyListeners();
-
-    _wsService.connect(
-      sessionId: currentSessionId,
-      onState: (state) {
-        _connectingSessionId = null;
-        sessionState = state;
-        roomCode = state.roomCode ?? roomCode;
-        isQuickMatchMode = state.quickMatch;
-        isConnected = true;
-        notifyListeners();
-      },
-      onError: (message) {
-        _connectingSessionId = null;
-        errorMessage = message;
-        isConnected = false;
-        notifyListeners();
-      },
-      onConnected: () {
-        _connectingSessionId = null;
-        isConnected = true;
-        notifyListeners();
-
-        if (pid != null && pid.isNotEmpty) {
-          _wsService.requestState(
-            StartConquestGameRequest(sessionId: currentSessionId, playerId: pid),
-          );
-        }
-      },
-    );
-
-    // Not: STOMP bağlantısı asenkron kurulur; ilk state gelince isConnected true olur.
   }
 
   Future<void> connectToCurrentSession() => connectToSession();
@@ -294,101 +206,6 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     );
   }
 
-  Future<void> submitOnlineAnswerFromMapProperties(
-    Map<String, dynamic> mapProperties,
-  ) async {
-    final sid = sessionId;
-    final pid = playerId;
-    if (sid == null || pid == null) {
-      errorMessage = 'Cevap göndermek için sessionId/playerId gerekli.';
-      notifyListeners();
-      return;
-    }
-
-    final state = sessionState;
-    if (state == null) {
-      errorMessage = 'Oturum durumu henüz hazır değil.';
-      notifyListeners();
-      return;
-    }
-
-    try {
-      await IsoCountryService.ensureLoaded();
-    } catch (_) {}
-
-    String? readFirstNonEmpty(List<String> keys) {
-      for (final key in keys) {
-        final raw = mapProperties[key];
-        final value = raw?.toString().trim();
-        if (value != null && value.isNotEmpty && value != '-99') return value;
-      }
-      return null;
-    }
-
-    final isoCandidate = readFirstNonEmpty(const [
-      'ISO3166-1-Alpha-2',
-      'ISO_A2',
-      'iso_a2',
-      'ISO3166-1-Alpha-3',
-      'ISO_A3',
-      'iso_a3',
-      'ADM0_A3',
-      'adm0_a3',
-      'id',
-    ]);
-
-    final nameCandidate = readFirstNonEmpty(const [
-      'name',
-      'NAME',
-      'admin',
-      'ADMIN',
-    ]);
-
-    final available = state.playableIsoCodes.isNotEmpty
-        ? state.playableIsoCodes
-            .map((iso) => MapCountryModel(isoCode: iso, name: iso))
-            .toList(growable: false)
-        : <MapCountryModel>[];
-
-    if (available.isEmpty) {
-      final fallbackIso = (isoCandidate ?? '').trim();
-      final fallbackName = (nameCandidate ?? '').trim();
-      if (fallbackIso.isNotEmpty || fallbackName.isNotEmpty) {
-        available.add(
-          MapCountryModel(
-            isoCode: fallbackIso.isNotEmpty ? fallbackIso : fallbackName,
-            name: fallbackName.isNotEmpty ? fallbackName : fallbackIso,
-          ),
-        );
-      }
-    }
-
-    final matcher = CountryMatchService(availableCountries: available);
-    MapCountryModel? matched;
-
-    if (isoCandidate != null && isoCandidate.trim().isNotEmpty) {
-      matched = matcher.matchByIsoCode(isoCandidate);
-    }
-    matched ??= (nameCandidate != null && nameCandidate.trim().isNotEmpty)
-        ? matcher.matchByName(nameCandidate)
-        : null;
-
-    if (matched == null || matched.isoCode.trim().isEmpty) {
-      errorMessage = 'Bu bölge oyun verilerinde yok.';
-      notifyListeners();
-      return;
-    }
-
-    _wsService.submitAnswer(
-      SubmitConquestAnswerRequest(
-        sessionId: sid,
-        playerId: pid,
-        selectedIsoCode: matched.isoCode,
-        selectedCountryName: nameCandidate ?? matched.name,
-      ),
-    );
-  }
-
   Future<void> submitOnlineAnswer({
     required String selectedIsoCode,
     required String selectedCountryName,
@@ -409,7 +226,7 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     );
   }
 
-  Future<void> refreshSessionState() async {
+  Future<void> refreshSessionState({required String token}) async {
     final currentSessionId = sessionId;
     if (currentSessionId == null || currentSessionId.isEmpty) return;
 
@@ -418,7 +235,10 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      sessionState = await _apiService.getSessionState(currentSessionId);
+      sessionState = await _apiService.getSessionState(
+        currentSessionId,
+        token: token,
+      );
     } catch (e) {
       errorMessage = errorMessageFrom(e);
       rethrow;
@@ -426,33 +246,6 @@ class ConquestMultiplayerProvider with ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> leaveSession() async {
-    final sid = sessionId;
-    final pid = playerId;
-
-    if (sid != null && pid != null && _wsService.isConnected) {
-      _wsService.leaveSession(
-        StartConquestGameRequest(sessionId: sid, playerId: pid),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-    }
-
-    _wsService.disconnect();
-    isConnected = false;
-    isLoading = false;
-    _connectingSessionId = null;
-
-    sessionId = null;
-    roomCode = null;
-    playerId = null;
-    playerName = null;
-    sessionState = null;
-    errorMessage = null;
-    isQuickMatchMode = false;
-
-    notifyListeners();
   }
 
   bool get isHost {
@@ -471,4 +264,6 @@ class ConquestMultiplayerProvider with ChangeNotifier {
     errorMessage = null;
     notifyListeners();
   }
+
+  void _emit() => notifyListeners();
 }

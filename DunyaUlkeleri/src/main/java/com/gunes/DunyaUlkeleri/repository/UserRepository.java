@@ -31,10 +31,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u.username, VALUE(s) FROM User u JOIN u.categoryBestScores s WHERE KEY(s) = :category ORDER BY VALUE(s) DESC")
     List<Object[]> findTop10ByCategory(@Param("category") String category, Pageable pageable);
 
-    @Transactional(readOnly = true)
-    @Query("SELECT u.username, u.avatarId, u.displayName FROM User u WHERE u.username IN :usernames")
-    List<Object[]> findLeaderboardProfileByUsernames(@Param("usernames") List<String> usernames);
-    
     @Modifying
     @Query("DELETE FROM User u WHERE u.isVerified = false AND u.creationDate < :cutoff")
     void deleteUnverifiedUsersOlderThan(@Param("cutoff") LocalDateTime cutoff);

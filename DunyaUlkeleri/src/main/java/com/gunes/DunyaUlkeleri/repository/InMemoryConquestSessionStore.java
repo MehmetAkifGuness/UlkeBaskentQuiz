@@ -2,7 +2,6 @@ package com.gunes.DunyaUlkeleri.repository;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Repository;
@@ -16,6 +15,8 @@ public class InMemoryConquestSessionStore implements ConquestSessionStore {
     private final Map<String, ConquestGameSession> sessionsById =
             new ConcurrentHashMap<>();
     private final Map<String, String> roomCodeToSessionId =
+            new ConcurrentHashMap<>();
+    private final Map<String, String> sessionIdToRoomCode =
             new ConcurrentHashMap<>();
 
     @Override
@@ -54,13 +55,25 @@ public class InMemoryConquestSessionStore implements ConquestSessionStore {
     @Override
     public void save(ConquestGameSession session) {
         if (session == null) return;
-        if (safeTrim(session.getSessionId()) == null) return;
+        final String sessionId = safeTrim(session.getSessionId());
+        if (sessionId == null) return;
 
-        sessionsById.put(session.getSessionId(), session);
+        sessionsById.put(sessionId, session);
 
         final String roomCode = safeTrim(session.getRoomCode());
         if (roomCode != null && !roomCode.isBlank()) {
-            roomCodeToSessionId.put(roomCode.toUpperCase(Locale.ROOT), session.getSessionId());
+            final String normalizedRoomCode = roomCode.toUpperCase(Locale.ROOT);
+            final String previous = sessionIdToRoomCode.put(sessionId, normalizedRoomCode);
+            if (previous != null && !previous.equals(normalizedRoomCode)) {
+                roomCodeToSessionId.remove(previous, sessionId);
+            }
+            roomCodeToSessionId.put(normalizedRoomCode, sessionId);
+            return;
+        }
+
+        final String previous = sessionIdToRoomCode.remove(sessionId);
+        if (previous != null && !previous.isBlank()) {
+            roomCodeToSessionId.remove(previous, sessionId);
         }
     }
 
@@ -69,16 +82,11 @@ public class InMemoryConquestSessionStore implements ConquestSessionStore {
         final String normalizedId = safeTrim(sessionId);
         if (normalizedId == null || normalizedId.isBlank()) return;
 
-        final ConquestGameSession removed = sessionsById.remove(normalizedId);
-        if (removed == null) return;
+        sessionsById.remove(normalizedId);
 
-        final String roomCode = safeTrim(removed.getRoomCode());
-        if (roomCode != null && !roomCode.isBlank()) {
-            roomCodeToSessionId.remove(roomCode.toUpperCase(Locale.ROOT), normalizedId);
-        } else {
-            // Oda kodu null ise map'ten temizleyebilmek için yedek tarama.
-            roomCodeToSessionId.entrySet().removeIf(e -> Objects.equals(e.getValue(), normalizedId));
-        }
+        final String normalizedRoomCode = sessionIdToRoomCode.remove(normalizedId);
+        if (normalizedRoomCode == null || normalizedRoomCode.isBlank()) return;
+        roomCodeToSessionId.remove(normalizedRoomCode, normalizedId);
     }
 
     @Override

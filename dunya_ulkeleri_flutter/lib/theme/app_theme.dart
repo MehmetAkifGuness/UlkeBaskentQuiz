@@ -1,4 +1,4 @@
-// lib/theme/app_theme.dart
+﻿// lib/theme/app_theme.dart
 import 'package:flutter/material.dart';
 
 class AppColors {
@@ -53,7 +53,6 @@ class AppTheme {
       primary: AppColors.primaryBlue,
       secondary: AppColors.successGreen,
       surface: AppColors.surface,
-      background: AppColors.background,
       error: AppColors.errorRed,
       outline: AppColors.borderLight,
     );
@@ -90,7 +89,7 @@ class AppTheme {
       ),
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: AppColors.surface2,
-        selectedColor: AppColors.primaryBlue.withOpacity(0.20),
+        selectedColor: AppColors.primaryBlue.withValues(alpha: 0.20),
         side: const BorderSide(color: AppColors.borderLight),
         labelStyle: const TextStyle(
           color: AppColors.textDark,
@@ -144,3 +143,4 @@ class AppTheme {
   // Geriye dönük kullanım için (istersen ileride tamamen kaldırabiliriz)
   static ThemeData get lightTheme => darkTheme;
 }
+
