@@ -288,7 +288,9 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
     });
   }
 
-  void _retryLoadGeoJson() => setState(() => _loadFuture = _loadGeoJson());
+  void _retryLoadGeoJson() => setState(() {
+        _loadFuture = _loadGeoJson();
+      });
 
   @override
   Widget build(BuildContext context) => _ConquestOnlineGameView(state: this);

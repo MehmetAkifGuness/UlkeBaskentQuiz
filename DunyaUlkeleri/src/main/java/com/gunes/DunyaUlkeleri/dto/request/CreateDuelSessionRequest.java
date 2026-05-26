@@ -11,5 +11,6 @@ public class CreateDuelSessionRequest {
     private String username;
     private String category;
     private String mode;
+    private Boolean vsBot;
+    private String botDifficulty;
 }
-

@@ -73,7 +73,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _refresh() {
     final token = Provider.of<AuthProvider>(context, listen: false).token;
     if (token == null) return;
-    setState(() => _profileFuture = _fetchProfileData(token));
+    setState(() {
+      _profileFuture = _fetchProfileData(token);
+    });
   }
 
   void _updateLocalProfile(UserProfileModel Function(UserProfileModel current) updater) {

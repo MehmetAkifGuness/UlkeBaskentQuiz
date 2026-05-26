@@ -53,12 +53,14 @@ extension ConquestProviderVsBot on ConquestProvider {
     errorMessage = null;
     lastRoundMessage = null;
     isGameActive = true;
+    _cancelRoundTransitionTimer();
     pickNextTargetCountry();
     _emit();
   }
 
   void stopBotMatch() {
     cancelBotTimer();
+    _cancelRoundTransitionTimer();
     isGameActive = false;
     isWaitingForAnswer = false;
     isRoundLocked = false;
@@ -88,7 +90,7 @@ extension ConquestProviderVsBot on ConquestProvider {
         ? 'İki tarafın da canı bitti. Ülke atlandı.'
         : 'İki tarafın da canı bitti. ${skipped.name} atlandı.';
 
-    pickNextTargetCountry();
+    _scheduleNextTargetCountry();
   }
 
   void scheduleBotAnswer({required int roundToken, required bool isRetry}) {
@@ -156,7 +158,7 @@ extension ConquestProviderVsBot on ConquestProvider {
 
     lastRoundMessage = 'Bot daha hızlı bildi: ${target.name}';
 
-    pickNextTargetCountry();
+    _scheduleNextTargetCountry();
     _emit();
   }
 
@@ -223,7 +225,7 @@ extension ConquestProviderVsBot on ConquestProvider {
 
         lastRoundMessage = 'Sen daha hızlı bildin!';
 
-        pickNextTargetCountry();
+        _scheduleNextTargetCountry();
       } else {
         wrongCount += 1;
         streak = 0;

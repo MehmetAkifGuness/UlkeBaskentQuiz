@@ -14,6 +14,7 @@ extension DuelProviderConnection on DuelProvider {
       sessionId: sid,
       onState: (state) {
         sessionState = state;
+        _captureMyAnswerResult(state);
         isConnected = true;
         _connectingSessionId = null;
         _emit();
@@ -31,4 +32,3 @@ extension DuelProviderConnection on DuelProvider {
     );
   }
 }
-

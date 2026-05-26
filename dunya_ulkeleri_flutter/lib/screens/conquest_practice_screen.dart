@@ -92,7 +92,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
   Future<_ConquestMapLoadResult> _loadGeoJson() =>
       _loadConquestPracticeGeoJson(_assetPath);
 
-  void _retryLoadGeoJson() => setState(() => _loadFuture = _loadGeoJson());
+  void _retryLoadGeoJson() => setState(() {
+        _loadFuture = _loadGeoJson();
+      });
 
   Widget _continentFilterBar(BuildContext context) {
     final provider = context.watch<ConquestProvider>();

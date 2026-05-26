@@ -265,7 +265,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
     provider.startBotMatch();
   }
 
-  void _retryLoadGeoJson() => setState(() => _loadFuture = _loadGeoJson());
+  void _retryLoadGeoJson() => setState(() {
+        _loadFuture = _loadGeoJson();
+      });
 
   void _setSelectedPlayerColor(Color c) =>
       setState(() => _selectedPlayerColor = c);

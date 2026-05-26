@@ -8,8 +8,12 @@ class _DuelEntryContent extends StatelessWidget {
   final List<_ModeOption> modes;
   final String selectedMode;
   final ValueChanged<String> onModeChanged;
+  final List<_BotDifficultyOption> botDifficulties;
+  final String selectedBotDifficulty;
+  final ValueChanged<String> onBotDifficultyChanged;
   final TextEditingController roomCodeController;
   final Future<void> Function() onQuickMatch;
+  final Future<void> Function() onBotMatch;
   final Future<void> Function() onCreateRoom;
   final Future<void> Function() onJoinRoom;
   final VoidCallback onHaptic;
@@ -22,8 +26,12 @@ class _DuelEntryContent extends StatelessWidget {
     required this.modes,
     required this.selectedMode,
     required this.onModeChanged,
+    required this.botDifficulties,
+    required this.selectedBotDifficulty,
+    required this.onBotDifficultyChanged,
     required this.roomCodeController,
     required this.onQuickMatch,
+    required this.onBotMatch,
     required this.onCreateRoom,
     required this.onJoinRoom,
     required this.onHaptic,
@@ -53,7 +61,7 @@ class _DuelEntryContent extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Rakibini bul, 5 tur oynayın. Kazanan kupa kazanır, kaybeden kupa kaybeder.',
+                'Rakibini bul, seçtiğin kategorideki ülke sayısı kadar tur oynayın. Her turda ilk doğru cevap veren 1 puan alır. Kazanan kupa kazanır, kaybeden kupa kaybeder.',
                 style: TextStyle(
                   color: AppColors.textMuted,
                   fontWeight: FontWeight.w600,
@@ -68,6 +76,63 @@ class _DuelEntryContent extends StatelessWidget {
                 modes: modes,
                 selectedMode: selectedMode,
                 onModeChanged: onModeChanged,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        GlassCard(
+          padding: const EdgeInsets.all(16),
+          tint: AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bot Modu',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Seçtiğin kategorideki ülke sayısı kadar tur oynarsın. Her turda ilk doğru cevap veren kazanır.',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final d in botDifficulties)
+                    ChoiceChip(
+                      label: Text(d.label),
+                      selected: selectedBotDifficulty == d.value,
+                      onSelected: isBusy
+                          ? null
+                          : (selected) {
+                              if (!selected) return;
+                              onBotDifficultyChanged(d.value);
+                            },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: isBusy ? null : onBotMatch,
+                  icon: const Icon(Icons.smart_toy_outlined, size: 18),
+                  label: const Text(
+                    'Bota Karşı Oyna',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
               ),
             ],
           ),
@@ -169,4 +234,3 @@ class _DuelEntryContent extends StatelessWidget {
     );
   }
 }
-

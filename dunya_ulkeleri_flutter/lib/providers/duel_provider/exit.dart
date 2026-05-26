@@ -36,8 +36,8 @@ extension DuelProviderExit on DuelProvider {
     sessionState = null;
     errorMessage = null;
     isQuickMatchMode = false;
+    _myAnswerCorrectByRound.clear();
 
     _emit();
   }
 }
-

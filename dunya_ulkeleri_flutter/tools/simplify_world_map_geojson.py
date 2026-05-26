@@ -22,9 +22,9 @@ def perpendicular_distance(point, start, end):
     return math.hypot(x - px, y - py)
 
 
-def rdp(points, epsilon):
+def rdp_mask(points, epsilon):
     if len(points) <= 2:
-        return points
+        return [True] * len(points)
 
     stack = [(0, len(points) - 1)]
     keep = [False] * len(points)
@@ -49,6 +49,11 @@ def rdp(points, epsilon):
             stack.append((start_idx, max_index))
             stack.append((max_index, end_idx))
 
+    return keep
+
+
+def rdp(points, epsilon):
+    keep = rdp_mask(points, epsilon)
     return [p for i, p in enumerate(points) if keep[i]]
 
 
@@ -63,11 +68,11 @@ def simplify_ring(ring, epsilon):
     else:
         core = ring
 
-    simplified = rdp([(p[0], p[1]) for p in core], epsilon)
-    if len(simplified) < 3:
+    keep = rdp_mask([(p[0], p[1]) for p in core], epsilon)
+    out = [p for p, k in zip(core, keep) if k]
+    if len(out) < 3:
         return ring
 
-    out = [[x, y] for (x, y) in simplified]
     out.append(out[0])
     return out
 
@@ -90,17 +95,24 @@ def simplify_geometry(geometry, epsilon):
     return geometry
 
 
-def round_coordinates(obj, decimals):
-    if isinstance(obj, list):
-        return [round_coordinates(x, decimals) for x in obj]
-    if isinstance(obj, float):
-        return round(obj, decimals)
-    return obj
+def round_geometry_coordinates(geometry, decimals):
+    coords = geometry.get("coordinates")
+    if coords is None:
+        return geometry
+
+    def round_any(x):
+        if isinstance(x, list):
+            return [round_any(v) for v in x]
+        if isinstance(x, float):
+            return round(x, decimals)
+        return x
+
+    return {**geometry, "coordinates": round_any(coords)}
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="GeoJSON world map'i performans icin sadeleştirir (RDP)."
+        description="GeoJSON world map'i performans için sadeleştirir (RDP)."
     )
     parser.add_argument(
         "--input",
@@ -137,15 +149,14 @@ def main():
         geom = feat.get("geometry") or {}
         if isinstance(geom, dict):
             new_geom = simplify_geometry(geom, args.tolerance)
+            if args.round is not None and args.round >= 0:
+                new_geom = round_geometry_coordinates(new_geom, args.round)
             new_feat = {**feat, "geometry": new_geom}
             new_features.append(new_feat)
         else:
             new_features.append(feat)
 
     data["features"] = new_features
-
-    if args.round is not None and args.round >= 0:
-        data = round_coordinates(data, args.round)
 
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

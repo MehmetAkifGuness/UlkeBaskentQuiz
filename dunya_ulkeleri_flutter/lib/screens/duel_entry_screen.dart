@@ -38,10 +38,17 @@ class _DuelEntryScreenState extends State<DuelEntryScreen> {
     _ModeOption('Başkent → Ülke', 'CAPITAL_TO_COUNTRY'),
   ];
 
+  static const List<_BotDifficultyOption> _botDifficulties = <_BotDifficultyOption>[
+    _BotDifficultyOption('Kolay', 'EASY'),
+    _BotDifficultyOption('Orta', 'MEDIUM'),
+    _BotDifficultyOption('Zor', 'HARD'),
+  ];
+
   final TextEditingController _roomCodeController = TextEditingController();
 
   String _selectedCategory = 'Dünya';
   String _selectedMode = 'MIXED';
+  String _selectedBotDifficulty = 'MEDIUM';
 
   String? _lastSnackMessage;
 
@@ -74,6 +81,7 @@ class _DuelEntryScreenState extends State<DuelEntryScreen> {
   }
 
   Future<void> _createRoom() => _createRoomImpl(this);
+  Future<void> _botMatch() => _botMatchImpl(this);
   Future<void> _quickMatch() => _quickMatchImpl(this);
   Future<void> _joinRoom() => _joinRoomImpl(this);
 
@@ -103,8 +111,12 @@ class _DuelEntryScreenState extends State<DuelEntryScreen> {
           modes: _modes,
           selectedMode: _selectedMode,
           onModeChanged: (m) => setState(() => _selectedMode = m),
+          botDifficulties: _botDifficulties,
+          selectedBotDifficulty: _selectedBotDifficulty,
+          onBotDifficultyChanged: (d) => setState(() => _selectedBotDifficulty = d),
           roomCodeController: _roomCodeController,
           onQuickMatch: _quickMatch,
+          onBotMatch: _botMatch,
           onCreateRoom: _createRoom,
           onJoinRoom: _joinRoom,
           onHaptic: _triggerHaptic,
@@ -120,3 +132,8 @@ class _ModeOption {
   const _ModeOption(this.label, this.value);
 }
 
+class _BotDifficultyOption {
+  final String label;
+  final String value;
+  const _BotDifficultyOption(this.label, this.value);
+}

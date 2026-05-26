@@ -7,6 +7,7 @@ extension ConquestProviderPractice on ConquestProvider {
     // ADIM 3: Bu ekran tek oyunculu pratik içindir.
     _setMode(ConquestGameMode.practice);
     cancelBotTimer(); // Güvenlik: VS Bot ekranından kalan timer varsa iptal et.
+    _cancelRoundTransitionTimer();
     isWaitingForAnswer = false;
     roundWinner = null;
     lastRoundMessage = null;
@@ -80,12 +81,14 @@ extension ConquestProviderPractice on ConquestProvider {
 
     errorMessage = null;
     isGameActive = true;
+    _cancelRoundTransitionTimer();
     pickNextTargetCountry();
     _emit();
   }
 
   void stopGame() {
     cancelBotTimer(); // Güvenlik: bot timer'ı varsa durdur.
+    _cancelRoundTransitionTimer();
     isGameActive = false;
     isWaitingForAnswer = false;
     isRoundLocked = false;
@@ -96,6 +99,7 @@ extension ConquestProviderPractice on ConquestProvider {
 
   void resetGame() {
     cancelBotTimer();
+    _cancelRoundTransitionTimer();
     isRoundLocked = false;
     targetCountry = null;
     conqueredIsoCodes.clear();

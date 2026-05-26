@@ -5,16 +5,30 @@ part 'duel_session_dto/session_state.dart';
 class CreateDuelSessionRequest {
   final String category;
   final String mode;
+  final bool vsBot;
+  final String? botDifficulty;
 
   CreateDuelSessionRequest({
     required this.category,
     required this.mode,
+    this.vsBot = false,
+    this.botDifficulty,
   });
 
-  Map<String, dynamic> toJson() => {
-        'category': category,
-        'mode': mode,
-      };
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'category': category,
+      'mode': mode,
+    };
+    if (vsBot) {
+      map['vsBot'] = true;
+      final diff = (botDifficulty ?? '').trim();
+      if (diff.isNotEmpty) {
+        map['botDifficulty'] = diff;
+      }
+    }
+    return map;
+  }
 }
 
 class CreateDuelSessionResponse {
@@ -95,4 +109,3 @@ class LeaveDuelSessionRequest {
         'playerId': playerId,
       };
 }
-

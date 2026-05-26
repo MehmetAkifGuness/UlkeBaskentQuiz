@@ -29,14 +29,40 @@ class DuelProvider with ChangeNotifier {
   DuelSessionState? sessionState;
   bool isQuickMatchMode = false;
 
+  final Map<int, bool> _myAnswerCorrectByRound = <int, bool>{};
+
   bool get isInLobby => (sessionState?.status ?? '').toUpperCase() == 'WAITING';
   bool get isGameStarted => (sessionState?.status ?? '').toUpperCase() == 'STARTED';
   bool get isGameFinished => (sessionState?.status ?? '').toUpperCase() == 'FINISHED';
+
+  bool? myAnswerCorrectForRound(int? roundNumber) {
+    if (roundNumber == null) return null;
+    return _myAnswerCorrectByRound[roundNumber];
+  }
+
+  void _captureMyAnswerResult(DuelSessionState state) {
+    final pid = playerId;
+    if (pid == null) return;
+
+    final lastPid = (state.lastAnsweredPlayerId ?? '').trim();
+    if (lastPid.isEmpty || lastPid != pid) return;
+
+    final correct = state.lastAnswerCorrect;
+    if (correct == null) return;
+
+    final roundNumber =
+        state.lastAnsweredRoundNumber ?? state.currentRound?.roundNumber;
+    if (roundNumber == null || roundNumber <= 0) return;
+
+    _myAnswerCorrectByRound[roundNumber] = correct;
+  }
 
   Future<bool> createSession({
     required String token,
     required String category,
     required String mode,
+    bool vsBot = false,
+    String? botDifficulty,
   }) async {
     if (isLoading) return false;
     isLoading = true;
@@ -45,7 +71,12 @@ class DuelProvider with ChangeNotifier {
 
     try {
       final response = await _apiService.createSession(
-        CreateDuelSessionRequest(category: category, mode: mode),
+        CreateDuelSessionRequest(
+          category: category,
+          mode: mode,
+          vsBot: vsBot,
+          botDifficulty: botDifficulty,
+        ),
         token: token,
       );
 
@@ -55,6 +86,7 @@ class DuelProvider with ChangeNotifier {
       this.category = category;
       this.mode = mode;
       isQuickMatchMode = false;
+      _myAnswerCorrectByRound.clear();
 
       notifyListeners();
       return true;
@@ -87,6 +119,7 @@ class DuelProvider with ChangeNotifier {
       this.roomCode = response.roomCode;
       playerId = response.playerId;
       isQuickMatchMode = false;
+      _myAnswerCorrectByRound.clear();
 
       notifyListeners();
       return true;
@@ -121,6 +154,7 @@ class DuelProvider with ChangeNotifier {
       this.category = category;
       this.mode = mode;
       isQuickMatchMode = true;
+      _myAnswerCorrectByRound.clear();
 
       notifyListeners();
       return true;
@@ -184,4 +218,3 @@ class DuelProvider with ChangeNotifier {
 
   void _emit() => notifyListeners();
 }
-

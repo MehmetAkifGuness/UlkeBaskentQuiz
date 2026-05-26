@@ -65,6 +65,7 @@ class ConquestProvider with ChangeNotifier {
 
   /// Bot cevap simülasyonu için timer.
   Timer? botTimer;
+  Timer? _roundTransitionTimer;
 
   /// Bir round içinde "ilk doğru cevap" kuralını uygulamak için.
   bool isWaitingForAnswer = false;
@@ -98,6 +99,8 @@ class ConquestProvider with ChangeNotifier {
     _disposed = true;
     botTimer?.cancel();
     botTimer = null;
+    _roundTransitionTimer?.cancel();
+    _roundTransitionTimer = null;
     super.dispose();
   }
 

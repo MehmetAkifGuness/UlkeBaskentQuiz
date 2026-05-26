@@ -1,9 +1,8 @@
-﻿oyunlarda hani ülke başkent tahmin edebiliyoruz ya orada şöyle bir şey yapabiliriz online modunu yaapbiliriz aynı anda 2 kullanıcı aynı soruda cevap vermeye çalışır ve en yüksek puan alan oyuncu bir miktar kupa kazanabiir kaybeden oyuncu da belli bir miktar kupa kaybedebilir ve böylelikle lig sistemi oluşturulur lig sistemi kullannıcının profil sayfasında tutulsun ve eşleşme sisteminde kullanıcılar aynı ligden kullanıcılar ile eşleşsinler ve her sezon ayın 1 inde yenilensin ona göre bir lig sistemi oluştur 
+﻿ülke başkent modunda tüm sorular bittikten sonra bir sonuç sayfası oluşturulacak ve ordan direk çıkış yapılabilecek bu sayede çıkan bir kişi olunca beraberlik sayıyor onun da önüne geçilir ve bug çözülmüş olur
 
-dünya fetih modu özelliğinde 2 farklı oyuncu o-var ya onların aynı rengi seçememes için kontrol sağlanacak
+kupa sisteminde kaybedilen oyunlarda kupa düşme mantığı çözülecek
 
-toplam ustalık puanı artmıyor oynanan oyunda artmıyor en yüksek skor değişiyormu onun hakkında da bir fikrim yok onları da düzeltmem gerekecek
+eşleşme sisteminde zorunlu olmadıktan sonra farklı liglerden oyuncularla eşleşme olmayacak 
 
-online mod da şöyle bir sorun var hızlı giriş yaptığımda aynı anda 2 kişi giriyor ya orada şu var bulunacak ülkenin rengi direk böyle belli ediyor odalarda da aynı şekilde kendini yani bir tetikleyici gibi düşün ve şöyle bir şey var ona dokununca başka ülkelerde boyanıyor sanırım biraz karışıklık var onu çözelim yani komple lobiye dönme ve geri tuşları çalışmıyor
+harita fetih modunda ise o kıta fethedilene kadar tur bitmeyecek ve en fazla ülkenin konumunu bilen kazanacak
 
-online modda hızlı girş modunda şöyle de bir şey var en başta harita gelince işlem yapılamıoyr onun da çözülmesi gerekecek

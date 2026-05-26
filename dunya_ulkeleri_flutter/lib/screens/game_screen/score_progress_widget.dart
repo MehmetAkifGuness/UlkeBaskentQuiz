@@ -1,10 +1,16 @@
 ﻿part of '../game_screen.dart';
+
 class ScoreProgressWidget extends StatelessWidget {
   final String ghostName;
   final int ghostScore;
   final int currentScore;
   final int totalQuestions;
   final int remainingQuestions;
+
+  // Sabit değerler sınıf değişkeni olarak tanımlandı
+  static const int _maxScorePerQuestion = 2000;
+  static const Duration _questionAnimDuration = Duration(milliseconds: 500);
+  static const Duration _scoreAnimDuration = Duration(milliseconds: 800);
 
   const ScoreProgressWidget({
     super.key,
@@ -17,30 +23,41 @@ class ScoreProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int answeredQuestions = totalQuestions - remainingQuestions;
-    double questionProgress = totalQuestions > 0
-        ? (answeredQuestions / totalQuestions)
-        : 0.0;
-    if (questionProgress > 1.0) questionProgress = 1.0;
+    final int answeredQuestions = totalQuestions - remainingQuestions;
+    final int maxPossibleScore = totalQuestions * _maxScorePerQuestion;
 
-    // Maksimum alınabilecek teorik skor (Soru başı 2000 puan)
-    int maxPossibleScore = totalQuestions * 2000;
-
-    // Senin ve rakibin (hayaletin) bar üzerindeki yüzde hesaplamaları
-    double scoreProgress = maxPossibleScore > 0
-        ? (currentScore / maxPossibleScore)
-        : 0.0;
-    double ghostProgress = maxPossibleScore > 0
-        ? (ghostScore / maxPossibleScore)
+    // .clamp(0.0, 1.0) kullanılarak sınır kontrolleri kısaltıldı
+    final double questionProgress = totalQuestions > 0
+        ? (answeredQuestions / totalQuestions).clamp(0.0, 1.0)
         : 0.0;
 
-    if (scoreProgress > 1.0) scoreProgress = 1.0;
-    if (ghostProgress > 1.0) ghostProgress = 1.0;
+    final double scoreProgress = maxPossibleScore > 0
+        ? (currentScore / maxPossibleScore).clamp(0.0, 1.0)
+        : 0.0;
+
+    final double ghostProgress = maxPossibleScore > 0
+        ? (ghostScore / maxPossibleScore).clamp(0.0, 1.0)
+        : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // --- 1. BAR: SORU DURUMU ---
+        _buildQuestionProgressSection(answeredQuestions, questionProgress),
+        const SizedBox(height: 16),
+        _buildScoreProgressSection(scoreProgress, ghostProgress),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // --- 1. BAR: SORU DURUMU ---
+  Widget _buildQuestionProgressSection(
+    int answeredQuestions,
+    double questionProgress,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -73,28 +90,36 @@ class ScoreProgressWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+            // TweenAnimationBuilder optimizasyonu: Sabit UI child üzerinden geçildi
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0.0, end: questionProgress),
-              duration: const Duration(milliseconds: 500),
+              duration: _questionAnimDuration,
               curve: Curves.easeOut,
               builder: (context, value, child) {
-                return FractionallySizedBox(
-                  widthFactor: value > 0.0 ? value : 0.0,
-                  child: Container(
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.successGreen,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
+                return FractionallySizedBox(widthFactor: value, child: child);
               },
+              child: Container(
+                height: 10,
+                decoration: BoxDecoration(
+                  color: AppColors.successGreen,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ],
         ),
+      ],
+    );
+  }
 
-        const SizedBox(height: 16), // Araya biraz daha nefes boşluğu ekledik
-        // --- 2. BAR: SKOR VE HAYALET DURUMU ---
+  // --- 2. BAR: SKOR VE HAYALET DURUMU ---
+  Widget _buildScoreProgressSection(
+    double scoreProgress,
+    double ghostProgress,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -119,10 +144,9 @@ class ScoreProgressWidget extends StatelessWidget {
         const SizedBox(height: 6),
         Stack(
           alignment: Alignment.centerLeft,
-          clipBehavior: Clip
-              .none, // 🚨 YENİ: Hedef çizgisinin barın dışına hafif taşabilmesi için
+          clipBehavior: Clip.none,
           children: [
-            // 1. Gri Arka Plan Barı
+            // Gri Arka Plan Barı
             Container(
               height: 16,
               decoration: BoxDecoration(
@@ -131,14 +155,14 @@ class ScoreProgressWidget extends StatelessWidget {
               ),
             ),
 
-            // 2. Senin Skorun (Dolan Mavi Bar)
+            // Senin Skorun (Dolan Mavi Bar)
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 0.0, end: scoreProgress),
-              duration: const Duration(milliseconds: 800),
+              duration: _scoreAnimDuration,
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
                 return FractionallySizedBox(
-                  widthFactor: value > 0.0 ? value : 0.0,
+                  widthFactor: value,
                   child: Container(
                     height: 16,
                     decoration: BoxDecoration(
@@ -162,23 +186,19 @@ class ScoreProgressWidget extends StatelessWidget {
               },
             ),
 
-            // 3. 🚨 YENİ EKLENDİ: Rakibin (Hayaletin) Skoru İçin Hedef Çizgisi
+            // Rakibin (Hayaletin) Skoru İçin Hedef Çizgisi
             if (ghostProgress > 0.0)
               FractionallySizedBox(
                 widthFactor: ghostProgress,
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Container(
-                    width: 4, // Çizginin kalınlığı
-                    height:
-                        24, // Bardan (16px) biraz daha uzun, belirgin bir hedef çizgisi
+                    width: 4,
+                    height: 24,
                     decoration: BoxDecoration(
                       color: Colors.amber,
                       borderRadius: BorderRadius.circular(2),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 1,
-                      ), // Şık dursun diye ince beyaz çerçeve
+                      border: Border.all(color: Colors.white, width: 1),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.amber.withValues(alpha: 0.8),
@@ -192,9 +212,7 @@ class ScoreProgressWidget extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 8), // Alt boşluk
       ],
     );
   }
 }
-

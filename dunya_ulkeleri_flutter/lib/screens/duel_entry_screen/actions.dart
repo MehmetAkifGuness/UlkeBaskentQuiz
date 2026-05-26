@@ -21,6 +21,29 @@ Future<void> _createRoomImpl(_DuelEntryScreenState state) async {
   );
 }
 
+Future<void> _botMatchImpl(_DuelEntryScreenState state) async {
+  state._triggerHaptic();
+  final token = state.context.read<AuthProvider>().token;
+  if (token == null || token.trim().isEmpty) {
+    state._showSnackOnce('Lütfen giriş yapın.');
+    return;
+  }
+
+  final ok = await state.context.read<DuelProvider>().createSession(
+        token: token,
+        category: state._selectedCategory,
+        mode: state._selectedMode,
+        vsBot: true,
+        botDifficulty: state._selectedBotDifficulty,
+      );
+  if (!ok || !state.mounted) return;
+
+  Navigator.push(
+    state.context,
+    FadePageRoute(page: const DuelGameScreen()),
+  );
+}
+
 Future<void> _quickMatchImpl(_DuelEntryScreenState state) async {
   state._triggerHaptic();
   final token = state.context.read<AuthProvider>().token;
@@ -68,4 +91,3 @@ Future<void> _joinRoomImpl(_DuelEntryScreenState state) async {
     FadePageRoute(page: const DuelGameScreen()),
   );
 }
-

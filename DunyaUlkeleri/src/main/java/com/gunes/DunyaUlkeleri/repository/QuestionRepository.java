@@ -25,6 +25,8 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<String> findRandomWrongCountries(@Param("correctAnswer") String correctAnswer);
 
     List<Question> findByContinent(String continent);
+
+    long countByContinent(String continent);
     
     List<Question> findAllByOrderByCountryNameAsc();
 

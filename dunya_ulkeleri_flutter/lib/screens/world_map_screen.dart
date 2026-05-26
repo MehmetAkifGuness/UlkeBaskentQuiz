@@ -123,9 +123,11 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                           ? 'Harita verisi bulunamadı. Lütfen assets/maps/world_map_simplified.json dosyasını ekleyin.'
                           : 'Dünya haritası verisi okunamadı. Dosya formatını kontrol edin.',
                       onRetry: () =>
-                          setState(() => _loadFuture = _loadWorldGeoJson(_assetPath)),
-                    );
-                  }
+                          setState(() {
+                            _loadFuture = _loadWorldGeoJson(_assetPath);
+                          }),
+                     );
+                   }
 
                   final result = snapshot.data;
                   if (result == null || result.countries.isEmpty) {
@@ -134,10 +136,12 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                       message:
                           'Şu an `assets/maps/world_map_simplified.json` içinde ülke geometrisi bulunmuyor.\n'
                           'Dosya eklendiğinde bu ekran otomatik çalışacak.',
-                      onRetry: () =>
-                          setState(() => _loadFuture = _loadWorldGeoJson(_assetPath)),
-                    );
-                  }
+                       onRetry: () =>
+                           setState(() {
+                             _loadFuture = _loadWorldGeoJson(_assetPath);
+                           }),
+                     );
+                   }
 
                   final countries = result.countries;
                   final bytes = result.bytes;

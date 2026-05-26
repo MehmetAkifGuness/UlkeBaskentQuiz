@@ -1,6 +1,26 @@
 part of '../conquest_provider.dart';
 
 extension ConquestProviderCore on ConquestProvider {
+  void _cancelRoundTransitionTimer() {
+    _roundTransitionTimer?.cancel();
+    _roundTransitionTimer = null;
+  }
+
+  void _scheduleNextTargetCountry() {
+    if (!isGameActive) return;
+
+    _cancelRoundTransitionTimer();
+    isRoundLocked = true;
+    _roundTransitionTimer = Timer(const Duration(milliseconds: 900), () {
+      if (_disposed) return;
+      _roundTransitionTimer = null;
+      if (!isGameActive) return;
+      isRoundLocked = false;
+      pickNextTargetCountry();
+      _emit();
+    });
+  }
+
   void setContinentFilter(String continent) {
     if (selectedContinentFilter == continent) return;
 
@@ -23,6 +43,7 @@ extension ConquestProviderCore on ConquestProvider {
 
   void pickNextTargetCountry() {
     if (!isGameActive) return;
+    _cancelRoundTransitionTimer();
 
     final remaining = playableCountries
         .where((c) => !conqueredIsoCodes.contains(c.isoCode))
@@ -110,7 +131,7 @@ extension ConquestProviderCore on ConquestProvider {
         correctCount += 1;
         streak += 1;
 
-        pickNextTargetCountry();
+        _scheduleNextTargetCountry();
 
         // Oyun bitti mesajı pickNextTargetCountry içinde ayarlanır.
       } else {
@@ -121,7 +142,7 @@ extension ConquestProviderCore on ConquestProvider {
         remainingLives = max(0, remainingLives - 1);
         if (remainingLives <= 0) {
           errorMessage = 'Canların bitti. Bu tur atlandı: ${target.name}';
-          pickNextTargetCountry();
+          _scheduleNextTargetCountry();
           return;
         }
 
@@ -130,7 +151,7 @@ extension ConquestProviderCore on ConquestProvider {
         _clearWrongFlashLater();
       }
     } finally {
-      isRoundLocked = false;
+      isRoundLocked = _roundTransitionTimer != null;
       _emit();
     }
   }

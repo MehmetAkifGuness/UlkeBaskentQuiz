@@ -8,6 +8,9 @@ class DuelSessionState {
   final String? mode;
   final bool quickMatch;
   final String? lastEventMessage;
+  final String? lastAnsweredPlayerId;
+  final bool? lastAnswerCorrect;
+  final int? lastAnsweredRoundNumber;
   final String? winnerUsername;
   final bool finished;
   final List<DuelPlayerState> players;
@@ -21,6 +24,9 @@ class DuelSessionState {
     required this.mode,
     required this.quickMatch,
     required this.lastEventMessage,
+    required this.lastAnsweredPlayerId,
+    required this.lastAnswerCorrect,
+    required this.lastAnsweredRoundNumber,
     required this.winnerUsername,
     required this.finished,
     required this.players,
@@ -50,6 +56,9 @@ class DuelSessionState {
       mode: json['mode']?.toString(),
       quickMatch: (json['quickMatch'] ?? false) as bool,
       lastEventMessage: json['lastEventMessage']?.toString(),
+      lastAnsweredPlayerId: json['lastAnsweredPlayerId']?.toString(),
+      lastAnswerCorrect: json['lastAnswerCorrect'] as bool?,
+      lastAnsweredRoundNumber: (json['lastAnsweredRoundNumber'] as num?)?.toInt(),
       winnerUsername: json['winnerUsername']?.toString(),
       finished: (json['finished'] ?? false) as bool,
       players: players,
@@ -124,4 +133,3 @@ class DuelRoundState {
     );
   }
 }
-

@@ -19,6 +19,13 @@ public class DuelGameSession {
     private boolean quickMatch;
     private String matchmakingKey;
     private boolean trophiesApplied;
+    private boolean vsBot;
+    private String botPlayerId;
+    private String botDifficulty;
+
+    private String lastAnsweredPlayerId;
+    private Boolean lastAnswerCorrect;
+    private Integer lastAnsweredRoundNumber;
 
     private int maxRounds = 5;
     private Set<Long> askedQuestionIds = new HashSet<>();
@@ -54,4 +61,3 @@ public class DuelGameSession {
         touch();
     }
 }
-

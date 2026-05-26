@@ -114,7 +114,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _refresh() {
-    setState(() => _dashboardFuture = _loadDashboard());
+    setState(() {
+      _dashboardFuture = _loadDashboard();
+    });
   }
 
   @override

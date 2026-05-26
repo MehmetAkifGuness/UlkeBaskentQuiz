@@ -17,6 +17,7 @@ import 'game_screen.dart';
 import 'duel_entry_screen.dart';
 
 part 'home_screen/cards.dart';
+part 'home_screen/cards_modes.dart';
 part 'home_screen/free_mode_sheet.dart';
 part 'home_screen/category_tile.dart';
 

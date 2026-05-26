@@ -15,9 +15,11 @@ public class DuelSessionStateDto {
     private String mode;
     private boolean quickMatch;
     private String lastEventMessage;
+    private String lastAnsweredPlayerId;
+    private Boolean lastAnswerCorrect;
+    private Integer lastAnsweredRoundNumber;
     private String winnerUsername;
     private boolean finished;
     private List<DuelPlayerDto> players;
     private DuelRoundDto currentRound;
 }
-
