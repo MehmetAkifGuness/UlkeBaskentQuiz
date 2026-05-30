@@ -80,3 +80,80 @@ class _MapErrorCard extends StatelessWidget {
   }
 }
 
+class _WorldMapLayer extends StatefulWidget {
+  final _WorldMapLoadResult result;
+  final MapZoomPanBehavior zoomPanBehavior;
+  final int selectedIndex;
+  final ValueChanged<int> onSelectionChanged;
+
+  const _WorldMapLayer({
+    super.key,
+    required this.result,
+    required this.zoomPanBehavior,
+    required this.selectedIndex,
+    required this.onSelectionChanged,
+  });
+
+  @override
+  State<_WorldMapLayer> createState() => _WorldMapLayerState();
+}
+
+class _WorldMapLayerState extends State<_WorldMapLayer> {
+  late final List<MapCountryModel> _countries = widget.result.countries;
+  late final MapShapeSource _source;
+
+  @override
+  void initState() {
+    super.initState();
+    final provider = context.read<WorldMapProvider>();
+
+    _source = MapShapeSource.memory(
+      widget.result.bytes,
+      shapeDataField: widget.result.shapeDataField,
+      dataCount: _countries.length,
+      primaryValueMapper: (int index) => _countries[index].name,
+      shapeColorValueMapper: (int index) {
+        final c = _countries[index];
+        final conquered = provider.conqueredCountryColors[c.isoCode];
+        if (conquered != null) return conquered.withValues(alpha: 0.85);
+        return AppColors.surface2.withValues(alpha: 0.70);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    context.watch<WorldMapProvider>();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.borderLight),
+            color: AppColors.surface.withValues(alpha: 0.35),
+          ),
+          child: SfMaps(
+            layers: [
+              MapShapeLayer(
+                source: _source,
+                zoomPanBehavior: widget.zoomPanBehavior,
+                strokeColor: AppColors.borderLight,
+                strokeWidth: 0.6,
+                selectedIndex: widget.selectedIndex,
+                selectionSettings: MapSelectionSettings(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.25),
+                  strokeColor: AppColors.primaryBlue,
+                  strokeWidth: 1.4,
+                ),
+                onSelectionChanged: widget.onSelectionChanged,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

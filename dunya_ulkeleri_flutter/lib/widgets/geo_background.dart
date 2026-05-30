@@ -17,25 +17,31 @@ class GeoBackground extends StatelessWidget {
           Positioned(
             left: -140,
             top: -160,
-            child: _GlowBlob(
-              color: AppColors.primaryBlue.withValues(alpha: 0.25),
-              size: 360,
+            child: IgnorePointer(
+              child: _GlowBlob(
+                color: AppColors.primaryBlue.withValues(alpha: 0.25),
+                size: 360,
+              ),
             ),
           ),
           Positioned(
             right: -130,
             top: -180,
-            child: _GlowBlob(
-              color: AppColors.successGreen.withValues(alpha: 0.12),
-              size: 340,
+            child: IgnorePointer(
+              child: _GlowBlob(
+                color: AppColors.successGreen.withValues(alpha: 0.12),
+                size: 340,
+              ),
             ),
           ),
           Positioned(
             left: -80,
             bottom: -140,
-            child: _GlowBlob(
-              color: AppColors.primaryBlueHover.withValues(alpha: 0.12),
-              size: 280,
+            child: IgnorePointer(
+              child: _GlowBlob(
+                color: AppColors.primaryBlueHover.withValues(alpha: 0.12),
+                size: 280,
+              ),
             ),
           ),
           if (safeArea) SafeArea(child: child) else child,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/error_message_utils.dart';
 import 'verify_screen.dart';
 
@@ -44,12 +45,12 @@ class RegisterScreenState extends State<RegisterScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Üstte ufak bir ikon ekleyelim (Opsiyonel şıklık)
-              Icon(
-                Icons.person_add_alt_1_rounded,
-                size: 80,
-                color: Colors.amber,
-              ),
-              SizedBox(height: 20),
+               Icon(
+                 Icons.person_add_alt_1_rounded,
+                 size: 80,
+                 color: AppColors.primaryBlue,
+               ),
+               SizedBox(height: 20),
 
               TextField(
                 controller: _usernameController,
@@ -89,19 +90,13 @@ class RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 30),
 
-              _isLoading
-                  ? CircularProgressIndicator(color: Colors.amber)
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 55),
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 4,
-                      ),
-                      onPressed: () async {
+               _isLoading
+                   ? CircularProgressIndicator(color: AppColors.primaryBlue)
+                   : ElevatedButton(
+                       style: ElevatedButton.styleFrom(
+                         minimumSize: Size(double.infinity, 55),
+                       ),
+                       onPressed: () async {
                         Provider.of<SettingsProvider>(
                           context,
                           listen: false,

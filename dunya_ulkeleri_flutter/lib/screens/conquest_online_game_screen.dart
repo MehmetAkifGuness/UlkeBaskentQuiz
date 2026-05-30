@@ -211,9 +211,19 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
       if (!mounted) return;
 
       final players = (provider.sessionState?.players ?? const []).toList()
-        ..sort((a, b) => b.score.compareTo(a.score));
+        ..sort((a, b) {
+          final byConquer = b.conqueredCount.compareTo(a.conqueredCount);
+          if (byConquer != 0) return byConquer;
+          return b.score.compareTo(a.score);
+        });
 
-      final winnerName = players.isNotEmpty ? players.first.username : null;
+      final winnerName = () {
+        if (players.isEmpty) return null;
+        final top = players.first.conqueredCount;
+        final winners = players.where((p) => p.conqueredCount == top).toList();
+        if (winners.length == 1) return winners.first.username;
+        return 'Berabere: ${winners.map((p) => p.username ?? 'Oyuncu').join(', ')}';
+      }();
 
       showDialog<void>(
         context: context,
@@ -244,7 +254,7 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(child: Text(p.username ?? 'Oyuncu')),
-                        Text('Skor: ${p.score} • Can: ${p.remainingLives}'),
+                        Text('Fetih: ${p.conqueredCount} • Can: ${p.remainingLives}'),
                       ],
                     ),
                   ),

@@ -1,8 +1,1 @@
-﻿ülke başkent modunda tüm sorular bittikten sonra bir sonuç sayfası oluşturulacak ve ordan direk çıkış yapılabilecek bu sayede çıkan bir kişi olunca beraberlik sayıyor onun da önüne geçilir ve bug çözülmüş olur
-
-kupa sisteminde kaybedilen oyunlarda kupa düşme mantığı çözülecek
-
-eşleşme sisteminde zorunlu olmadıktan sonra farklı liglerden oyuncularla eşleşme olmayacak 
-
-harita fetih modunda ise o kıta fethedilene kadar tur bitmeyecek ve en fazla ülkenin konumunu bilen kazanacak
-
+﻿

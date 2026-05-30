@@ -3,6 +3,8 @@ package com.gunes.DunyaUlkeleri.service.impl;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class GameStatusResponseBuilder {
+
+    private static final Logger log = LoggerFactory.getLogger(GameStatusResponseBuilder.class);
 
     private final QuestionRepository questionRepository;
     private final GameSessionRepository gameSessionRepository;
@@ -53,6 +57,8 @@ public class GameStatusResponseBuilder {
         response.setTotalQuestions(totalQuestions);
         response.setRemainingQuestions(remainingQuestions);
 
+        final String mode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
+
         List<Object[]> topUsers;
         if (isDaily) {
             topUsers = gameSessionRepository.findTop10DailyScores(
@@ -61,7 +67,6 @@ public class GameStatusResponseBuilder {
                     PageRequest.of(0, 1)
             );
         } else {
-            String mode = session.getGameMode() == null ? "MIXED" : session.getGameMode();
             topUsers = gameSessionRepository.findTop10ByCategoryAndMode(
                     category,
                     mode,
@@ -69,13 +74,26 @@ public class GameStatusResponseBuilder {
             );
         }
 
-        if (topUsers != null
-                && !topUsers.isEmpty()
-                && topUsers.get(0)[1] != null
-                && ((Integer) topUsers.get(0)[1]) > 0) {
+        final int rowCount = (topUsers == null) ? 0 : topUsers.size();
+        final Object[] top = (topUsers != null && !topUsers.isEmpty()) ? topUsers.get(0) : null;
+        final String topUsername = (top != null && top.length > 0 && top[0] != null) ? top[0].toString() : null;
+        final Integer topScore = (top != null && top.length > 1 && top[1] instanceof Number)
+                ? ((Number) top[1]).intValue()
+                : null;
+        log.info(
+                "ghost category={} mode={} daily={} rows={} topUser={} topScore={}",
+                category,
+                mode,
+                isDaily,
+                rowCount,
+                topUsername,
+                topScore
+        );
+
+        if (topUsers != null && !topUsers.isEmpty() && topScore != null && topScore > 0) {
             Object[] topPlayer = topUsers.get(0);
-            response.setGhostName((String) topPlayer[0]);
-            response.setGhostScore((Integer) topPlayer[1]);
+            response.setGhostName(topPlayer[0] == null ? null : topPlayer[0].toString());
+            response.setGhostScore(topScore);
         } else {
             response.setGhostName("Rekor Yok");
             response.setGhostScore(0);

@@ -39,8 +39,9 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
   String? _lastSnackMessage;
   int _selectedIndex = -1;
   int? _lastTappedShapeIndex;
-  int _mapsRefreshSeed = 0;
+  int _mapLayerSeed = 0;
   bool _didQueueInitialMapsRefresh = false;
+  bool _isCountrySheetOpen = false;
 
   @override
   void initState() {
@@ -124,6 +125,9 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                           : 'Dünya haritası verisi okunamadı. Dosya formatını kontrol edin.',
                       onRetry: () =>
                           setState(() {
+                            _selectedIndex = -1;
+                            _lastTappedShapeIndex = null;
+                            _mapLayerSeed++;
                             _loadFuture = _loadWorldGeoJson(_assetPath);
                           }),
                      );
@@ -138,124 +142,86 @@ class _WorldMapScreenState extends State<WorldMapScreen> {
                           'Dosya eklendiğinde bu ekran otomatik çalışacak.',
                        onRetry: () =>
                            setState(() {
+                             _selectedIndex = -1;
+                             _lastTappedShapeIndex = null;
+                             _mapLayerSeed++;
                              _loadFuture = _loadWorldGeoJson(_assetPath);
                            }),
                      );
                    }
 
                   final countries = result.countries;
-                  final bytes = result.bytes;
 
-                  // Bazı cihazlarda/ilk açılışta SfMaps'in hit-test/gesture katmanı
-                  // ilk frame'de doğru initialize olmayabiliyor (özellikle tab içinde).
-                  // İlk çizimden hemen sonra 1 kez yeniden oluşturup etkileşimi garanti ediyoruz.
                   if (!_didQueueInitialMapsRefresh) {
                     _didQueueInitialMapsRefresh = true;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (!mounted) return;
-                      setState(() => _mapsRefreshSeed++);
+                      setState(() => _mapLayerSeed++);
                     });
                   }
 
-                  // Harita renkleri / seçimleri Provider state'i ile güncelleneceği için
-                  // key ile yeniden çizimi garanti altına alıyoruz.
-                  final MapShapeSource source = MapShapeSource.memory(
-                    bytes,
-                    shapeDataField: result.shapeDataField,
-                    dataCount: countries.length,
-                    primaryValueMapper: (int index) => countries[index].name,
-                    shapeColorValueMapper: (int index) {
-                      final c = countries[index];
-                      final conquered =
-                          provider.conqueredCountryColors[c.isoCode];
-                      if (conquered != null) {
-                        return conquered.withValues(alpha: 0.85);
+
+                  return _WorldMapLayer(
+                    key: ValueKey<int>(_mapLayerSeed),
+                    result: result,
+                     zoomPanBehavior: _zoomPanBehavior,
+                     selectedIndex: _selectedIndex,
+                     onSelectionChanged: (int index) async {
+                      if (_isCountrySheetOpen) return;
+                      if (index >= 0 && mounted) {
+                        setState(() => _selectedIndex = index);
                       }
-                      // Varsayılan ülke rengi (fetih modunda ileride değişecek).
-                      return AppColors.surface2.withValues(alpha: 0.70);
+                      final effectiveIndex = index >= 0
+                          ? index
+                          : _lastTappedShapeIndex;
+                      if (effectiveIndex == null) return;
+                      _lastTappedShapeIndex = effectiveIndex;
+
+                      if (effectiveIndex < 0 ||
+                          effectiveIndex >= countries.length) {
+                        provider.clearSelection();
+                        if (!mounted) return;
+                        setState(() => _selectedIndex = -1);
+                        return;
+                      }
+
+                      context
+                          .read<SettingsProvider>()
+                          .triggerButtonVibration();
+
+                      final mapCountry = countries[effectiveIndex];
+                      final props =
+                          mapCountry.extra ??
+                          const <String, dynamic>{};
+
+                      if (!mounted) return;
+
+                      try {
+                        await provider.selectCountryFromMapProperties(
+                          props,
+                        );
+                      } catch (e) {
+                        _showSnackOnce(e.toString());
+                      }
+
+                      if (!context.mounted) return;
+
+                       final matched = provider.selectedCountry;
+                       final errText = (provider.errorMessage ?? '')
+                           .trim();
+
+                      _isCountrySheetOpen = true;
+                      try {
+                        await _openSelectedCountrySheet(
+                          rootContext: context,
+                          mapCountry: mapCountry,
+                          matchedCountry: matched,
+                          errorMessage: errText.isEmpty ? null : errText,
+                        );
+                      } finally {
+                        _isCountrySheetOpen = false;
+                      }
                     },
-                  );
-
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.borderLight),
-                          color: AppColors.surface.withValues(alpha: 0.35),
-                        ),
-                        child: SfMaps(
-                          key: ValueKey<int>(_mapsRefreshSeed),
-                          layers: [
-                            MapShapeLayer(
-                              source: source,
-                              zoomPanBehavior: _zoomPanBehavior,
-                              strokeColor: AppColors.borderLight,
-                              strokeWidth: 0.6,
-                              selectedIndex: _selectedIndex,
-                              selectionSettings: MapSelectionSettings(
-                                color: AppColors.primaryBlue.withValues(alpha: 0.25),
-                                strokeColor: AppColors.primaryBlue,
-                                strokeWidth: 1.4,
-                              ),
-                              onSelectionChanged: (int index) async {
-                                // Syncfusion selection davranışı: Seçili shape'e tekrar dokunulursa
-                                // callback -1 dönebilir. UX için son tıklanan index'i fallback olarak kullanıyoruz.
-                                final effectiveIndex = index >= 0
-                                    ? index
-                                    : _lastTappedShapeIndex;
-                                if (effectiveIndex == null) return;
-                                _lastTappedShapeIndex = effectiveIndex;
-
-                                if (effectiveIndex < 0 ||
-                                    effectiveIndex >= countries.length) {
-                                  provider.clearSelection();
-                                  if (!mounted) return;
-                                  setState(() => _selectedIndex = -1);
-                                  return;
-                                }
-
-                                context
-                                    .read<SettingsProvider>()
-                                    .triggerButtonVibration();
-
-                                final mapCountry = countries[effectiveIndex];
-                                final props =
-                                    mapCountry.extra ??
-                                    const <String, dynamic>{};
-
-                                if (!mounted) return;
-                                setState(() => _selectedIndex = effectiveIndex);
-
-                                try {
-                                  await provider.selectCountryFromMapProperties(
-                                    props,
-                                  );
-                                } catch (e) {
-                                  _showSnackOnce(e.toString());
-                                }
-
-                                if (!context.mounted) return;
-
-                                final matched = provider.selectedCountry;
-                                final errText = (provider.errorMessage ?? '')
-                                    .trim();
-
-                                await _openSelectedCountrySheet(
-                                  rootContext: context,
-                                  mapCountry: mapCountry,
-                                  matchedCountry: matched,
-                                  errorMessage: errText.isEmpty
-                                      ? null
-                                      : errText,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   );
                 },
               ),

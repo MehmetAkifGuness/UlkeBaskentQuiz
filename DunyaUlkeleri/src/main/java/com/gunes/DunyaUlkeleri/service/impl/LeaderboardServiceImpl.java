@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class LeaderboardServiceImpl implements LeaderboardService {
+
+    private static final Logger log = LoggerFactory.getLogger(LeaderboardServiceImpl.class);
 
     private final GameSessionRepository gameSessionRepository;
 
@@ -42,6 +46,19 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     PageRequest.of(0, 10)
             );
         }
+
+        final int rowCount = (rows == null) ? 0 : rows.size();
+        final Object[] top = (rows != null && !rows.isEmpty()) ? rows.get(0) : null;
+        final String topUsername = (top != null && top.length > 0 && top[0] != null) ? top[0].toString() : null;
+        final Integer topScore = (top != null && top.length > 1) ? toInteger(top[1]) : null;
+        log.info(
+                "leaderboard category={} mode={} rows={} topUser={} topScore={}",
+                category,
+                mode,
+                rowCount,
+                topUsername,
+                topScore
+        );
 
         List<LeaderboardEntryResponse> out = new ArrayList<>();
         for (Object[] row : rows) {

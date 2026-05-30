@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
                   ConnectionState.waiting) {
                 return const Scaffold(
                   body: Center(
-                    child: CircularProgressIndicator(color: Colors.amber),
+                    child: CircularProgressIndicator(color: AppColors.primaryBlue),
                   ),
                 );
               }

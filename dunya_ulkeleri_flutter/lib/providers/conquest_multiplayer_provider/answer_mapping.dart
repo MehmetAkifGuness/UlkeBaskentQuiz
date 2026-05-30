@@ -19,6 +19,8 @@ extension ConquestMultiplayerProviderAnswerMapping on ConquestMultiplayerProvide
       return;
     }
 
+    if (state.roundLocked || (state.currentRound?.locked ?? false)) return;
+
     try {
       await IsoCountryService.ensureLoaded();
     } catch (_) {}

@@ -44,8 +44,8 @@ public class ConquestLeagueAwarder {
                 return Optional.empty();
             }
 
-            int s1 = p1.getScore();
-            int s2 = p2.getScore();
+            int s1 = p1.getConqueredCount();
+            int s2 = p2.getConqueredCount();
             if (s1 == s2) {
                 session.setTrophiesApplied(true);
                 return Optional.empty();

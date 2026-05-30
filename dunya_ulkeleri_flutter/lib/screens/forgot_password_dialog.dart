@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/settings_provider.dart'; // 🚨 YENİ EKLENDİ
+import '../theme/app_theme.dart';
 import '../utils/error_message_utils.dart';
 
 class ForgotPasswordDialog extends StatefulWidget {
@@ -112,11 +113,14 @@ class ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
 
     return AlertDialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.surface2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         "Şifre Değiştir",
-        style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: AppColors.primaryBlue,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -130,13 +134,9 @@ class ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
               SizedBox(height: 15),
               TextField(
                 controller: _emailController,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textDark),
                 decoration: InputDecoration(
                   labelText: "E-posta veya Kullanıcı Adı",
-                  labelStyle: TextStyle(color: Colors.amber),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
                 ),
               ),
             ] else if (_step == 1 && widget.email != null) ...[
@@ -152,26 +152,18 @@ class ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
               SizedBox(height: 15),
               TextField(
                 controller: _codeController,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textDark),
                 decoration: InputDecoration(
                   labelText: "Doğrulama Kodu",
-                  labelStyle: TextStyle(color: Colors.amber),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
                 ),
               ),
               SizedBox(height: 10),
               TextField(
                 controller: _newPasswordController,
                 obscureText: true,
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textDark),
                 decoration: InputDecoration(
                   labelText: "Yeni Şifre",
-                  labelStyle: TextStyle(color: Colors.amber),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
                 ),
               ),
             ],
@@ -192,13 +184,9 @@ class ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         isLoading
             ? Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: CircularProgressIndicator(color: Colors.amber),
+                child: CircularProgressIndicator(color: AppColors.primaryBlue),
               )
             : ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black,
-                ),
                 onPressed: () {
                   Provider.of<SettingsProvider>(
                     context,

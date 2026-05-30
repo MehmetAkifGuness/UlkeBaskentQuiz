@@ -8,7 +8,7 @@ class _ScoreChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String name = (player.username ?? 'Oyuncu').toString();
-    final int score = player.score;
+    final int conquered = player.conqueredCount;
     final int lives = player.remainingLives;
     final String colorHex = (player.colorHex ?? '').toString();
 
@@ -35,7 +35,7 @@ class _ScoreChip extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            '$score',
+            '$conquered',
             style: const TextStyle(
               color: AppColors.textMuted,
               fontWeight: FontWeight.w800,

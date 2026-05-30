@@ -305,7 +305,22 @@ public class DuelRoundScheduler {
     private boolean lockIfRoundEnded(DuelGameSession session, DuelRound round) {
         if (session == null || round == null) return false;
 
-        final int expected = Optional.ofNullable(session.getPlayers()).orElseGet(List::of).size();
+        if (round.isLocked()) {
+            if (round.getRoundNumber() >= session.getMaxRounds()) {
+                session.setStatus(DuelGameStatus.FINISHED);
+            }
+            return true;
+        }
+
+        final int expected = (int) Optional.ofNullable(session.getPlayers())
+                .orElseGet(List::of)
+                .stream()
+                .filter(p -> p != null && DuelRoundSchedulerSupport.safeTrim(p.getPlayerId()) != null)
+                .map(DuelPlayer::getPlayerId)
+                .map(DuelRoundSchedulerSupport::safeTrim)
+                .filter(pid -> pid != null && !pid.isBlank())
+                .distinct()
+                .count();
         final boolean hasWinner = DuelRoundSchedulerSupport.safeTrim(round.getWinnerPlayerId()) != null;
         final boolean allAnswered = round.getSelectedByPlayerId().size() >= expected;
         final boolean expired = roundService.isRoundExpired(round);

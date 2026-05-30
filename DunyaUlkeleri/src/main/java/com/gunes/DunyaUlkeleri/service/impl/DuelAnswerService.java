@@ -3,6 +3,7 @@ package com.gunes.DunyaUlkeleri.service.impl;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -166,7 +167,7 @@ public class DuelAnswerService {
 
         boolean ended = round.isLocked();
         if (!ended) {
-            final int expected = Optional.ofNullable(session.getPlayers()).orElseGet(List::of).size();
+            final int expected = expectedAnswerCount(session);
             ended = round.getSelectedByPlayerId().size() >= expected
                     || safeTrim(round.getWinnerPlayerId()) != null
                     || roundService.isRoundExpired(round);
@@ -180,6 +181,19 @@ public class DuelAnswerService {
             session.setStatus(DuelGameStatus.FINISHED);
         }
         return true;
+    }
+
+    private static int expectedAnswerCount(DuelGameSession session) {
+        if (session == null) return 0;
+        return (int) Optional.ofNullable(session.getPlayers())
+                .orElseGet(List::of)
+                .stream()
+                .filter(Objects::nonNull)
+                .map(DuelPlayer::getPlayerId)
+                .map(DuelAnswerService::safeTrim)
+                .filter(pid -> pid != null && !pid.isBlank())
+                .distinct()
+                .count();
     }
 
     private static String keyOf(DuelRound round) {

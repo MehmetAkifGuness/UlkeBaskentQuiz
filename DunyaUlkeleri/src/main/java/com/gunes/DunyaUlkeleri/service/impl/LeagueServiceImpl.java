@@ -13,6 +13,7 @@ import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.service.LeagueService;
 import com.gunes.DunyaUlkeleri.util.league.LeagueSeason;
 import com.gunes.DunyaUlkeleri.util.league.LeagueTier;
+import com.gunes.DunyaUlkeleri.util.league.TrophyDeltaCalculator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class LeagueServiceImpl implements LeagueService {
 
     private static final Logger log = LoggerFactory.getLogger(LeagueServiceImpl.class);
+    private static final TrophyDeltaCalculator TROPHY_DELTA = new TrophyDeltaCalculator();
 
     private final UserRepository userRepository;
     private final LeagueProperties leagueProperties;
@@ -73,8 +75,15 @@ public class LeagueServiceImpl implements LeagueService {
         ensureSeason(winner);
         ensureSeason(loser);
 
-        int winnerNext = winner.getTrophies() + leagueProperties.getWinTrophies();
-        int loserNext = loser.getTrophies() - leagueProperties.getLossTrophies();
+        TrophyDeltaCalculator.TrophyDelta delta = TROPHY_DELTA.calculate(
+                winner.getTrophies(),
+                loser.getTrophies(),
+                leagueProperties.getWinTrophies(),
+                leagueProperties.getLossTrophies()
+        );
+
+        int winnerNext = winner.getTrophies() + delta.winnerGain();
+        int loserNext = loser.getTrophies() - delta.loserLoss();
 
         winnerNext = Math.max(leagueProperties.getMinTrophies(), winnerNext);
         loserNext = Math.max(leagueProperties.getMinTrophies(), loserNext);

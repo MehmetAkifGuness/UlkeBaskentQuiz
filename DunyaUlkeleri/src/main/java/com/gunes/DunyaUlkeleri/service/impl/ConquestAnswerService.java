@@ -1,5 +1,6 @@
 package com.gunes.DunyaUlkeleri.service.impl;
 
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -29,6 +30,7 @@ public class ConquestAnswerService {
 
     private final ConquestSessionStore sessionStore;
     private final ConquestRoundService roundService;
+    private final ConquestRoundScheduler roundScheduler;
     private final ConquestSessionStateMapper stateMapper;
     private final ConquestLeagueAwarder leagueAwarder;
     private final LeagueService leagueService;
@@ -50,6 +52,7 @@ public class ConquestAnswerService {
                         : session.getCurrentRound().getWinnerPlayerId();
                 stateDto = toStateDto(session, "Oyun bitti.", winnerId, true);
                 matchResult = leagueAwarder.tryMarkFinishedGame(session);
+                roundScheduler.clear(session.getSessionId());
             } else {
                 if (session.getStatus() != ConquestGameStatus.STARTED) {
                     throw AppException.conflict("GAME_NOT_STARTED", "Oyun başlamadı.");
@@ -62,6 +65,8 @@ public class ConquestAnswerService {
                 final ConquestRound round = session.getCurrentRound();
                 if (round == null) {
                     roundService.pickNextTargetCountry(session, null);
+                    session.touch();
+                    sessionStore.save(session);
                     return toStateDto(session, "Yeni tur başlatıldı.", null, false);
                 }
 
@@ -76,8 +81,12 @@ public class ConquestAnswerService {
 
                 if (player.getRemainingLives() <= 0) {
                     if (roundService.areAllPlayersOutOfLives(session)) {
-                        roundService.pickNextTargetCountry(session, null);
-                        return toStateDto(session, "İki tarafın da canı bitti. Ülke atlandı.", null, false);
+                        lockSkippedRound(round);
+                        session.touch();
+                        sessionStore.save(session);
+                        stateDto = toStateDto(session, "İki tarafın da canı bitti. Ülke atlandı.", null, true);
+                        roundScheduler.reschedule(session);
+                        return stateDto;
                     }
                     return toStateDto(session, "Bu tur için canın bitti.", null, false);
                 }
@@ -92,19 +101,24 @@ public class ConquestAnswerService {
                 if (normalizedTargetIso != null && normalizedTargetIso.equalsIgnoreCase(normalizedSelectedIso)) {
                     roundService.finishRound(session, player, round);
                     session.touch();
+                    sessionStore.save(session);
 
                     if (session.isFinished()) {
                         session.setStatus(ConquestGameStatus.FINISHED);
+                        sessionStore.save(session);
                         matchResult = leagueAwarder.tryMarkFinishedGame(session);
                         log.info("Game finished: sessionId={}, roomCode={}", session.getSessionId(), session.getRoomCode());
                         stateDto = toStateDto(session, "Tebrikler! Tüm ülkeler fethedildi.", player.getPlayerId(), true);
+                        roundScheduler.clear(session.getSessionId());
                     } else {
-                        roundService.pickNextTargetCountry(session, player.getPlayerId());
-                        return toStateDto(session, "Round kazanıldı.", player.getPlayerId(), false);
+                        stateDto = toStateDto(session, "Round kazanıldı.", player.getPlayerId(), true);
+                        roundScheduler.reschedule(session);
+                        return stateDto;
                     }
                 } else {
                     player.setRemainingLives(Math.max(0, player.getRemainingLives() - 1));
                     session.touch();
+                    sessionStore.save(session);
 
                     log.info(
                             "Wrong answer: sessionId={}, playerId={}, selectedIso={}, remainingLives={}",
@@ -115,8 +129,12 @@ public class ConquestAnswerService {
                     );
 
                     if (roundService.areAllPlayersOutOfLives(session)) {
-                        roundService.pickNextTargetCountry(session, null);
-                        return toStateDto(session, "İki tarafın da canı bitti. Ülke atlandı.", null, false);
+                        lockSkippedRound(round);
+                        session.touch();
+                        sessionStore.save(session);
+                        stateDto = toStateDto(session, "İki tarafın da canı bitti. Ülke atlandı.", null, true);
+                        roundScheduler.reschedule(session);
+                        return stateDto;
                     }
 
                     return toStateDto(session, "Yanlış cevap (-1 can).", null, false);
@@ -139,5 +157,12 @@ public class ConquestAnswerService {
 
     private static String safeTrim(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private static void lockSkippedRound(ConquestRound round) {
+        if (round == null || round.isLocked()) return;
+        round.setLocked(true);
+        round.setWinnerPlayerId(null);
+        round.setFinishedAt(Instant.now());
     }
 }

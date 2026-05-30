@@ -146,6 +146,8 @@ class _ConquestBotScreenView extends StatelessWidget {
                           fontWeight: FontWeight.w900,
                           fontSize: 18,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       const Text(

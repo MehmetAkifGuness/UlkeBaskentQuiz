@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/auth_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/error_message_utils.dart';
 
 class VerifyScreen extends StatefulWidget {
@@ -150,7 +151,7 @@ class VerifyScreenState extends State<VerifyScreen> {
               Icon(
                 Icons.mark_email_unread_outlined,
                 size: 90,
-                color: Colors.blue,
+                color: AppColors.primaryBlue,
               ),
               SizedBox(height: 30),
 
@@ -161,7 +162,7 @@ class VerifyScreenState extends State<VerifyScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[900], // E-posta adresi koyu mavi yapıldı
+                  color: AppColors.primaryBlue,
                 ),
               ),
               SizedBox(height: 12),
@@ -172,7 +173,7 @@ class VerifyScreenState extends State<VerifyScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
-                  color: Colors.black,
+                  color: AppColors.textMuted,
                   height: 1.4,
                 ),
               ),
@@ -188,23 +189,13 @@ class VerifyScreenState extends State<VerifyScreen> {
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 15, // Rakamların arasını açar
-                  color:
-                      Colors.black, // 🚨 DÜZELTİLDİ: Beyazdan siyaha çevrildi
+                  color: AppColors.textDark,
                 ),
                 decoration: InputDecoration(
                   labelText: "Doğrulama Kodu",
                   hintText: "000000",
                   counterText:
                       "", // Alt köşede çıkan "0/6" sayaç yazısını gizler
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      20,
-                    ), // Daha yuvarlak kenarlar
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: Colors.amber, width: 2),
-                  ),
                   contentPadding: EdgeInsets.symmetric(vertical: 18),
                 ),
               ),
@@ -228,18 +219,12 @@ class VerifyScreenState extends State<VerifyScreen> {
 
               // --- 🚨 ONAYLA BUTONU (YÜKLENİYOR İKONU DAHİL) ---
               _isLoading
-                  ? CircularProgressIndicator(color: Colors.amber)
+                  ? const CircularProgressIndicator(
+                      color: AppColors.primaryBlue,
+                    )
                   : ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(double.infinity, 55),
-                        backgroundColor: Colors.amber,
-                        foregroundColor: Colors.black,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            20,
-                          ), // Daha modern yuvarlak kenarlar
-                        ),
                       ),
                       onPressed: _verifyCode,
                       child: Text(

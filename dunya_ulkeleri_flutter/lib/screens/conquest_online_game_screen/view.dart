@@ -91,6 +91,8 @@ class _ConquestOnlineGameView extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -143,7 +145,7 @@ class _ConquestOnlineGameView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Skorlar',
+                      'Fetih',
                       style: TextStyle(
                         color: AppColors.textDark,
                         fontWeight: FontWeight.w900,

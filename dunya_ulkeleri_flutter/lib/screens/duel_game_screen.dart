@@ -6,9 +6,12 @@ import '../providers/auth_provider.dart';
 import '../providers/duel_provider.dart';
 import '../providers/profile_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/page_trasitions.dart';
 import '../widgets/answer_button.dart';
 import '../widgets/geo_background.dart';
 import '../widgets/glass_card.dart';
+import 'duel_entry_screen.dart';
+import 'duel_result_screen.dart';
 
 part 'duel_game_screen/header_card.dart';
 part 'duel_game_screen/info_card.dart';
@@ -26,6 +29,8 @@ class _DuelGameScreenState extends State<DuelGameScreen> {
   String? _selectedOption;
   int? _roundNumber;
   bool _didRefreshProfileOnFinish = false;
+  bool _didAutoExitAfterOpponentLeft = false;
+  bool _didNavigateToResult = false;
 
   @override
   void initState() {
@@ -58,6 +63,35 @@ class _DuelGameScreenState extends State<DuelGameScreen> {
           context.read<ProfileProvider>().refresh(token);
         });
       }
+    }
+
+    final didOpponentLeave =
+        (state?.finished ?? false) && (state?.players.length ?? 0) < 2;
+    if (didOpponentLeave && !_didAutoExitAfterOpponentLeft) {
+      _didAutoExitAfterOpponentLeft = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final navigator = Navigator.of(context);
+        await duel.leaveSession(token: token);
+        if (!mounted) return;
+        navigator.pushAndRemoveUntil(
+          FadePageRoute(page: const DuelEntryScreen()),
+          (route) => route.isFirst,
+        );
+      });
+    }
+
+    final didFinishWithTwoPlayers =
+        (state?.finished ?? false) && (state?.players.length ?? 0) == 2;
+    if (didFinishWithTwoPlayers && !_didNavigateToResult && state != null) {
+      _didNavigateToResult = true;
+      final initialState = state;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          FadePageRoute(page: DuelResultScreen(initialState: initialState)),
+        );
+      });
     }
 
     final bottomPad = MediaQuery.of(context).padding.bottom + 24.0;

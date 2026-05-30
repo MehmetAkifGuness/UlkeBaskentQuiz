@@ -66,7 +66,6 @@ class LoginScreenState extends State<LoginScreen> {
                 child: Text(
                   "Şifremi Unuttum",
                   style: TextStyle(
-                    color: Colors.amber,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
