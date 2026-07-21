@@ -15,6 +15,7 @@ import '../utils/error_message_utils.dart';
 part 'conquest_multiplayer_provider/answer_mapping.dart';
 part 'conquest_multiplayer_provider/connection.dart';
 part 'conquest_multiplayer_provider/exit.dart';
+part 'conquest_multiplayer_provider/pause.dart';
 part 'conquest_multiplayer_provider/target.dart';
 
 class ConquestMultiplayerProvider with ChangeNotifier {
@@ -46,7 +47,10 @@ class ConquestMultiplayerProvider with ChangeNotifier {
   // TODO: Liderlik tablosu eklenecek.
   // TODO: Davet linki ve arkadaş sistemi eklenecek.
 
-  bool get isInLobby => (sessionState?.status ?? '').toUpperCase() == 'WAITING';
+  bool get isInLobby {
+    final status = (sessionState?.status ?? '').toUpperCase();
+    return status == 'WAITING' || status == 'PAUSED';
+  }
 
   bool get isGameStarted =>
       (sessionState?.status ?? '').toUpperCase() == 'STARTED';

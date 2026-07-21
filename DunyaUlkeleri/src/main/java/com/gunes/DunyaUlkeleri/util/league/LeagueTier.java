@@ -2,6 +2,7 @@ package com.gunes.DunyaUlkeleri.util.league;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Optional;
 
 public enum LeagueTier {
     BRONZE(0, "Bronz"),
@@ -27,6 +28,13 @@ public enum LeagueTier {
         return displayName;
     }
 
+    public Optional<LeagueTier> next() {
+        int nextOrdinal = ordinal() + 1;
+        return nextOrdinal < values().length
+                ? Optional.of(values()[nextOrdinal])
+                : Optional.empty();
+    }
+
     public static LeagueTier fromTrophies(int trophies) {
         return Arrays.stream(values())
                 .filter(t -> trophies >= t.minTrophies)
@@ -34,4 +42,3 @@ public enum LeagueTier {
                 .orElse(BRONZE);
     }
 }
-

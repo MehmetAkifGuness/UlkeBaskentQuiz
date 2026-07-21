@@ -59,29 +59,21 @@ Future<void> _pickAndUploadAvatarImpl(_ProfileScreenState state, String token) a
   }
 }
 
-Future<void> _editDisplayNameImpl(
+Future<void> _editUsernameImpl(
   _ProfileScreenState state,
   String token,
-  String currentName,
   String currentUsername,
 ) async {
-  final displayController = TextEditingController(text: currentName);
   final usernameController = TextEditingController(text: currentUsername);
 
-  final result = await showDialog<Map<String, String>>(
+  final result = await showDialog<String>(
     context: state.context,
     builder: (ctx) {
       return AlertDialog(
-        title: const Text('Profil Bilgilerini Güncelle'),
+        title: const Text('Kullanıcı adını güncelle'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: displayController,
-              maxLength: 40,
-              decoration: const InputDecoration(hintText: 'Görünen isim'),
-            ),
-            const SizedBox(height: 12),
             TextField(
               controller: usernameController,
               maxLength: 20,
@@ -101,10 +93,7 @@ Future<void> _editDisplayNameImpl(
             child: const Text('İptal'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(<String, String>{
-              'displayName': displayController.text,
-              'username': usernameController.text,
-            }),
+            onPressed: () => Navigator.of(ctx).pop(usernameController.text),
             child: const Text('Kaydet'),
           ),
         ],
@@ -114,44 +103,26 @@ Future<void> _editDisplayNameImpl(
 
   if (result == null) return;
 
-  final displayName = (result['displayName'] ?? '').trim();
-  final username = (result['username'] ?? '').trim();
-
-  final hasUsernameChange = username.isNotEmpty && username != currentUsername;
-  final hasDisplayNameChange = displayName.isNotEmpty && displayName != currentName;
-
-  if (!hasUsernameChange && !hasDisplayNameChange) return;
+  final username = result.trim();
+  if (username.isEmpty || username == currentUsername) return;
 
   try {
-    var workingToken = token;
+    final auth = await state._userService.updateUsername(token, username);
+    final newToken = auth.token;
+    final newUsername = auth.username;
 
-    if (hasUsernameChange) {
-      final auth = await state._userService.updateUsername(workingToken, username);
-      final newToken = auth.token;
-      final newUsername = auth.username;
-
-      if (newToken == null || newUsername == null) {
-        throw Exception('Kullanıcı adı güncellenemedi (eksik yanıt).');
-      }
-
-      if (!state.mounted) return;
-
-      await Provider.of<AuthProvider>(state.context, listen: false).updateSession(
-        token: newToken,
-        username: newUsername,
-      );
-
-      workingToken = newToken;
-
-      state._updateLocalProfile((current) => current.copyWith(username: newUsername));
+    if (newToken == null || newUsername == null) {
+      throw Exception('Kullanıcı adı güncellenemedi (eksik yanıt).');
     }
 
-    if (hasDisplayNameChange) {
-      final ok = await state._userService.updateDisplayName(workingToken, displayName);
-      if (!ok) return;
-      if (!state.mounted) return;
-      state._updateLocalProfile((current) => current.copyWith(displayName: displayName));
-    }
+    if (!state.mounted) return;
+
+    await Provider.of<AuthProvider>(state.context, listen: false).updateSession(
+      token: newToken,
+      username: newUsername,
+    );
+
+    state._updateLocalProfile((current) => current.copyWith(username: newUsername));
   } catch (e) {
     if (!state.mounted) return;
     ScaffoldMessenger.of(state.context).showSnackBar(
@@ -185,6 +156,7 @@ List<Widget> _buildMasteryCards(Map<String, int> scores) {
     _ContinentInfo('Güney Amerika', 12),
     _ContinentInfo('Okyanusya', 14),
   ];
+  const world = _ContinentInfo('Dünya', 195);
 
   return [
     for (final item in specialModes)
@@ -194,6 +166,7 @@ List<Widget> _buildMasteryCards(Map<String, int> scores) {
         maxScore: item.maxScore,
         scores: scores,
       ),
+    _MasteryCard.fromScores(continent: world, scores: scores),
     for (final continent in continents)
       _MasteryCard.fromScores(continent: continent, scores: scores),
   ];
@@ -257,8 +230,7 @@ double _progressToNextTier(int totalScore) {
     final next = i + 1 < tiers.length ? tiers[i + 1] : null;
     if (next == null) return 1.0;
     if (totalScore < next.minScore) {
-      final span =
-          (next.minScore - current.minScore).clamp(1, 1 << 30).toDouble();
+      final span = math.max(1, next.minScore - current.minScore).toDouble();
       return ((totalScore - current.minScore) / span).clamp(0.0, 1.0);
     }
   }
@@ -277,6 +249,10 @@ String _formatNumber(int value) {
 }
 
 String _formatCompact(int value) {
+  if (value >= 1_000_000_000) {
+    final v = value / 1_000_000_000;
+    return '${v.toStringAsFixed(v < 10 ? 1 : 0)}B';
+  }
   if (value >= 1_000_000) {
     final v = value / 1_000_000;
     return '${v.toStringAsFixed(v < 10 ? 1 : 0)}M';

@@ -58,6 +58,9 @@ class _ConquestPracticeScreenState extends State<ConquestPracticeScreen> {
   // Shape -> playable (provider isoKey) eşleştirmesini ekranda cache’liyoruz.
   List<String?>? _shapePlayableKeys;
   String? _shapePlayableSignature;
+  MapShapeSource? _mapSource;
+  Object? _mapSourceGeometryKey;
+  Object? _mapSourceVisualKey;
 
   // Kıta filtresi seçildiyse sadece o kıtanın GeoJSON'ını üretip MapShapeSource'a veriyoruz.
   String? _continentCacheSignature;

@@ -11,6 +11,7 @@ public class LeagueProperties {
     private int lossTrophies = 20;
     private int resetTrophies = 0;
     private int minTrophies = 0;
+    private double monthlyDecayRate = 0.20;
 
     public int getWinTrophies() {
         return winTrophies;
@@ -43,5 +44,12 @@ public class LeagueProperties {
     public void setMinTrophies(int minTrophies) {
         this.minTrophies = minTrophies;
     }
-}
 
+    public double getMonthlyDecayRate() {
+        return monthlyDecayRate;
+    }
+
+    public void setMonthlyDecayRate(double monthlyDecayRate) {
+        this.monthlyDecayRate = monthlyDecayRate;
+    }
+}

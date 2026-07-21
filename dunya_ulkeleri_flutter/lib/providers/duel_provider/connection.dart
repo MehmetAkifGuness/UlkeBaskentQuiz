@@ -17,10 +17,15 @@ extension DuelProviderConnection on DuelProvider {
         _captureMyAnswerResult(state);
         isConnected = true;
         _connectingSessionId = null;
+        if ((state.status ?? '').toUpperCase() != 'WAITING') {
+          _stopQuickMatchPolling();
+        }
         _emit();
       },
       onError: (message) {
         errorMessage = message.trim().isEmpty ? null : message.trim();
+        _connectingSessionId = null;
+        isConnected = false;
         _emit();
       },
       onConnected: () {

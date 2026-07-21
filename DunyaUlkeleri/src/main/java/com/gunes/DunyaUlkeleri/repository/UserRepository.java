@@ -25,6 +25,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // 🚨 YENİ EKLENDİ: Scheduler'ın (Temizlikçinin) misafirleri bulabilmesi için
     List<User> findByIsGuestTrue();
 
+    @Query("SELECT u.id, u.trophies, u.trophySeason FROM User u WHERE u.isGuest = false")
+    List<Object[]> findLeagueStates();
+
+    @Query("SELECT u FROM User u WHERE u.isGuest = false ORDER BY u.trophies DESC, u.username ASC")
+    List<User> findLeagueLeaderboard(Pageable pageable);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.isGuest = false AND (u.trophies > :trophies OR (u.trophies = :trophies AND u.username < :username))")
+    long countLeaguePlayersAhead(@Param("trophies") int trophies, @Param("username") String username);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.isGuest = false")
+    long countLeaguePlayers();
+
+    @Query("UPDATE User u SET u.trophies = :trophies, u.trophySeason = :season WHERE u.id = :id")
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    int updateLeagueState(@Param("id") long id, @Param("trophies") int trophies, @Param("season") int season);
+
     // YENİ EKLENEN: Kategoriye göre en yüksek skorlu 10 kişiyi çeken PostgreSQL uyumlu sorgu
     @Query("SELECT u.username, VALUE(s) FROM User u JOIN u.categoryBestScores s WHERE KEY(s) = :category ORDER BY VALUE(s) DESC")
     List<Object[]> findTop10ByCategory(@Param("category") String category, Pageable pageable);

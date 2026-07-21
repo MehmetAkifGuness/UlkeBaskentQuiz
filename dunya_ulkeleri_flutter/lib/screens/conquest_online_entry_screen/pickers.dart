@@ -95,5 +95,3 @@ class _ColorPicker extends StatelessWidget {
     );
   }
 }
-
-

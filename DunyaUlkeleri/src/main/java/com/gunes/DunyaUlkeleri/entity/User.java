@@ -72,8 +72,6 @@ public class User {
     @Column(columnDefinition = "integer default 1")
     private Integer avatarId = 1;
 
-    private String displayName;
-
     @Column(columnDefinition = "bytea")
     private byte[] customAvatar;
 

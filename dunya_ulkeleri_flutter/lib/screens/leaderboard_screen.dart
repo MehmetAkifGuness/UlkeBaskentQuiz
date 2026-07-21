@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 import '../providers/settings_provider.dart';
+import '../models/league_leaderboard_model.dart';
 import '../services/user.service.dart';
 import '../theme/app_theme.dart';
 import '../utils/error_message_utils.dart';
@@ -18,6 +19,7 @@ import '../widgets/glass_card.dart';
 
 part 'leaderboard_screen/podium_widgets.dart';
 part 'leaderboard_screen/rank_widgets.dart';
+part 'leaderboard_screen/league_widgets.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -33,6 +35,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   final Map<String, Uint8List> _customAvatarBytesByUsername = {};
 
   final List<String> _categories = const [
+    'Ligler',
     "🔥 Günün Görevi",
     "♾️ Sonsuz Mod",
     "Dünya",
@@ -47,6 +50,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   String _selectedCategory = "🔥 Günün Görevi";
 
   List<Map<String, dynamic>> _leaderboardData = [];
+  LeagueLeaderboardModel? _leagueLeaderboard;
   bool _isLoading = true;
 
   @override
@@ -78,6 +82,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final token = Provider.of<AuthProvider>(context, listen: false).token;
       if (token != null) {
+        final isLeague = _selectedCategory == 'Ligler';
+        _leagueLeaderboard = null;
+        if (isLeague) {
+          _leagueLeaderboard = await _userService.getLeagueLeaderboard(token);
+          _leaderboardData = [];
+          await _prefetchLeagueAvatars(token, _leagueLeaderboard!);
+          return;
+        }
+
         String apiCategory = _selectedCategory;
         String apiMode = 'MIXED';
 
@@ -110,6 +123,25 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _prefetchLeagueAvatars(
+    String token,
+    LeagueLeaderboardModel leaderboard,
+  ) async {
+    final users = <Map<String, dynamic>>[
+      for (final entry in leaderboard.topPlayers)
+        {
+          'username': entry.username,
+          'hasCustomAvatar': entry.hasCustomAvatar,
+        },
+      if (leaderboard.currentUser != null)
+        {
+          'username': leaderboard.currentUser!.username,
+          'hasCustomAvatar': leaderboard.currentUser!.hasCustomAvatar,
+        },
+    ];
+    await _prefetchCustomAvatars(token, users);
   }
 
   Future<void> _prefetchCustomAvatars(
@@ -192,6 +224,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                             color: AppColors.primaryBlue,
                           ),
                         ),
+                      )
+                    else if (_selectedCategory == 'Ligler' &&
+                        _leagueLeaderboard != null)
+                      _LeagueLeaderboardView(
+                        leaderboard: _leagueLeaderboard!,
+                        avatarBytesByUsername: _customAvatarBytesByUsername,
                       )
                     else if (_leaderboardData.isEmpty)
                       _EmptyState(category: _selectedCategory)

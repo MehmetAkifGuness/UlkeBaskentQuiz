@@ -146,9 +146,6 @@ extension ConquestProviderCore on ConquestProvider {
           return;
         }
 
-        // Kısa süreli görsel uyarı (UI isterse kullanır).
-        wrongFlashIsoCode = tapped.isoCode;
-        _clearWrongFlashLater();
       }
     } finally {
       isRoundLocked = _roundTransitionTimer != null;
@@ -190,14 +187,6 @@ extension ConquestProviderCore on ConquestProvider {
   void _setMode(ConquestGameMode mode) {
     currentMode = mode;
     isVsBotMode = mode == ConquestGameMode.vsBot;
-  }
-
-  void _clearWrongFlashLater() {
-    Future<void>.delayed(const Duration(milliseconds: 650)).then((_) {
-      if (_disposed) return;
-      wrongFlashIsoCode = null;
-      _emit();
-    });
   }
 
   String? _readAuthToken() {

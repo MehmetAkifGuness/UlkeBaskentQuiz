@@ -23,6 +23,7 @@ public class ConquestGameServiceImpl implements ConquestGameService {
     private final ConquestQuickMatchService quickMatchService;
     private final ConquestJoinService joinService;
     private final ConquestStartGameService startGameService;
+    private final ConquestPauseService pauseService;
     private final ConquestPlayerPresenceService playerPresenceService;
     private final ConquestSessionQueryService sessionQueryService;
     private final ConquestAnswerService answerService;
@@ -45,6 +46,16 @@ public class ConquestGameServiceImpl implements ConquestGameService {
     @Override
     public ConquestSessionStateDto startGame(StartConquestGameRequest request) {
         return startGameService.startGame(request);
+    }
+
+    @Override
+    public ConquestSessionStateDto pauseGame(StartConquestGameRequest request) {
+        return pauseService.pauseGame(request);
+    }
+
+    @Override
+    public ConquestSessionStateDto resumeGame(StartConquestGameRequest request) {
+        return pauseService.resumeGame(request);
     }
 
     @Override

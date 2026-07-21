@@ -19,6 +19,10 @@ public interface ConquestGameService {
 
     ConquestSessionStateDto startGame(StartConquestGameRequest request);
 
+    ConquestSessionStateDto pauseGame(StartConquestGameRequest request);
+
+    ConquestSessionStateDto resumeGame(StartConquestGameRequest request);
+
     ConquestSessionStateDto setReady(SetConquestReadyRequest request);
 
     ConquestSessionStateDto leaveSession(StartConquestGameRequest request);

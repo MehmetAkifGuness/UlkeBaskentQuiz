@@ -27,6 +27,7 @@ dependencies:
   stomp_dart_client: ^3.0.1
   image_picker: ^1.2.2
   http_parser: ^4.1.2
+  flag: ^7.0.2
 
 dev_dependencies:
   flutter_test:
@@ -48,5 +49,5 @@ flutter:
     - assets/sounds/
     - assets/maps/
     - assets/iso/
-    - assets/dictionary/
+    - assets/countries/
     - .env # 🚨 YENİ EKLENDİ: İleride ekleyeceğimiz ses dosyaları için (Örn: correct.mp3, wrong.mp3)

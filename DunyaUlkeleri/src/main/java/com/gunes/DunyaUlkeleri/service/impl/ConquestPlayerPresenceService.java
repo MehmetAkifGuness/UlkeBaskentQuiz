@@ -74,7 +74,8 @@ public class ConquestPlayerPresenceService {
                 return toStateDto(session, null, null, false);
             }
 
-            if (session.getStatus() == ConquestGameStatus.STARTED) {
+            if (session.getStatus() == ConquestGameStatus.STARTED ||
+                    session.getStatus() == ConquestGameStatus.PAUSED) {
                 matchResult = leagueAwarder.tryMarkLeave(session, playerId);
             }
 
@@ -97,7 +98,8 @@ public class ConquestPlayerPresenceService {
                  return null;
              }
 
-             if (session.getStatus() == ConquestGameStatus.STARTED) {
+            if (session.getStatus() == ConquestGameStatus.STARTED ||
+                    session.getStatus() == ConquestGameStatus.PAUSED) {
                  session.setStatus(ConquestGameStatus.FINISHED);
              }
 

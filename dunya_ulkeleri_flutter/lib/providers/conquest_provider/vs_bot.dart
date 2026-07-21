@@ -238,9 +238,6 @@ extension ConquestProviderVsBot on ConquestProvider {
           if (_areBothVsBotPlayersOutOfLives()) {
             _skipVsBotTargetBecauseNoLives();
           }
-        } else {
-          wrongFlashIsoCode = tapped.isoCode;
-          _clearWrongFlashLater();
         }
       }
     } catch (e) {

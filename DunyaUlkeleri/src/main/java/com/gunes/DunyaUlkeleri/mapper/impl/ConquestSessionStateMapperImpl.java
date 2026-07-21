@@ -59,6 +59,7 @@ public class ConquestSessionStateMapperImpl
                 session.getSelectedContinentFilter(),
                 session.getHostPlayerId(),
                 session.isQuickMatch(),
+                session.isPauseUsed(),
                 players,
                 session.getConqueredCountryColors(),
                 roundDto,

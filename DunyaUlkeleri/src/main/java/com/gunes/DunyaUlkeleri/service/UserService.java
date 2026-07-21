@@ -10,8 +10,6 @@ public interface UserService {
     UserProfileResponse getUserProfile(String username);
     void updateAvatar(String username, Integer avatarId);
 
-    UserProfileResponse updateDisplayName(String username, String displayName);
-
     AuthResponse updateUsername(String username, String newUsername);
 
     UserProfileResponse uploadCustomAvatar(String username, byte[] imageBytes, String contentType);

@@ -64,23 +64,46 @@ class _ConquestOnlineGameMapSection extends StatelessWidget {
             List<String?>.filled(mapCountries.length, null, growable: false);
 
         final colors = provider.conqueredCountryColorsAsColors;
-
-        final MapShapeSource source = MapShapeSource.memory(
-          result.bytes,
-          shapeDataField: result.shapeDataField,
-          dataCount: mapCountries.length,
-          primaryValueMapper: (int index) => mapCountries[index].name,
-          shapeColorValueMapper: (int index) {
-            final key = shapeKeys[index];
-            if (key != null) {
-              final conquered = colors[key];
-              if (conquered != null) {
-                return conquered.withValues(alpha: 0.85);
-              }
-            }
-            return AppColors.surface2.withValues(alpha: 0.70);
-          },
+        final visualKey = Object.hash(
+          Object.hashAll(shapeKeys),
+          Object.hashAll(
+            colors.entries.map(
+              (entry) => Object.hash(entry.key, entry.value.toARGB32()),
+            ),
+          ),
         );
+
+        final geometryKey = Object.hash(result.bytes, mapCountries);
+        if (state._mapSource == null ||
+            state._mapSourceGeometryKey != geometryKey ||
+            state._mapSourceVisualKey != visualKey) {
+          state._mapSource = MapShapeSource.memory(
+            result.bytes,
+            shapeDataField: result.shapeDataField,
+            dataCount: mapCountries.length,
+            primaryValueMapper: (int index) => mapCountries[index].name,
+            shapeColorValueMapper: (int index) {
+              final keys = state._shapePlayableKeys;
+              final mapIso = mapCountries[index].isoCode.trim().toUpperCase();
+              final matchedKey = keys != null && index < keys.length
+                  ? keys[index]
+                  : null;
+              final key = matchedKey ??
+                  (mapIso.isEmpty || mapIso == '-99' ? null : mapIso);
+              if (key != null) {
+                final colorHex = provider.sessionState?.conqueredCountryColors[key];
+                final conquered = colorHex == null ? null : hexToColor(colorHex);
+                if (conquered != null) {
+                  return conquered.withValues(alpha: 0.85);
+                }
+              }
+              return AppColors.surface2.withValues(alpha: 0.70);
+            },
+          );
+          state._mapSourceGeometryKey = geometryKey;
+          state._mapSourceVisualKey = visualKey;
+        }
+        final source = state._mapSource!;
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 6),
@@ -99,9 +122,9 @@ class _ConquestOnlineGameMapSection extends StatelessWidget {
                     strokeColor: AppColors.borderLight,
                     strokeWidth: 0.6,
                     selectionSettings: MapSelectionSettings(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.18),
-                      strokeColor: AppColors.primaryBlue,
-                      strokeWidth: 1.2,
+                      color: Colors.transparent,
+                      strokeColor: Colors.transparent,
+                      strokeWidth: 0,
                     ),
                     onSelectionChanged: (int index) async {
                       // Syncfusion: Tapping an already-selected shape again can yield `-1` (unselected).
@@ -113,7 +136,9 @@ class _ConquestOnlineGameMapSection extends StatelessWidget {
                           .read<SettingsProvider>()
                           .triggerButtonVibration();
 
-                      final key = shapeKeys[index];
+                      final mapIso = mapCountries[index].isoCode.trim().toUpperCase();
+                      final key = shapeKeys[index] ??
+                          (mapIso.isEmpty || mapIso == '-99' ? null : mapIso);
                       if (key == null) {
                         state._showSnackOnce('Bu bölge maç kapsamında değil.');
                         return;

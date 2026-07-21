@@ -3,9 +3,12 @@ package com.gunes.DunyaUlkeleri.dto.response;
 import lombok.Data;
 
 @Data
-public class LeaderboardEntryResponse {
+public class LeagueLeaderboardEntryResponse {
+    private int rank;
     private String username;
-    private Integer score;
+    private int trophies;
+    private String league;
     private Integer avatarId;
     private boolean hasCustomAvatar;
+    private boolean currentUser;
 }

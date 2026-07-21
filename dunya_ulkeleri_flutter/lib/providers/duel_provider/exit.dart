@@ -2,6 +2,7 @@ part of '../duel_provider.dart';
 
 extension DuelProviderExit on DuelProvider {
   Future<void> leaveSession({String? token}) async {
+    _stopQuickMatchPolling();
     final sid = sessionId;
     final pid = playerId;
 

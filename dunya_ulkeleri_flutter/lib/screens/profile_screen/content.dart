@@ -11,7 +11,7 @@ class _ProfileContentList extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onSettings;
   final VoidCallback onAvatarTap;
-  final VoidCallback onEditDisplayName;
+  final VoidCallback onEditUsername;
   final VoidCallback onShowTierInfo;
   final VoidCallback onDictionary;
   final VoidCallback onMistakes;
@@ -28,7 +28,7 @@ class _ProfileContentList extends StatelessWidget {
     required this.onBack,
     required this.onSettings,
     required this.onAvatarTap,
-    required this.onEditDisplayName,
+    required this.onEditUsername,
     required this.onShowTierInfo,
     required this.onDictionary,
     required this.onMistakes,
@@ -60,7 +60,7 @@ class _ProfileContentList extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                profile.displayName,
+                profile.username,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppColors.textDark,
@@ -70,20 +70,11 @@ class _ProfileContentList extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               IconButton(
-                onPressed: onEditDisplayName,
+                onPressed: onEditUsername,
                 icon: const Icon(Icons.edit, size: 18),
                 color: AppColors.textMuted,
               ),
             ],
-          ),
-        ),
-        Text(
-          '@${profile.username}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.textMuted,
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
           ),
         ),
         const SizedBox(height: 10),
@@ -93,6 +84,8 @@ class _ProfileContentList extends StatelessWidget {
           icon: tier.icon,
           onInfo: onShowTierInfo,
         ),
+        const SizedBox(height: 14),
+        _LeagueProgressCard(profile: profile),
         const SizedBox(height: 14),
         _AnalysisCard(
           text: analysisText,
@@ -110,6 +103,19 @@ class _ProfileContentList extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _MasteryGrid(items: _buildMasteryCards(scores)),
+        const SizedBox(height: 8),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'Dünya kartı tüm ülkeleri kapsar. Alt satırlardaki kıta kartları Dünya kategorisi hariç ayrı hesaplanır.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ),
         const SizedBox(height: 18),
         const _SectionHeader(title: 'Genel İstatistikler'),
         const SizedBox(height: 10),

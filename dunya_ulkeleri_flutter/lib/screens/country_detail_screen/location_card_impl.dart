@@ -1,9 +1,14 @@
 part of '../country_detail_screen.dart';
 
+final _worldMapSource = MapShapeSource.asset(
+  'assets/maps/world_map_simplified.json',
+  shapeDataField: 'name',
+);
+
 extension _CountryDetailScreenLocationCardImpl on CountryDetailScreenState {
   Widget _buildLocationCardImpl() {
     final latLng = countryLatLng;
-    final label = '${widget.countryName}, ${widget.continent}'.trim();
+    final label = '${widget.countryName}, $displayedContinent'.trim();
 
     if (latLng == null) {
       return Container(
@@ -23,11 +28,6 @@ extension _CountryDetailScreenLocationCardImpl on CountryDetailScreenState {
         ),
       );
     }
-
-    final source = MapShapeSource.asset(
-      'assets/maps/world_map_simplified.json',
-      shapeDataField: 'name',
-    );
 
     final zoomPanBehavior = MapZoomPanBehavior(
       focalLatLng: latLng,
@@ -51,7 +51,7 @@ extension _CountryDetailScreenLocationCardImpl on CountryDetailScreenState {
               child: SfMaps(
                 layers: [
                   MapShapeLayer(
-                    source: source,
+                    source: _worldMapSource,
                     zoomPanBehavior: zoomPanBehavior,
                     strokeColor: AppColors.borderLight,
                     strokeWidth: 0.5,
@@ -101,6 +101,4 @@ extension _CountryDetailScreenLocationCardImpl on CountryDetailScreenState {
       ),
     );
   }
-
 }
-

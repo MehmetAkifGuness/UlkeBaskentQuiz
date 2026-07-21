@@ -28,6 +28,7 @@ part 'profile_screen/content.dart';
 part 'profile_screen/analysis_widgets.dart';
 part 'profile_screen/mastery.dart';
 part 'profile_screen/stats_and_tier.dart';
+part 'profile_screen/league_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -127,12 +128,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'image/jpeg';
   }
 
-  Future<void> _editDisplayName(
-    String token,
-    String currentName,
-    String currentUsername,
-  ) {
-    return _editDisplayNameImpl(this, token, currentName, currentUsername);
+  Future<void> _editUsername(String token, String currentUsername) {
+    return _editUsernameImpl(this, token, currentUsername);
   }
 
   void _goToTab(int index) {
@@ -292,10 +289,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (token == null) return;
                 _showAvatarOptions(token);
               },
-              onEditDisplayName: () {
+              onEditUsername: () {
                 final token = Provider.of<AuthProvider>(context, listen: false).token;
                 if (token == null) return;
-                _editDisplayName(token, profile.displayName, profile.username);
+                _editUsername(token, profile.username);
               },
               onShowTierInfo: () => _showTierInfoSheet(tier),
               onDictionary: _openDictionary,

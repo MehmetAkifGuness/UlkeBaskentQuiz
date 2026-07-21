@@ -18,6 +18,7 @@ public class ConquestGameSession {
     private boolean quickMatch;
     private String matchmakingKey;
     private boolean trophiesApplied;
+    private boolean pauseUsed;
 
     private List<ConquestPlayer> players = new ArrayList<>();
 

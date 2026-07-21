@@ -108,6 +108,18 @@ class _ConquestOnlineLobbyScreenState extends State<ConquestOnlineLobbyScreen> {
     await provider.startOnlineGame();
   }
 
+  Future<void> _resumeGame(ConquestMultiplayerProvider provider) async {
+    _triggerHaptic();
+    final resumed = await provider.resumeGame(
+      token: context.read<AuthProvider>().token,
+    );
+    if (!mounted || !resumed) return;
+    Navigator.pushReplacement(
+      context,
+      FadePageRoute(page: const ConquestOnlineGameScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.read<ConquestMultiplayerProvider>();
@@ -208,7 +220,18 @@ class _ConquestOnlineLobbyScreenState extends State<ConquestOnlineLobbyScreen> {
                 onToggleReady: () => provider.setReady(!amIReady),
               ),
               const SizedBox(height: 14),
-              if (!isQuickMatch)
+              if (status == 'PAUSED')
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: !provider.isLoading
+                        ? () => _resumeGame(provider)
+                        : null,
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Oyuna Dön'),
+                  ),
+                )
+              else if (!isQuickMatch)
                 SizedBox(
                   width: double.infinity,
                   child: (() {

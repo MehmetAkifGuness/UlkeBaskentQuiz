@@ -1,9 +1,9 @@
 package com.gunes.DunyaUlkeleri.controller;
 
-import com.gunes.DunyaUlkeleri.dto.request.UpdateProfileRequest;
 import com.gunes.DunyaUlkeleri.dto.request.UpdateUsernameRequest;
 import com.gunes.DunyaUlkeleri.dto.response.AuthResponse;
 import com.gunes.DunyaUlkeleri.dto.response.LeaderboardEntryResponse;
+import com.gunes.DunyaUlkeleri.dto.response.LeagueLeaderboardResponse;
 import com.gunes.DunyaUlkeleri.dto.response.RecentSessionResponse;
 import com.gunes.DunyaUlkeleri.dto.response.UserAvatarImageResponse;
 import com.gunes.DunyaUlkeleri.dto.response.UserProfileResponse;
@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -68,6 +67,11 @@ public class UserController {
         return ResponseEntity.ok(leaderboardService.getCategoryLeaderboard(category, mode));
     }
 
+    @GetMapping("/league-leaderboard")
+    public ResponseEntity<LeagueLeaderboardResponse> getLeagueLeaderboard(Authentication authentication) {
+        return ResponseEntity.ok(leaderboardService.getLeagueLeaderboard(authentication.getName()));
+    }
+
     @GetMapping("/mistakes")
     public ResponseEntity<Set<Question>> getUserMistakes(Authentication authentication) {
         return ResponseEntity.ok(userProfileQueryService.getUserMistakes(authentication.getName()));
@@ -84,12 +88,6 @@ public class UserController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         userService.updateAvatar(username, avatarId);
         return ResponseEntity.ok("Avatar başarıyla güncellendi.");
-    }
-
-    @PutMapping("/profile")
-    public ResponseEntity<UserProfileResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(userService.updateDisplayName(username, request.getDisplayName()));
     }
 
     @PutMapping("/username")

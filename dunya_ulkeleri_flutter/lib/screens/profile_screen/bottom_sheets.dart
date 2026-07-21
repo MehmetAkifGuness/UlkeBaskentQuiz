@@ -146,7 +146,7 @@ class _TierInfoSheet extends StatelessWidget {
                     const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final tier = tiers[index];
-                  final selected = tier.name == currentTier.name;
+                  final selected = tier.minScore == currentTier.minScore;
                   final border = selected
                       ? tier.color.withValues(alpha: 0.55)
                       : AppColors.borderLight;

@@ -1,1 +1,1 @@
-﻿
+﻿doğru veya yanlış bilince harita kendine refresh atıyor bu da göz ağrıtıyor bunu yapmasak yada daha iyi bir şekilde yapsak iyi olur

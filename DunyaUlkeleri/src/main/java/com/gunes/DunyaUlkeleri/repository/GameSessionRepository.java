@@ -19,12 +19,12 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
     List<Object[]> findTop10DailyScores(@Param("category") String category, @Param("startDate") LocalDateTime startDate, Pageable pageable);
 
     @Query(
-            "SELECT g.user.username, MAX(g.currentScore), g.user.avatarId, g.user.displayName, " +
+            "SELECT g.user.username, MAX(g.currentScore), g.user.avatarId, " +
             "CASE WHEN g.user.customAvatar IS NOT NULL THEN true ELSE false END " +
             "FROM GameSession g " +
             "WHERE g.category = :category " +
             "AND g.createdAt >= :startDate " +
-            "GROUP BY g.user.username, g.user.avatarId, g.user.displayName, " +
+            "GROUP BY g.user.username, g.user.avatarId, " +
             "CASE WHEN g.user.customAvatar IS NOT NULL THEN true ELSE false END " +
             "ORDER BY MAX(g.currentScore) DESC"
     )
@@ -38,18 +38,20 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
     List<Object[]> findTop10ByCategoryAndMode(@Param("category") String category, @Param("mode") String mode, Pageable pageable);
 
     @Query(
-            "SELECT g.user.username, MAX(g.currentScore), g.user.avatarId, g.user.displayName, " +
+            "SELECT g.user.username, MAX(g.currentScore), g.user.avatarId, " +
             "CASE WHEN g.user.customAvatar IS NOT NULL THEN true ELSE false END " +
             "FROM GameSession g " +
             "WHERE g.category = :category " +
             "AND g.gameMode = :mode " +
-            "GROUP BY g.user.username, g.user.avatarId, g.user.displayName, " +
+            "AND g.createdAt >= :startDate " +
+            "GROUP BY g.user.username, g.user.avatarId, " +
             "CASE WHEN g.user.customAvatar IS NOT NULL THEN true ELSE false END " +
             "ORDER BY MAX(g.currentScore) DESC"
     )
     List<Object[]> findTop10ByCategoryAndModeWithProfile(
             @Param("category") String category,
             @Param("mode") String mode,
+            @Param("startDate") LocalDateTime startDate,
             Pageable pageable
     );
 
@@ -67,16 +69,21 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
     List<Object[]> findTop10ByCategoryOverall(@Param("category") String category, Pageable pageable);
 
     @Query(
-            "SELECT g.user.username, MAX(g.currentScore), g.user.avatarId, g.user.displayName, " +
+            "SELECT g.user.username, MAX(g.currentScore), g.user.avatarId, " +
             "CASE WHEN g.user.customAvatar IS NOT NULL THEN true ELSE false END " +
             "FROM GameSession g " +
             "WHERE g.category = :category " +
+            "AND g.createdAt >= :startDate " +
             "AND (g.gameMode IN ('COUNTRY_TO_CAPITAL', 'CAPITAL_TO_COUNTRY', 'MIXED')) " +
-            "GROUP BY g.user.username, g.user.avatarId, g.user.displayName, " +
+            "GROUP BY g.user.username, g.user.avatarId, " +
             "CASE WHEN g.user.customAvatar IS NOT NULL THEN true ELSE false END " +
             "ORDER BY MAX(g.currentScore) DESC"
     )
-    List<Object[]> findTop10ByCategoryOverallWithProfile(@Param("category") String category, Pageable pageable);
+    List<Object[]> findTop10ByCategoryOverallWithProfile(
+            @Param("category") String category,
+            @Param("startDate") LocalDateTime startDate,
+            Pageable pageable
+    );
 
     void deleteByUser(User user);
 

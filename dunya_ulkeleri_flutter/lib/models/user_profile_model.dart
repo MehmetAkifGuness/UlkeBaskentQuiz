@@ -4,7 +4,6 @@ class UserProfileModel {
   static const Object _noValue = Object();
 
   final String username;
-  final String displayName;
   final String email;
   final String creationDate;
   final int maxWinStreak;
@@ -12,7 +11,12 @@ class UserProfileModel {
   final int totalMasteryPoints;
   final int trophies;
   final String league;
+  final int leagueMinTrophies;
+  final String nextLeague;
+  final int nextLeagueMinTrophies;
+  final int trophiesToNextLeague;
   final int trophySeason;
+  final int seasonDaysRemaining;
   final bool hasPlayedDaily;
   final int dailyStreak;
 
@@ -22,7 +26,6 @@ class UserProfileModel {
 
   UserProfileModel({
     required this.username,
-    required this.displayName,
     required this.email,
     required this.creationDate,
     required this.maxWinStreak,
@@ -30,7 +33,12 @@ class UserProfileModel {
     required this.totalMasteryPoints,
     required this.trophies,
     required this.league,
+    required this.leagueMinTrophies,
+    required this.nextLeague,
+    required this.nextLeagueMinTrophies,
+    required this.trophiesToNextLeague,
     required this.trophySeason,
+    required this.seasonDaysRemaining,
     required this.hasPlayedDaily,
     required this.dailyStreak,
     required this.avatarId,
@@ -40,17 +48,20 @@ class UserProfileModel {
 
   UserProfileModel copyWith({
     String? username,
-    String? displayName,
     int? avatarId,
     bool? hasCustomAvatar,
     int? trophies,
     String? league,
+    int? leagueMinTrophies,
+    String? nextLeague,
+    int? nextLeagueMinTrophies,
+    int? trophiesToNextLeague,
     int? trophySeason,
+    int? seasonDaysRemaining,
     Object? customAvatarBytes = _noValue,
   }) {
     return UserProfileModel(
       username: username ?? this.username,
-      displayName: displayName ?? this.displayName,
       email: email,
       creationDate: creationDate,
       maxWinStreak: maxWinStreak,
@@ -58,7 +69,12 @@ class UserProfileModel {
       totalMasteryPoints: totalMasteryPoints,
       trophies: trophies ?? this.trophies,
       league: league ?? this.league,
+      leagueMinTrophies: leagueMinTrophies ?? this.leagueMinTrophies,
+      nextLeague: nextLeague ?? this.nextLeague,
+      nextLeagueMinTrophies: nextLeagueMinTrophies ?? this.nextLeagueMinTrophies,
+      trophiesToNextLeague: trophiesToNextLeague ?? this.trophiesToNextLeague,
       trophySeason: trophySeason ?? this.trophySeason,
+      seasonDaysRemaining: seasonDaysRemaining ?? this.seasonDaysRemaining,
       hasPlayedDaily: hasPlayedDaily,
       dailyStreak: dailyStreak,
       avatarId: avatarId ?? this.avatarId,
@@ -72,7 +88,6 @@ class UserProfileModel {
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
     return UserProfileModel(
       username: json['username'] ?? 'Bilinmiyor',
-      displayName: json['displayName'] ?? (json['username'] ?? 'Bilinmiyor'),
       email: json['email'] ?? '',
       creationDate: json['creationDate'] ?? '',
       maxWinStreak: json['maxWinStreak'] ?? 0,
@@ -80,7 +95,14 @@ class UserProfileModel {
       totalMasteryPoints: ((json['totalMasteryPoints'] ?? 0) as num).toInt(),
       trophies: ((json['trophies'] ?? 0) as num).toInt(),
       league: (json['league'] ?? '').toString(),
+      leagueMinTrophies: ((json['leagueMinTrophies'] ?? 0) as num).toInt(),
+      nextLeague: (json['nextLeague'] ?? '').toString(),
+      nextLeagueMinTrophies:
+          ((json['nextLeagueMinTrophies'] ?? 0) as num).toInt(),
+      trophiesToNextLeague:
+          ((json['trophiesToNextLeague'] ?? 0) as num).toInt(),
       trophySeason: ((json['trophySeason'] ?? 0) as num).toInt(),
+      seasonDaysRemaining: ((json['seasonDaysRemaining'] ?? 0) as num).toInt(),
       hasPlayedDaily: json['hasPlayedDaily'] ?? false,
       dailyStreak: json['dailyStreak'] ?? 0,
       avatarId: json['avatarId'] ?? 1,

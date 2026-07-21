@@ -7,6 +7,7 @@ class ConquestSessionState {
   final String? selectedContinentFilter;
   final String? hostPlayerId;
   final bool quickMatch;
+  final bool pauseUsed;
   final List<ConquestPlayerState> players;
   final Map<String, String> conqueredCountryColors;
   final ConquestRoundState? currentRound;
@@ -22,6 +23,7 @@ class ConquestSessionState {
     required this.selectedContinentFilter,
     required this.hostPlayerId,
     required this.quickMatch,
+    required this.pauseUsed,
     required this.players,
     required this.conqueredCountryColors,
     required this.currentRound,
@@ -49,6 +51,7 @@ class ConquestSessionState {
       selectedContinentFilter: json['selectedContinentFilter']?.toString(),
       hostPlayerId: json['hostPlayerId']?.toString(),
       quickMatch: (json['quickMatch'] ?? false) as bool,
+      pauseUsed: (json['pauseUsed'] ?? false) as bool,
       players: playersJson
           .whereType<Map>()
           .map(
@@ -77,6 +80,7 @@ class ConquestSessionState {
         'selectedContinentFilter': selectedContinentFilter,
         'hostPlayerId': hostPlayerId,
         'quickMatch': quickMatch,
+        'pauseUsed': pauseUsed,
         'players': players.map((e) => e.toJson()).toList(),
         'conqueredCountryColors': conqueredCountryColors,
         'currentRound': currentRound?.toJson(),

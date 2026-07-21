@@ -70,7 +70,11 @@ class GameScreenState extends State<GameScreen> {
             ),
             title: Row(
               children: [
-                Icon(Icons.pause_circle_filled, color: Colors.amber, size: 28),
+                Icon(
+                  Icons.pause_circle_filled,
+                  color: AppColors.primaryBlue,
+                  size: 28,
+                ),
                 SizedBox(width: 10),
                 Text('Oyunu Duraklat', style: TextStyle(color: Colors.white)),
               ],
@@ -95,7 +99,7 @@ class GameScreenState extends State<GameScreen> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
+                  backgroundColor: AppColors.primaryBlue,
                   foregroundColor: Colors.black,
                 ),
                 onPressed: () {

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../app/navigation.dart';
 import '../models/dictionary_model.dart';
 import '../models/map_country_model.dart';
-import '../providers/auth_provider.dart';
 import '../services/country_match_service.dart';
 import '../services/game_service.dart';
 import '../services/iso_country_service.dart';
@@ -50,19 +47,8 @@ class WorldMapProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final token = _readAuthToken();
-
-      if (token == null) {
-        // Token yoksa (misafir/ilk giriş vs.) en azından demo çalışsın.
-        availableCountries = _fallbackCountries();
-        isMapDataReady = true;
-        errorMessage =
-            'Ülke verileri alınamadı (token yok). Geçici örnek liste kullanılıyor.';
-        return;
-      }
-
       final List<DictionaryModel> dictionary = await _gameService.getDictionary(
-        token,
+        '',
       );
 
       // ISO çeviri tablosunu hazırla (asset'ten okur). Hata olursa isim bazlı devam eder.
@@ -88,9 +74,8 @@ class WorldMapProvider with ChangeNotifier {
       isMapDataReady = true;
       errorMessage = null;
     } catch (e) {
-      // Backend erişilemezse uygulama crash etmesin.
-      availableCountries = _fallbackCountries();
-      isMapDataReady = true;
+      availableCountries = const <MapCountryModel>[];
+      isMapDataReady = false;
       errorMessage = errorMessageFrom(e);
     } finally {
       isLoading = false;

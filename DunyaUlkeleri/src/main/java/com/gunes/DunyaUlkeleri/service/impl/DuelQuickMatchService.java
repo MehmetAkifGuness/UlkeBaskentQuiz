@@ -136,8 +136,9 @@ public class DuelQuickMatchService {
             waiting.addPlayer(player);
             waiting.setStatus(DuelGameStatus.STARTED);
             roundService.startFirstRound(waiting);
-            roundScheduler.reschedule(waiting);
             waiting.touch();
+            sessionStore.save(waiting);
+            roundScheduler.reschedule(waiting);
         }
 
         quickMatchQueue.removeWaitingSessionId(matchmakingKey, waitingSessionId);

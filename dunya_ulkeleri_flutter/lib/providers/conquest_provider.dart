@@ -83,9 +83,6 @@ class ConquestProvider with ChangeNotifier {
   /// Aynı anda birden fazla tıklamayı engellemek için.
   bool isRoundLocked = false;
 
-  /// Yanlış seçilen ülkeyi kısa süreli vurgulamak için (UI isterse kullanır).
-  String? wrongFlashIsoCode;
-
   final Random _random = Random();
   final GameService _gameService = GameService();
   bool _disposed = false;

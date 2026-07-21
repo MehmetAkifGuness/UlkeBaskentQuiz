@@ -133,34 +133,51 @@ class _ConquestPracticeMapSection extends StatelessWidget {
         final shapeKeys = state._shapePlayableKeys ??
             List<String?>.filled(mapCountries.length, null, growable: false);
 
-        final targetKey =
-            provider.isGameActive ? provider.targetCountry?.isoCode : null;
-
-        final MapShapeSource source = MapShapeSource.memory(
-          mapBytes,
-          shapeDataField: result.shapeDataField,
-          dataCount: mapCountries.length,
-          primaryValueMapper: (int index) => mapCountries[index].name,
-          shapeColorValueMapper: (int index) {
-            final key = shapeKeys[index];
-
-            if (key != null) {
-              final conqueredColor = provider.conqueredCountryColors[key];
-              if (conqueredColor != null) {
-                return conqueredColor.withValues(alpha: 0.85);
-              }
-              if (provider.wrongFlashIsoCode == key) {
-                return Colors.redAccent.withValues(alpha: 0.35);
-              }
-              if (targetKey != null && key == targetKey) {
-                return provider.playerColor.withValues(alpha: 0.25);
-              }
-            }
-
-            return AppColors.surface2.withValues(alpha: 0.70);
-          },
+        final geometryKey = Object.hash(mapBytes, mapCountries);
+        final visualKey = Object.hash(
+          provider.targetCountry?.isoCode,
+          Object.hashAll(shapeKeys),
+          Object.hashAll(
+            provider.conqueredCountryColors.entries.map(
+              (entry) => Object.hash(entry.key, entry.value.toARGB32()),
+            ),
+          ),
         );
+        if (state._mapSource == null ||
+            state._mapSourceGeometryKey != geometryKey ||
+            state._mapSourceVisualKey != visualKey) {
+          state._mapSource = MapShapeSource.memory(
+            mapBytes,
+            shapeDataField: result.shapeDataField,
+            dataCount: mapCountries.length,
+            primaryValueMapper: (int index) => mapCountries[index].name,
+            shapeColorValueMapper: (int index) {
+              final keys = state._shapePlayableKeys;
+              final mapIso = mapCountries[index].isoCode.trim().toUpperCase();
+              final matchedKey = keys != null && index < keys.length
+                  ? keys[index]
+                  : null;
+              final key = matchedKey ??
+                  (mapIso.isEmpty || mapIso == '-99' ? null : mapIso);
 
+              if (key != null) {
+                final conqueredColor = provider.conqueredCountryColors[key];
+                if (conqueredColor != null) {
+                  return conqueredColor.withValues(alpha: 0.85);
+                }
+                if (provider.isGameActive &&
+                    key == provider.targetCountry?.isoCode) {
+                  return AppColors.yellow.withValues(alpha: 0.38);
+                }
+              }
+
+              return AppColors.surface2.withValues(alpha: 0.70);
+            },
+          );
+          state._mapSourceGeometryKey = geometryKey;
+          state._mapSourceVisualKey = visualKey;
+        }
+        final source = state._mapSource!;
         return Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           child: ClipRRect(
@@ -178,9 +195,9 @@ class _ConquestPracticeMapSection extends StatelessWidget {
                     strokeColor: AppColors.borderLight,
                     strokeWidth: 0.6,
                     selectionSettings: MapSelectionSettings(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.18),
-                      strokeColor: AppColors.primaryBlue,
-                      strokeWidth: 1.2,
+                      color: Colors.transparent,
+                      strokeColor: Colors.transparent,
+                      strokeWidth: 0,
                     ),
                     onSelectionChanged: (int index) async {
                       // Syncfusion seçim davranışı: Seçili shape'e tekrar dokunulursa
@@ -197,7 +214,10 @@ class _ConquestPracticeMapSection extends StatelessWidget {
                         return;
                       }
 
-                      final key = shapeKeys[effectiveIndex];
+                      final mapIso =
+                          mapCountries[effectiveIndex].isoCode.trim().toUpperCase();
+                      final key = shapeKeys[effectiveIndex] ??
+                          (mapIso.isEmpty || mapIso == '-99' ? null : mapIso);
                       if (key == null) {
                         state._showSnackOnce('Bu bölge oyun kapsamında değil.');
                         return;

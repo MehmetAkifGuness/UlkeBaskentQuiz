@@ -36,9 +36,28 @@ public class LeagueServiceImpl implements LeagueService {
     public void ensureSeason(User user) {
         if (user == null) return;
         final int current = currentSeasonId();
-        if (user.getTrophySeason() != current) {
-            user.setTrophySeason(current);
-            user.setTrophies(leagueProperties.getResetTrophies());
+        if (user.getTrophySeason() == current) return;
+
+        int previousSeason = user.getTrophySeason();
+        user.setTrophies(decayedTrophies(user.getTrophies(), previousSeason, current));
+        user.setTrophySeason(current);
+    }
+
+    @Override
+    @Transactional
+    public void ensureAllSeasons() {
+        final int current = currentSeasonId();
+        for (Object[] state : userRepository.findLeagueStates()) {
+            if (state == null || state.length < 3) continue;
+            int previousSeason = ((Number) state[2]).intValue();
+            if (previousSeason == current) continue;
+
+            int trophies = ((Number) state[1]).intValue();
+            userRepository.updateLeagueState(
+                    ((Number) state[0]).longValue(),
+                    decayedTrophies(trophies, previousSeason, current),
+                    current
+            );
         }
     }
 
@@ -50,6 +69,32 @@ public class LeagueServiceImpl implements LeagueService {
     @Override
     public String leagueNameOf(int trophies) {
         return tierOf(trophies).displayName();
+    }
+
+    @Override
+    public int leagueMinTrophiesOf(int trophies) {
+        return tierOf(trophies).minTrophies();
+    }
+
+    @Override
+    public String nextLeagueNameOf(int trophies) {
+        return tierOf(trophies).next().map(LeagueTier::displayName).orElse("");
+    }
+
+    @Override
+    public int nextLeagueMinTrophiesOf(int trophies) {
+        LeagueTier tier = tierOf(trophies);
+        return tier.next().map(LeagueTier::minTrophies).orElse(tier.minTrophies());
+    }
+
+    @Override
+    public int trophiesToNextLeagueOf(int trophies) {
+        return Math.max(0, nextLeagueMinTrophiesOf(trophies) - Math.max(0, trophies));
+    }
+
+    @Override
+    public int daysRemainingInSeason() {
+        return LeagueSeason.daysRemainingInCurrentSeason();
     }
 
     @Override
@@ -94,6 +139,16 @@ public class LeagueServiceImpl implements LeagueService {
 
     private static String safeTrim(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private int decayedTrophies(int trophies, int previousSeason, int currentSeason) {
+        int floor = Math.max(leagueProperties.getMinTrophies(), leagueProperties.getResetTrophies());
+        if (previousSeason <= 0) return Math.max(floor, trophies);
+
+        int months = LeagueSeason.monthsBetween(previousSeason, currentSeason);
+        double rate = Math.max(0d, Math.min(0.95d, leagueProperties.getMonthlyDecayRate()));
+        long decayed = Math.round(Math.max(0, trophies) * Math.pow(1d - rate, months));
+        return (int) Math.max(floor, Math.min(Integer.MAX_VALUE, decayed));
     }
 }
 

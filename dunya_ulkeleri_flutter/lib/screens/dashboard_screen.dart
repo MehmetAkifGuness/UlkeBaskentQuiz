@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/recent_session_model.dart';
 import '../models/user_profile_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/conquest_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/user.service.dart';
 import '../theme/app_theme.dart';
@@ -94,7 +95,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _openConquestPractice() {
     Provider.of<SettingsProvider>(context, listen: false).triggerButtonVibration();
-    Navigator.push(context, FadePageRoute(page: const ConquestPracticeScreen()));
+    Navigator.push(
+      context,
+      FadePageRoute(
+        page: ChangeNotifierProvider(
+          create: (_) => ConquestProvider(),
+          child: const ConquestPracticeScreen(),
+        ),
+      ),
+    );
   }
 
   void _openConquestBot() {
@@ -102,7 +111,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context,
       listen: false,
     ).triggerButtonVibration();
-    Navigator.push(context, FadePageRoute(page: const ConquestBotScreen()));
+    Navigator.push(
+      context,
+      FadePageRoute(
+        page: ChangeNotifierProvider(
+          create: (_) => ConquestProvider(),
+          child: const ConquestBotScreen(),
+        ),
+      ),
+    );
   }
 
   void _openConquestOnline() {

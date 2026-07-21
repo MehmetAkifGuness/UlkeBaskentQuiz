@@ -7,6 +7,7 @@ import 'package:syncfusion_flutter_maps/maps.dart';
 
 import '../models/conquest_session_dto.dart';
 import '../models/map_country_model.dart';
+import '../providers/auth_provider.dart';
 import '../providers/conquest_multiplayer_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/country_match_service.dart';
@@ -43,10 +44,14 @@ class _ConquestOnlineGameScreenState extends State<ConquestOnlineGameScreen> {
   late Future<_OnlineMapLoadResult> _loadFuture = _loadGeoJson();
   String? _lastSnackMessage;
   bool _didShowFinishedDialog = false;
+  bool _isReturningToLobby = false;
 
   // Shape -> backend isoCode eşleştirmesini cache'liyoruz.
   List<String?>? _shapePlayableKeys;
   String? _shapePlayableSignature;
+  MapShapeSource? _mapSource;
+  Object? _mapSourceGeometryKey;
+  Object? _mapSourceVisualKey;
 
   @override
   void initState() {

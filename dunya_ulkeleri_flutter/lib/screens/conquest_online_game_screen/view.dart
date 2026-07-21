@@ -1,5 +1,28 @@
 part of '../conquest_online_game_screen.dart';
 
+extension _ConquestOnlineGameNavigation on _ConquestOnlineGameScreenState {
+  Future<void> _returnToLobby(BuildContext context) async {
+    if (_isReturningToLobby) return;
+    _isReturningToLobby = true;
+
+    final provider = context.read<ConquestMultiplayerProvider>();
+    final shouldPause = provider.isGameStarted;
+    final paused = !shouldPause ||
+        await provider.pauseGame(token: context.read<AuthProvider>().token);
+
+    if (context.mounted && paused) {
+      Navigator.pushReplacement(
+        context,
+        FadePageRoute(
+          page: const ConquestOnlineLobbyScreen(autoNavigateToGame: false),
+        ),
+      );
+    }
+
+    _isReturningToLobby = false;
+  }
+}
+
 class _ConquestOnlineGameView extends StatelessWidget {
   final _ConquestOnlineGameScreenState state;
 
@@ -47,12 +70,7 @@ class _ConquestOnlineGameView extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        Navigator.pushReplacement(
-          context,
-          FadePageRoute(
-            page: const ConquestOnlineLobbyScreen(autoNavigateToGame: false),
-          ),
-        );
+        await state._returnToLobby(context);
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -62,14 +80,7 @@ class _ConquestOnlineGameView extends StatelessWidget {
             IconButton(
               tooltip: 'Lobi',
               icon: const Icon(Icons.meeting_room_outlined),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  FadePageRoute(
-                    page: const ConquestOnlineLobbyScreen(autoNavigateToGame: false),
-                  ),
-                );
-              },
+              onPressed: () => state._returnToLobby(context),
             ),
           ],
         ),

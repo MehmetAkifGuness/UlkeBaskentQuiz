@@ -8,6 +8,7 @@ extension ConquestProviderPractice on ConquestProvider {
     _setMode(ConquestGameMode.practice);
     cancelBotTimer(); // Güvenlik: VS Bot ekranından kalan timer varsa iptal et.
     _cancelRoundTransitionTimer();
+    resetGame();
     isWaitingForAnswer = false;
     roundWinner = null;
     lastRoundMessage = null;
@@ -108,7 +109,6 @@ extension ConquestProviderPractice on ConquestProvider {
     wrongCount = 0;
     streak = 0;
     remainingLives = ConquestPlayer.initialLives;
-    wrongFlashIsoCode = null;
     isWaitingForAnswer = false;
     roundWinner = null;
     errorMessage = null;

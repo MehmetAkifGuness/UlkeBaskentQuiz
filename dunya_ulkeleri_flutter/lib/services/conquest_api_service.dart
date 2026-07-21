@@ -149,4 +149,55 @@ class ConquestApiService {
       throw Exception("İnternet bağlantınız koptu.");
     }
   }
+
+  Future<ConquestSessionState> pauseSession({
+    required String sessionId,
+    required String playerId,
+    required String token,
+  }) => _changePauseState(
+        action: 'pause',
+        sessionId: sessionId,
+        playerId: playerId,
+        token: token,
+      );
+
+  Future<ConquestSessionState> resumeSession({
+    required String sessionId,
+    required String playerId,
+    required String token,
+  }) => _changePauseState(
+        action: 'resume',
+        sessionId: sessionId,
+        playerId: playerId,
+        token: token,
+      );
+
+  Future<ConquestSessionState> _changePauseState({
+    required String action,
+    required String sessionId,
+    required String playerId,
+    required String token,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/sessions/$sessionId/$action'),
+            headers: _headers(token: token),
+            body: jsonEncode({'sessionId': sessionId, 'playerId': playerId}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return ConquestSessionState.fromJson(
+          jsonDecode(utf8.decode(response.bodyBytes)),
+        );
+      }
+
+      throw ApiException.fromResponse(response);
+    } on TimeoutException {
+      throw Exception("Sunucu yanıt vermedi. İnternetinizi kontrol edin.");
+    } on SocketException {
+      throw Exception("İnternet bağlantınız koptu.");
+    }
+  }
 }

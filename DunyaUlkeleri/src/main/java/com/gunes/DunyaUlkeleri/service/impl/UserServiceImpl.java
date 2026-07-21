@@ -17,6 +17,7 @@ import com.gunes.DunyaUlkeleri.repository.UserRepository;
 import com.gunes.DunyaUlkeleri.security.JwtUtil;
 import com.gunes.DunyaUlkeleri.service.LeagueService;
 import com.gunes.DunyaUlkeleri.service.UserService;
+import com.gunes.DunyaUlkeleri.util.league.LeagueTier;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -58,24 +59,6 @@ public class UserServiceImpl implements UserService {
         user.setAvatarId(avatarId);
         user.setCustomAvatar(null);
         user.setCustomAvatarContentType(null);
-    }
-
-    @Override
-    @Transactional
-    public UserProfileResponse updateDisplayName(String username, String displayName) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> AppException.notFound("USER_NOT_FOUND", "Kullanıcı bulunamadı."));
-
-        String normalized = displayName == null ? null : displayName.trim();
-        if (normalized == null || normalized.isBlank()) {
-            throw AppException.badRequest("DISPLAY_NAME_REQUIRED", "İsim (displayName) boş olamaz.");
-        }
-        if (normalized.length() > 40) {
-            throw AppException.badRequest("DISPLAY_NAME_TOO_LONG", "İsim (displayName) en fazla 40 karakter olabilir.");
-        }
-
-        user.setDisplayName(normalized);
-        return toUserProfileResponse(user);
     }
 
     @Override
@@ -185,18 +168,22 @@ public class UserServiceImpl implements UserService {
     private UserProfileResponse toUserProfileResponse(User user) {
         UserProfileResponse response = new UserProfileResponse();
         response.setUsername(user.getUsername());
-        response.setDisplayName(user.getDisplayName() == null || user.getDisplayName().isBlank()
-                ? user.getUsername()
-                : user.getDisplayName());
         response.setEmail(user.getEmail());
         response.setAvatarId(user.getAvatarId());
         response.setCreationDate(user.getCreationDate());
         response.setMaxWinStreak(user.getMaxWinStreak());
         response.setTotalGamesPlayed(user.getTotalGamesPlayed());
         response.setTotalMasteryPoints(user.getTotalMasteryPoints());
-        response.setTrophies(user.getTrophies());
-        response.setLeague(leagueService.leagueNameOf(user.getTrophies()));
+        int trophies = user.getTrophies();
+        LeagueTier tier = leagueService.tierOf(trophies);
+        response.setTrophies(trophies);
+        response.setLeague(tier.displayName());
+        response.setLeagueMinTrophies(tier.minTrophies());
+        response.setNextLeague(leagueService.nextLeagueNameOf(trophies));
+        response.setNextLeagueMinTrophies(leagueService.nextLeagueMinTrophiesOf(trophies));
+        response.setTrophiesToNextLeague(leagueService.trophiesToNextLeagueOf(trophies));
         response.setTrophySeason(user.getTrophySeason());
+        response.setSeasonDaysRemaining(leagueService.daysRemainingInSeason());
         response.setHasCustomAvatar(user.getCustomAvatar() != null && user.getCustomAvatar().length > 0);
 
         boolean playedToday = user.getLastDailyDate() != null && user.getLastDailyDate().equals(LocalDate.now());

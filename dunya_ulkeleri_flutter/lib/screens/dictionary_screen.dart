@@ -1,18 +1,16 @@
-// ignore_for_file: dead_null_aware_expression, dead_code
-
+import 'package:dunya_ulkeleri_flutter/models/dictionary_model.dart';
+import 'package:dunya_ulkeleri_flutter/theme/app_theme.dart';
+import 'package:dunya_ulkeleri_flutter/utils/error_message_utils.dart';
 import 'package:dunya_ulkeleri_flutter/utils/page_trasitions.dart';
+import 'package:dunya_ulkeleri_flutter/widgets/geo_background.dart';
+import 'package:dunya_ulkeleri_flutter/widgets/glass_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../providers/settings_provider.dart'; // 🚨 TİTREŞİM İÇİN EKLENDİ
-import '../services/game_service.dart';
-import '../models/dictionary_model.dart';
-import '../theme/app_theme.dart';
-import '../utils/error_message_utils.dart';
-import '../widgets/geo_background.dart';
-import '../widgets/glass_card.dart';
-import 'country_detail_screen.dart';
 
+import '../providers/settings_provider.dart';
+import '../services/country_catalog_service.dart';
+import '../services/game_service.dart';
+import 'country_detail_screen.dart';
 
 part 'dictionary_screen/flags.dart';
 part 'dictionary_screen/view.dart';
@@ -29,6 +27,7 @@ class DictionaryScreen extends StatefulWidget {
 
 class DictionaryScreenState extends State<DictionaryScreen> {
   final GameService _gameService = GameService();
+  final CountryCatalogService _catalogService = CountryCatalogService();
   final TextEditingController _searchController = TextEditingController();
 
   List<DictionaryModel> _allData = [];
@@ -51,8 +50,7 @@ class DictionaryScreenState extends State<DictionaryScreen> {
 
   Future<void> _fetchDictionaryData() async {
     try {
-      final token = Provider.of<AuthProvider>(context, listen: false).token;
-      final data = await _gameService.getDictionary(token ?? '');
+      final data = await _gameService.getDictionary('');
       setState(() {
         _allData = data;
         _availableContinents = _buildContinentOptions(data);
@@ -67,7 +65,6 @@ class DictionaryScreenState extends State<DictionaryScreen> {
     }
   }
 
-  // ignore: unused_element
   String _toTurkishLowerCase(String text) {
     return text
         .replaceAll('I', 'ı')
@@ -103,8 +100,8 @@ class DictionaryScreenState extends State<DictionaryScreen> {
 
       if (normalizedQuery.isEmpty) return true;
 
-      final country = _toTurkishLowerCase(item.countryName ?? '');
-      final capital = _toTurkishLowerCase(item.capitalName ?? '');
+      final country = _toTurkishLowerCase(item.countryName);
+      final capital = _toTurkishLowerCase(item.capitalName);
       final continentLower = _toTurkishLowerCase(item.continent ?? '');
 
       return country.contains(normalizedQuery) ||
@@ -271,8 +268,11 @@ class DictionaryScreenState extends State<DictionaryScreen> {
   }
 
   String _getFlagEmoji(String country) {
-    final cleanCountry = country.trim();
-    return _dictionaryFlagMap[cleanCountry] ?? '???';
+    final alpha2 = _catalogService.alpha2ForCountryName(country);
+    if (alpha2 != null && alpha2.isNotEmpty) {
+      return CountryCatalogService.flagEmojiFromAlpha2(alpha2) ?? '🏳️';
+    }
+    return '🏳️';
   }
 
   void _clearSelectedContinent() {
@@ -306,8 +306,7 @@ class DictionaryScreenState extends State<DictionaryScreen> {
     _searchController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) => _buildView(context);
-
 }
-

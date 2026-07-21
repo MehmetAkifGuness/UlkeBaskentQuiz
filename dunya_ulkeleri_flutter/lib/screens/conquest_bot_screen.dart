@@ -76,6 +76,9 @@ class _ConquestBotScreenState extends State<ConquestBotScreen> {
   // Shape -> playable (provider isoKey) eşleştirmesini ekranda cache’liyoruz.
   List<String?>? _shapePlayableKeys;
   String? _shapePlayableSignature;
+  MapShapeSource? _mapSource;
+  Object? _mapSourceGeometryKey;
+  Object? _mapSourceVisualKey;
 
   ConquestProvider? _provider;
 

@@ -98,6 +98,34 @@ public class ConquestRestController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/sessions/{sessionId}/pause")
+    public ResponseEntity<ConquestSessionStateDto> pauseSession(
+            @PathVariable String sessionId,
+            @RequestBody StartConquestGameRequest request
+    ) {
+        final StartConquestGameRequest effective = request == null ? new StartConquestGameRequest() : request;
+        if (effective.getSessionId() == null || effective.getSessionId().isBlank()) {
+            effective.setSessionId(sessionId);
+        }
+        final ConquestSessionStateDto state = conquestGameService.pauseGame(effective);
+        messagingTemplate.convertAndSend("/topic/conquest/" + state.getSessionId(), state);
+        return ResponseEntity.ok(state);
+    }
+
+    @PostMapping("/sessions/{sessionId}/resume")
+    public ResponseEntity<ConquestSessionStateDto> resumeSession(
+            @PathVariable String sessionId,
+            @RequestBody StartConquestGameRequest request
+    ) {
+        final StartConquestGameRequest effective = request == null ? new StartConquestGameRequest() : request;
+        if (effective.getSessionId() == null || effective.getSessionId().isBlank()) {
+            effective.setSessionId(sessionId);
+        }
+        final ConquestSessionStateDto state = conquestGameService.resumeGame(effective);
+        messagingTemplate.convertAndSend("/topic/conquest/" + state.getSessionId(), state);
+        return ResponseEntity.ok(state);
+    }
+
     // Mevcut state
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<ConquestSessionStateDto> getSessionState(@PathVariable String sessionId) {

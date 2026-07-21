@@ -1,4 +1,6 @@
 // lib/providers/duel_provider.dart
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/duel_session_dto.dart';
@@ -14,6 +16,8 @@ class DuelProvider with ChangeNotifier {
   final DuelWebSocketService _wsService = DuelWebSocketService();
 
   String? _connectingSessionId;
+  Timer? _quickMatchPollingTimer;
+  bool _quickMatchPollingInFlight = false;
 
   bool isConnected = false;
   bool isLoading = false;
@@ -65,6 +69,7 @@ class DuelProvider with ChangeNotifier {
     String? botDifficulty,
   }) async {
     if (isLoading) return false;
+    _stopQuickMatchPolling();
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -104,6 +109,7 @@ class DuelProvider with ChangeNotifier {
     required String roomCode,
   }) async {
     if (isLoading) return false;
+    _stopQuickMatchPolling();
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -138,6 +144,7 @@ class DuelProvider with ChangeNotifier {
     required String mode,
   }) async {
     if (isLoading) return false;
+    _stopQuickMatchPolling();
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -154,7 +161,9 @@ class DuelProvider with ChangeNotifier {
       this.category = category;
       this.mode = mode;
       isQuickMatchMode = true;
+      sessionState = null;
       _myAnswerCorrectByRound.clear();
+      _startQuickMatchPolling(token);
 
       notifyListeners();
       return true;
@@ -214,6 +223,51 @@ class DuelProvider with ChangeNotifier {
   void clearError() {
     errorMessage = null;
     notifyListeners();
+  }
+
+  void _startQuickMatchPolling(String token) {
+    _stopQuickMatchPolling();
+    _quickMatchPollingTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _pollQuickMatchState(token),
+    );
+  }
+
+  void _stopQuickMatchPolling() {
+    _quickMatchPollingTimer?.cancel();
+    _quickMatchPollingTimer = null;
+    _quickMatchPollingInFlight = false;
+  }
+
+  Future<void> _pollQuickMatchState(String token) async {
+    if (_quickMatchPollingInFlight || !isQuickMatchMode) return;
+
+    final sid = sessionId;
+    if (sid == null || sid.isEmpty) return;
+
+    _quickMatchPollingInFlight = true;
+    try {
+      final state = await _apiService.getSessionState(sid, token: token);
+      if (sid != sessionId || !isQuickMatchMode) return;
+
+      sessionState = state;
+      _captureMyAnswerResult(state);
+      if ((state.status ?? '').toUpperCase() != 'WAITING') {
+        _stopQuickMatchPolling();
+      }
+      _emit();
+    } catch (_) {
+      // WebSocket reconnect or the next poll can recover transient failures.
+    } finally {
+      _quickMatchPollingInFlight = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopQuickMatchPolling();
+    _wsService.disconnect();
+    super.dispose();
   }
 
   void _emit() => notifyListeners();

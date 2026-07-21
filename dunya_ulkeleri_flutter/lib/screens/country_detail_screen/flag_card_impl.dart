@@ -5,34 +5,23 @@ extension _CountryDetailScreenFlagCardImpl on CountryDetailScreenState {
     final borderRadius = BorderRadius.circular(18);
 
     Widget content;
-    if (flagUrl.isNotEmpty) {
-      content = Image.network(
-        flagUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.broken_image, color: AppColors.textMuted, size: 40),
-                SizedBox(height: 8),
-                Text(
-                  "Bayrak yüklenemedi",
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
+    if (flagAlpha2.isNotEmpty) {
+      content = LayoutBuilder(
+        builder: (context, constraints) {
+          return Flag.fromString(
+            flagAlpha2,
+            fit: BoxFit.cover,
+            height: constraints.maxHeight.isFinite ? constraints.maxHeight : 200,
+            width: constraints.maxWidth.isFinite ? constraints.maxWidth : null,
           );
         },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.primaryBlue),
-          );
-        },
+      );
+    } else if (flagEmoji.isNotEmpty) {
+      content = Center(
+        child: Text(
+          flagEmoji,
+          style: const TextStyle(fontSize: 68),
+        ),
       );
     } else {
       content = const Center(
@@ -50,8 +39,4 @@ extension _CountryDetailScreenFlagCardImpl on CountryDetailScreenState {
       child: ClipRRect(borderRadius: borderRadius, child: content),
     );
   }
-
-
-
 }
-
