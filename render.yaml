@@ -7,10 +7,12 @@ services:
     region: frankfurt
     plan: free
     envVars:
-      - key: DATABASE_URL
+      - key: DATABASE_HOST
+        sync: false
+      - key: DATABASE_NAME
         fromDatabase:
           name: dunya_ulkeleri_db
-          property: connectionString
+          property: database
       - key: DATABASE_USERNAME
         fromDatabase:
           name: dunya_ulkeleri_db
