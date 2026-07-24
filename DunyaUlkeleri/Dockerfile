@@ -1,12 +1,15 @@
-FROM maven:3.9.11-eclipse-temurin-21 AS build
-
+# 1. Aşama: Projeyi Maven ile Derleme (Build)
+FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn -q -DskipTests package
+COPY . .
+RUN ./mvnw clean package -DskipTests
 
-FROM eclipse-temurin:21-jre
-
+# 2. Aşama: Çalıştırma (Run)
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-COPY --from=build /app/target/DunyaUlkeleri-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
+
+# Render'ın atayacağı dinamik portu dinlemesi için
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
