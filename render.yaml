@@ -2,7 +2,6 @@ services:
   - type: web
     name: dunya-ulkeleri-backend
     runtime: docker
-    rootDir: DunyaUlkeleri
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: frankfurt
