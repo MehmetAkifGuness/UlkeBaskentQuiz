@@ -54,11 +54,13 @@ public final class CorsOriginPatterns {
             "https://172.28.*:*",
             "https://172.29.*:*",
             "https://172.30.*:*",
-            "https://172.31.*:*"
+            "https://172.31.*:*",
+            "https://*.ngrok-free.app",
+            "https://*.ngrok-free.dev",
+            "https://*.ngrok.app"
     );
 
     public static String[] devAllowedOriginPatternsArray() {
         return DEV_ALLOWED_ORIGIN_PATTERNS.toArray(String[]::new);
     }
 }
-
