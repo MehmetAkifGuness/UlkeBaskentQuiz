@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: dunya-ulkeleri-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: frankfurt
+    plan: free
+    envVars:
+      - key: DATABASE_HOST
+        sync: false
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: dunya_ulkeleri_db
+          property: database
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: dunya_ulkeleri_db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: dunya_ulkeleri_db
+          property: password
+      - key: JWT_SECRET
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
