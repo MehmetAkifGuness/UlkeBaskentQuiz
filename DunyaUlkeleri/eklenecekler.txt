@@ -1,1 +1,1 @@
-﻿
+﻿ustalık seviyeleri kısmında dünya kaldırılacak diğer taraftan db optimize edilecek boş yere db dolması önlenecek
